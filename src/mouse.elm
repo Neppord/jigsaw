@@ -43,9 +43,7 @@ init _ =
 
 type Msg
   = UpdateMouse Int Int
-  | MouseDown
-  | MouseUp
-
+  | MouseDown Bool
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -56,16 +54,10 @@ update msg model =
       , Cmd.none
       )
 
-    MouseDown ->
-      ( { model | mouseDown = True }
+    MouseDown isDown ->
+      ( { model | mouseDown = isDown }
       , Cmd.none
       )
-
-    MouseUp ->
-      ( { model | mouseDown = False }
-      , Cmd.none
-      )
-
 
 
 -- SUBSCRIPTIONS
@@ -75,13 +67,16 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.batch
     [ if model.mouseDown then mousePositionSubscription else Sub.none
-    , E.onMouseDown (D.succeed MouseDown)
-    , E.onMouseUp (D.succeed MouseUp)
+    , E.onMouseDown (D.succeed <| MouseDown True)
+    , E.onMouseUp (D.succeed <| MouseDown False)
     ]
 
 mousePositionSubscription : Sub Msg
 mousePositionSubscription =
   E.onMouseMove (D.map2 UpdateMouse (D.field "pageX" D.int) (D.field "pageY" D.int))
+
+
+
 
 
 -- VIEW
