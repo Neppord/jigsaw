@@ -1,7 +1,9 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (Html, div, h1, text)
+import Array as A
+import Html exposing (Html, div, h1, text, button, text)
+import Html.Events exposing (onClick)
 import Svg.Attributes exposing (id)
 import TypedSvg exposing (image, defs, svg, g, use, clipPath, rect)
 import TypedSvg.Attributes exposing (width, height, xlinkHref)
@@ -34,17 +36,16 @@ type alias Piece =
     }
 
 type alias Model =
-    { pieces : List Piece }
-
+    { pieces : A.Array Piece }
 
 
 init : () -> (Model, Cmd Msg)
 init () =
-    ( Model
+    ( Model <| A.fromList
         [ Piece 0 (Point 0 0) (Point 0 0) False
-        , Piece 1 (Point 0 1) (Point 0 1) False
-        , Piece 2 (Point 1 0) (Point 1 0) False
-        , Piece 3 (Point 1 1) (Point 1 1) False
+        , Piece 1 (Point 0 100) (Point 0 0) False
+        , Piece 2 (Point 100 0) (Point 0 0) False
+        , Piece 3 (Point 100 100) (Point 0 0) False
         ]
     , Cmd.none )
 
@@ -55,6 +56,7 @@ type Msg
   = MouseDown Int
   | MouseUp Int
   | MouseMove Int Int
+  | Scramble Int
 
 update : Msg -> Model -> (Model, Cmd msg)
 update msg model =
@@ -65,6 +67,18 @@ update msg model =
       ( model, Cmd.none )
     MouseMove x y ->
       ( model, Cmd.none )
+    Scramble id ->
+      ( { model | pieces = updatePiece id model.pieces}
+      , Cmd.none )
+
+
+updatePiece : Int -> A.Array Piece -> A.Array Piece
+updatePiece id pieces =
+    case A.get id pieces of
+        Just p ->
+            A.set id ({p | position = Point 200 0}) pieces
+        Nothing ->
+            pieces
 
 
 -- SUBSCRIPTIONS
@@ -79,28 +93,27 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   div []
-    [ h1 [] [ text ( "Test!" ) ]
+    [ button [ onClick (Scramble 1) ] [ text "foo" ]
+    , h1 [] [ text ( "Test!" ) ]
+
     , svg
           [ width <| num 1000
           , height <| num 1000
           ]
           ( constructJigsawSvg model )
+
     ]
 
 constructJigsawSvg : Model -> List (Svg msg)
 constructJigsawSvg model =
     defs [] ( defineJigsawSvg model ) :: constructSvgPieces model.pieces
 
-constructSvgPieces : List Piece -> List (Svg msg)
+constructSvgPieces : A.Array Piece -> List (Svg msg)
 constructSvgPieces pieces =
-    List.map pieceToSvg pieces
+    List.map pieceToSvg (A.toList pieces)
 
 pieceToSvg : Piece -> Svg msg
 pieceToSvg piece =
---  piece p.position.x p.position.y
---
---piece : Int -> Int -> Svg msg
---piece x y =
     g []
         [ use
             [ TypedSvg.Attributes.x <| px <| toFloat piece.position.x
@@ -126,7 +139,7 @@ definePuzzleImage =
 
 definePieceClipPaths : Model -> List (Svg msg)
 definePieceClipPaths model =
-    List.map pieceClipPath model.pieces
+    List.map pieceClipPath (A.toList model.pieces)
 
 pieceClipPath : Piece -> Svg msg
 pieceClipPath piece =
@@ -135,8 +148,8 @@ pieceClipPath piece =
             [ id <| pieceOutlineId piece
             , width <| px 100
             , height <| px 100
-            , TypedSvg.Attributes.x <| px <| toFloat <| piece.position.x * 100
-            , TypedSvg.Attributes.y <| px <| toFloat <| piece.position.y * 100
+            , TypedSvg.Attributes.x <| px <| toFloat <| piece.offset.x
+            , TypedSvg.Attributes.y <| px <| toFloat <| piece.offset.y
             ]
             []
         ]
