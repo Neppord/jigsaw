@@ -106,7 +106,7 @@ pieceToSvg piece =
             [ TypedSvg.Attributes.x <| px <| toFloat piece.position.x
             , TypedSvg.Attributes.y <| px <| toFloat piece.position.y
             , xlinkHref <| "#puzzle-image"
-            , TypedSvg.Attributes.clipPath <| clipPathRef piece.offset.x piece.offset.y
+            , TypedSvg.Attributes.clipPath <| clipPathRef piece
             ]
             []
         ]
@@ -126,30 +126,29 @@ definePuzzleImage =
 
 definePieceClipPaths : Model -> List (Svg msg)
 definePieceClipPaths model =
-    [ pieceClipPath 0 0
-    , pieceClipPath 0 1
-    , pieceClipPath 1 0
-    , pieceClipPath 1 1
-    ]
+    List.map pieceClipPath model.pieces
 
-
-pieceClipPath x y =
-    clipPath [ id <| pieceClipId x y ]
+pieceClipPath : Piece -> Svg msg
+pieceClipPath piece =
+    clipPath [ id <| pieceClipId piece ]
         [ rect
-            [ id <| pieceOutlineId x y
+            [ id <| pieceOutlineId piece
             , width <| px 100
             , height <| px 100
-            , TypedSvg.Attributes.x <| px <| toFloat <| x * 100
-            , TypedSvg.Attributes.y <| px <| toFloat <| y * 100
+            , TypedSvg.Attributes.x <| px <| toFloat <| piece.position.x * 100
+            , TypedSvg.Attributes.y <| px <| toFloat <| piece.position.y * 100
             ]
             []
         ]
 
-pieceOutlineId x y =
-    "piece-" ++ String.fromInt x ++ "-" ++ String.fromInt y ++ "-outline"
+pieceOutlineId : Piece -> String
+pieceOutlineId piece =
+    "piece-" ++ String.fromInt piece.id ++ "-outline"
 
-pieceClipId x y =
-    "piece-" ++ String.fromInt x ++ "-" ++ String.fromInt y ++ "-clip"
+pieceClipId : Piece -> String
+pieceClipId piece =
+    "piece-" ++ String.fromInt piece.id ++ "-clip"
 
-clipPathRef x y =
-    ClipPathFunc <| "url(#" ++ pieceClipId x y ++ ")"
+clipPathRef : Piece -> ClipPath
+clipPathRef piece =
+    ClipPathFunc <| "url(#" ++ pieceClipId piece ++ ")"
