@@ -9,6 +9,7 @@ import TypedSvg exposing (image, defs, svg, g, use, clipPath, rect)
 import TypedSvg.Attributes exposing (width, height, xlinkHref)
 import TypedSvg.Types exposing (num, px, ClipPath(..))
 import TypedSvg.Core exposing (Svg)
+import TypedSvg.Events exposing (onMouseDown, onMouseUp, onMouseMove)
 
 -- MAIN
 
@@ -43,9 +44,9 @@ init : () -> (Model, Cmd Msg)
 init () =
     ( Model <| A.fromList
         [ Piece 0 (Point 0 0) (Point 0 0) False
-        , Piece 1 (Point 0 100) (Point 0 0) False
-        , Piece 2 (Point 100 0) (Point 0 0) False
-        , Piece 3 (Point 100 100) (Point 0 0) False
+        , Piece 1 (Point 0 100) (Point 0 100) False
+        , Piece 2 (Point 100 0) (Point 100 0) False
+        , Piece 3 (Point 100 100) (Point 100 100) False
         ]
     , Cmd.none )
 
@@ -76,7 +77,7 @@ updatePiece : Int -> A.Array Piece -> A.Array Piece
 updatePiece id pieces =
     case A.get id pieces of
         Just p ->
-            A.set id ({p | position = Point 200 0}) pieces
+            A.set id ({p | position = Point 250 20}) pieces
         Nothing ->
             pieces
 
@@ -93,7 +94,7 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   div []
-    [ button [ onClick (Scramble 1) ] [ text "foo" ]
+    [ button [ onClick (Scramble 3) ] [ text "scramble" ]
     , h1 [] [ text ( "Test!" ) ]
 
     , svg
@@ -104,20 +105,24 @@ view model =
 
     ]
 
-constructJigsawSvg : Model -> List (Svg msg)
+constructJigsawSvg : Model -> List (Svg Msg)
 constructJigsawSvg model =
     defs [] ( defineJigsawSvg model ) :: constructSvgPieces model.pieces
 
-constructSvgPieces : A.Array Piece -> List (Svg msg)
+constructSvgPieces : A.Array Piece -> List (Svg Msg)
 constructSvgPieces pieces =
     List.map pieceToSvg (A.toList pieces)
 
-pieceToSvg : Piece -> Svg msg
+pieceToSvg : Piece -> Svg Msg
 pieceToSvg piece =
-    g []
+    g
+      [ onMouseDown <| MouseDown piece.id
+      , onMouseUp <| MouseUp piece.id
+      , onMouseMove <| MouseMove 0 0
+      ]
         [ use
-            [ TypedSvg.Attributes.x <| px <| toFloat piece.position.x
-            , TypedSvg.Attributes.y <| px <| toFloat piece.position.y
+            [ TypedSvg.Attributes.x <| px <| toFloat (piece.position.x - piece.offset.x)
+            , TypedSvg.Attributes.y <| px <| toFloat (piece.position.y - piece.offset.y)
             , xlinkHref <| "#puzzle-image"
             , TypedSvg.Attributes.clipPath <| clipPathRef piece
             ]
