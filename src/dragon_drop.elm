@@ -8,6 +8,7 @@ import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Events
 
+import Point exposing (Point)
 
 -- MAIN
 main =
@@ -22,34 +23,22 @@ main =
 -- MODEL
 
 type alias Model =
-  { cursor : Maybe Coordinate
-  , circles : A.Array Circle
+  { cursor : Maybe Point
+  , pieces : A.Array Piece
   }
 
 type Msg
-  = MouseDown Int Coordinate
-  | MouseMove Coordinate
+  = MouseDown Int Point
+  | MouseMove Point
   | MouseUp
 
-type alias Circle =
-  { center : Coordinate
+type alias Piece =
+  { position : Point
+  , offset : Point
   , selected : Bool
   , id : Int
+--  , neighbors : List Piece
   }
-
-type alias Coordinate =
-  { x: Int
-  , y: Int
-  }
-
-sub : Coordinate -> Coordinate -> Coordinate
-sub a b =
-  Coordinate (a.x - b.x) (a.y - b.y)
-
-add : Coordinate -> Coordinate -> Coordinate
-add a b =
-  Coordinate (a.x + b.x) (a.y + b.y)
-
 
 -- INIT
 
@@ -58,25 +47,7 @@ init () =
   let
     model =
       { cursor = Nothing
-      , circles = A.fromList
-        [ Circle ( Coordinate 50 500 ) False 0
-        , Circle ( Coordinate 100 500 ) False 1
-        , Circle ( Coordinate 150 500 ) False 2
-        , Circle ( Coordinate 200 500 ) False 3
-        , Circle ( Coordinate 250 500 ) False 4
-        , Circle ( Coordinate 300 500 ) False 5
-        , Circle ( Coordinate 350 500 ) False 6
-        , Circle ( Coordinate 400 500 ) False 7
-        , Circle ( Coordinate 450 500 ) False 8
-        , Circle ( Coordinate 500 500 ) False 9
-        , Circle ( Coordinate 550 500 ) False 10
-        , Circle ( Coordinate 600 500 ) False 11
-        , Circle ( Coordinate 650 500 ) False 12
-        , Circle ( Coordinate 700 500 ) False 13
-        , Circle ( Coordinate 750 500 ) False 14
-        , Circle ( Coordinate 800 500 ) False 15
-        , Circle ( Coordinate 850 500 ) False 16
-        ]
+      , pieces = createPieces 5 5
       }
   in
   ( model, Cmd.none )
@@ -87,30 +58,30 @@ init () =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   let
-    selectCircle : Int -> A.Array Circle
-    selectCircle id =
-      case A.get id model.circles of
+    selectPiece : Int -> A.Array Piece
+    selectPiece id =
+      case A.get id model.pieces of
         Nothing ->
-          model.circles
-        Just circle ->
-          A.set id { circle | selected = True } model.circles
+          model.pieces
+        Just piece ->
+          A.set id { piece | selected = True } model.pieces
 
-    turnOffSelectedStatus : Circle -> Circle
-    turnOffSelectedStatus circle =
-      { circle | selected = False }
+    turnOffSelectedStatus : Piece -> Piece
+    turnOffSelectedStatus piece =
+      { piece | selected = False }
 
-    moveCircleTo : Coordinate -> Circle -> Circle
-    moveCircleTo position circle =
-      if circle.selected then
-        { circle | center = add circle.center position }
+    movePieceTo : Point -> Piece -> Piece
+    movePieceTo newPosition piece =
+      if piece.selected then
+        { piece | position = Point.add piece.position newPosition }
       else
-        circle
+        piece
   in
   case msg of
     MouseDown id coordinate ->
       ( { model
           | cursor = Just coordinate
-          , circles = selectCircle id
+          , pieces = selectPiece id
         }
       , Cmd.none
       )
@@ -118,7 +89,7 @@ update msg model =
     MouseUp ->
       ( { model
           | cursor = Nothing
-          , circles = A.map turnOffSelectedStatus model.circles
+          , pieces = A.map turnOffSelectedStatus model.pieces
         }
       , Cmd.none
       )
@@ -131,7 +102,7 @@ update msg model =
         Just oldPos ->
           ( { model
               | cursor = Just newPos
-              , circles = A.map (moveCircleTo <| sub newPos oldPos) model.circles
+              , pieces = A.map (movePieceTo <| Point.sub newPos oldPos) model.pieces
             }
           , Cmd.none
           )
@@ -142,12 +113,36 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
+  let
+    defs =
+      Svg.defs [] ( definePuzzleImage :: definePieceClipPaths model )
+
+    onePiece piece =
+      Svg.g
+        [ onMouseDown piece.id
+        , translate piece.position
+        ]
+        [ Svg.use
+          [ Svg.Attributes.xlinkHref <| "#puzzle-image"
+          , Svg.Attributes.clipPath <| clipPathRef piece
+          ]
+          []
+        ]
+
+    pieces =
+      List.map onePiece (A.toList model.pieces)
+
+  in
   Html.div []
     [ Html.h1 [] [ Html.text ( "Test! " ) ]
     , Svg.svg
       ( svgAttributes model )
-      ( List.map circleSvg (A.toList model.circles) )
+      ( defs :: pieces)
     ]
+
+
+
+
 
 svgAttributes model =
   let
@@ -162,18 +157,6 @@ svgAttributes model =
     onMouseMove :: onMouseUp :: attributes
   else
     attributes
-
-circleSvg : Circle -> Svg Msg
-circleSvg circle =
-  Svg.circle
-    [ Svg.Attributes.fill "yellow"
-    , Svg.Attributes.stroke "green"
-    , Svg.Attributes.strokeWidth "4"
-    , Svg.Attributes.r (if circle.selected then "27" else "25")
-    , onMouseDown circle.id
-    , translate circle.center
-    ]
-    []
 
 onMouseUp : Svg.Attribute Msg
 onMouseUp =
@@ -190,13 +173,79 @@ onMouseMove =
   Svg.Events.on "mousemove"
     <| Json.Decode.map MouseMove coordinateDecoder
 
-coordinateDecoder : Json.Decode.Decoder Coordinate
+coordinateDecoder : Json.Decode.Decoder Point
 coordinateDecoder =
-  Json.Decode.map2 Coordinate
+  Json.Decode.map2 Point
     (Json.Decode.field "clientX" Json.Decode.int)
     (Json.Decode.field "clientY" Json.Decode.int)
 
-translate : Coordinate -> Svg.Attribute Msg
+translate : Point -> Svg.Attribute Msg
 translate position =
   Svg.Attributes.transform
     <| "translate(" ++ String.fromInt position.x ++ "," ++ String.fromInt position.y ++ ")"
+
+
+-- =================
+
+
+createPieces : Int -> Int -> A.Array Piece
+createPieces nx ny =
+  let
+    n = nx*ny
+    width = 100
+    height = 100
+    range =
+      A.fromList <| List.range 0 (n - 1)
+    onePiece i =
+      { position = Point 0 0
+      , offset = Point (width*(modBy nx i)) (height*(i//nx))
+      , selected = False
+      , id = i
+      }
+
+  in
+    A.map onePiece range
+
+
+definePuzzleImage : Svg Msg
+definePuzzleImage =
+  Svg.image
+    [ Svg.Attributes.id "puzzle-image"
+    , Svg.Attributes.xlinkHref "../resources/kitten.png"
+    ]
+    []
+
+
+definePieceClipPaths : Model -> List (Svg Msg)
+definePieceClipPaths model =
+    List.map pieceClipPath (A.toList model.pieces)
+
+pieceClipPath : Piece -> Svg Msg
+pieceClipPath piece =
+    let
+      px num =
+        String.fromInt num ++ "px"
+    in
+      Svg.clipPath [ Svg.Attributes.id <| pieceClipId piece ]
+        [ Svg.rect
+          [ Svg.Attributes.id <| pieceOutlineId piece
+          , Svg.Attributes.width <| px 100
+          , Svg.Attributes.height <| px 100
+          , Svg.Attributes.x <| px <| piece.offset.x
+          , Svg.Attributes.y <| px <| piece.offset.y
+          ]
+          []
+      ]
+
+pieceOutlineId : Piece -> String
+pieceOutlineId piece =
+    "piece-" ++ String.fromInt piece.id ++ "-outline"
+
+pieceClipId : Piece -> String
+pieceClipId piece =
+    "piece-" ++ String.fromInt piece.id ++ "-clip"
+
+clipPathRef : Piece -> String
+clipPathRef piece =
+    "url(#" ++ pieceClipId piece ++ ")"
+
