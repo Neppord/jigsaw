@@ -96,10 +96,12 @@ update msg model =
               { piece | position = point }
             Nothing ->
               Piece (Point 0 0) (Point 0 0) False -1
-        foo =
+
+        changeAllPiecePositions =
           List.indexedMap changePiecePosition newPositions
+
       in
-        ( { model | pieces = A.fromList foo }
+        ( { model | pieces = A.fromList changeAllPiecePositions }
         , Cmd.none
         )
 
