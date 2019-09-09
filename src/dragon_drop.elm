@@ -3,10 +3,12 @@ module Main exposing (..)
 import Browser
 import Array as A
 import Html exposing (Html)
+import Html.Events
 import Json.Decode
 import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Events
+import Random
 
 import Point exposing (Point)
 
@@ -31,6 +33,8 @@ type Msg
   = MouseDown Int Point
   | MouseMove Point
   | MouseUp
+  | Scramble
+  | ScrambledPositions (List Point)
 
 type alias Piece =
   { position : Point
@@ -78,6 +82,27 @@ update msg model =
         piece
   in
   case msg of
+    Scramble ->
+      ( model
+      , Random.generate ScrambledPositions
+        <| Point.randomPoints (A.length model.pieces) 0 500
+      )
+
+    ScrambledPositions newPositions ->
+      let
+        changePiecePosition ind point =
+          case A.get ind model.pieces of
+            Just piece ->
+              { piece | position = point }
+            Nothing ->
+              Piece (Point 0 0) (Point 0 0) False -1
+        foo =
+          List.indexedMap changePiecePosition newPositions
+      in
+        ( { model | pieces = A.fromList foo }
+        , Cmd.none
+        )
+
     MouseDown id coordinate ->
       ( { model
           | cursor = Just coordinate
@@ -134,14 +159,12 @@ view model =
 
   in
   Html.div []
-    [ Html.h1 [] [ Html.text ( "Test! " ) ]
+    [ Html.h1 [] [ Html.text ( "Kitten jigsaw! " ) ]
+    , Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
     , Svg.svg
       ( svgAttributes model )
       ( defs :: pieces)
     ]
-
-
-
 
 
 svgAttributes model =
