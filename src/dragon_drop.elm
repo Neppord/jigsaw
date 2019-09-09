@@ -27,6 +27,7 @@ main =
 type alias Model =
   { cursor : Maybe Point
   , pieces : A.Array Piece
+  , maxZLevel : Int
   }
 
 type Msg
@@ -40,9 +41,18 @@ type alias Piece =
   { position : Point
   , offset : Point
   , selected : Bool
+  , zlevel : Int
   , id : Int
 --  , neighbors : List Piece
   }
+
+
+
+-- Until I figure out how to handle index out of bounds
+-- exceptions more elegantly
+defaultPiece =
+  Piece (Point 0 0) (Point 0 0) False -1 -1
+
 
 -- INIT
 
@@ -52,6 +62,7 @@ init () =
     model =
       { cursor = Nothing
       , pieces = createPieces 5 5
+      , maxZLevel = 24
       }
   in
   ( model, Cmd.none )
@@ -68,7 +79,13 @@ update msg model =
         Nothing ->
           model.pieces
         Just piece ->
-          A.set id { piece | selected = True } model.pieces
+          A.set
+            id
+            { piece
+              | selected = True
+              , zlevel = model.maxZLevel
+            }
+            model.pieces
 
     turnOffSelectedStatus : Piece -> Piece
     turnOffSelectedStatus piece =
@@ -95,7 +112,7 @@ update msg model =
             Just piece ->
               { piece | position = point }
             Nothing ->
-              Piece (Point 0 0) (Point 0 0) False -1
+              defaultPiece
 
         changeAllPiecePositions =
           List.indexedMap changePiecePosition newPositions
@@ -109,6 +126,7 @@ update msg model =
       ( { model
           | cursor = Just coordinate
           , pieces = selectPiece id
+          , maxZLevel = model.maxZLevel + 1
         }
       , Cmd.none
       )
@@ -141,10 +159,16 @@ update msg model =
 view : Model -> Html Msg
 view model =
   let
-    defs =
+    definitions =
       Svg.defs [] ( definePuzzleImage :: definePieceClipPaths model )
 
-    onePiece piece =
+    pieces =
+      List.map svgPiece
+        <| List.sortBy .zlevel
+        <| A.toList model.pieces
+
+
+    svgPiece piece =
       Svg.g
         [ onMouseDown piece.id
         , translate piece.position
@@ -156,16 +180,13 @@ view model =
           []
         ]
 
-    pieces =
-      List.map onePiece (A.toList model.pieces)
-
   in
   Html.div []
     [ Html.h1 [] [ Html.text ( "Kitten jigsaw! " ) ]
     , Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
     , Svg.svg
       ( svgAttributes model )
-      ( defs :: pieces)
+      ( definitions :: pieces)
     ]
 
 
@@ -226,6 +247,7 @@ createPieces nx ny =
       , offset = Point (width*(modBy nx i)) (height*(i//nx))
       , selected = False
       , id = i
+      , zlevel = i
       }
 
   in
