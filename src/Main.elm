@@ -53,7 +53,6 @@ type Msg
 
 type alias Piece =
   { position : Point
-  , offset : Point
   , selected : Bool
   , zlevel : Int
   , id : Int
@@ -74,7 +73,6 @@ type alias PieceGroup =
 -- exceptions more elegantly
 defaultPiece =
   { position = (Point 0 0)
-  , offset = (Point 0 0)
   , selected = False
   , zlevel = -1
   , id = -1
@@ -112,25 +110,18 @@ createPieces image =
     nx = image.xpieces
     ny = image.ypieces
     n = nx*ny
-    pieceWidth = image.width // nx
-    pieceHeight = image.height // ny
     range =
       A.fromList <| List.range 0 (n - 1)
-    toPoint id =
-      Point (modBy nx id) (id // nx)
-    offset id =
-      Point.dot
-        ( toPoint id )
-        ( Point pieceWidth pieceHeight )
     neighbourOffsets =
       [ -nx, -1, 1, nx ]
     possibleNeighbours i =
       List.map ((+) i) neighbourOffsets
     isRealNeighbour i x =
-      Point.taxiDist (toPoint i) (toPoint x) == 1
+      Point.taxiDist
+        ( pieceIdToPoint i image.xpieces )
+        ( pieceIdToPoint x image.xpieces ) == 1
     onePiece i =
       { position = Point 0 0
-      , offset = offset i
       , selected = False
       , id = i
       , zlevel = i
@@ -140,6 +131,20 @@ createPieces image =
   in
     A.map onePiece range
 
+
+pieceIdToPoint : Int -> Int -> Point
+pieceIdToPoint id xpieces =
+  Point (modBy xpieces id) (id // xpieces)
+
+pieceIdToOffset : Int -> JigsawImage -> Point
+pieceIdToOffset id image =
+  let
+    pieceWidth = image.width // image.xpieces
+    pieceHeight = image.height // image.ypieces
+  in
+    Point.dot
+      ( pieceIdToPoint id image.xpieces )
+      ( Point pieceWidth pieceHeight )
 
 
 -- UPDATE
@@ -191,7 +196,7 @@ update msg model =
         changePiecePosition ind point =
           case A.get ind model.pieces of
             Just piece ->
-              { piece | position = Point.sub point piece.offset }
+              { piece | position = Point.sub point (pieceIdToOffset piece.id model.image) }
             Nothing ->
               defaultPiece
 
@@ -387,6 +392,7 @@ pieceClipPath image piece =
     let
       w = image.width // image.xpieces
       h = image.height // image.ypieces
+      offset = pieceIdToOffset piece.id image
       px num =
         String.fromInt num ++ "px"
     in
@@ -395,8 +401,8 @@ pieceClipPath image piece =
           [ Svg.Attributes.id <| pieceOutlineId piece.id
           , Svg.Attributes.width <| px w
           , Svg.Attributes.height <| px h
-          , Svg.Attributes.x <| px piece.offset.x
-          , Svg.Attributes.y <| px piece.offset.y
+          , Svg.Attributes.x <| px offset.x
+          , Svg.Attributes.y <| px offset.y
           ]
           []
       ]
