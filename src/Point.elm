@@ -27,13 +27,13 @@ taxiDist : Point -> Point -> Int
 taxiDist a b =
   abs (b.x - a.x) + abs (b.y - a.y)
 
-randomPoints : Int -> Int -> Int -> Random.Generator (List Point)
-randomPoints n min max =
-  Random.list n <| randomPoint min max
+randomPoints : Int -> Int -> Int -> Int -> Int -> Random.Generator (List Point)
+randomPoints n xmin xmax ymin ymax =
+  Random.list n <| randomPoint xmin xmax ymin ymax
 
-randomPoint : Int -> Int -> Random.Generator Point
-randomPoint min max =
+randomPoint : Int -> Int -> Int -> Int -> Random.Generator Point
+randomPoint xmin xmax ymin ymax =
   Random.map2
     (\x y -> Point x y)
-    (Random.int min max)
-    (Random.int min max)
+    (Random.int xmin xmax)
+    (Random.int ymin ymax)

@@ -4,6 +4,7 @@ import Browser
 import Array as A
 import Dict as D
 import Html exposing (Html)
+import Html.Attributes
 import Html.Events
 import Json.Decode
 import Svg exposing (Svg)
@@ -30,7 +31,18 @@ type alias Model =
   , pieces : A.Array Piece
   , pieceGroups : D.Dict Int PieceGroup
   , maxZLevel : Int
+  , image : JigsawImage
+  , width : Int
+  , height : Int
   }
+
+type alias JigsawImage =
+    { path : String
+    , width : Int
+    , height : Int
+    , xpieces : Int
+    , ypieces : Int
+    }
 
 type Msg
   = MouseDown Int Point
@@ -74,14 +86,60 @@ defaultPiece =
 init : () -> ( Model, Cmd Msg )
 init () =
   let
+    image =
+      { path = "../resources/kitten.png"
+      , width = 533
+      , height = 538
+      , xpieces = 6
+      , ypieces = 6
+      }
     model =
       { cursor = Nothing
-      , pieces = createPieces 10 10
+      , pieces = createPieces image
       , pieceGroups = D.empty
-      , maxZLevel = 99
+      , maxZLevel = image.xpieces * image.ypieces - 1
+      , image = image
+      , width = 1200
+      , height = 850
       }
   in
   ( model, Cmd.none )
+
+
+createPieces : JigsawImage -> A.Array Piece
+createPieces image =
+  let
+    nx = image.xpieces
+    ny = image.ypieces
+    n = nx*ny
+    pieceWidth = image.width // nx
+    pieceHeight = image.height // ny
+    range =
+      A.fromList <| List.range 0 (n - 1)
+    toPoint id =
+      Point (modBy nx id) (id // nx)
+    offset id =
+      Point.dot
+        ( toPoint id )
+        ( Point pieceWidth pieceHeight )
+    neighbourOffsets =
+      [ -nx, -1, 1, nx ]
+    possibleNeighbours i =
+      List.map ((+) i) neighbourOffsets
+    isRealNeighbour i x =
+      Point.taxiDist (toPoint i) (toPoint x) == 1
+    onePiece i =
+      { position = Point 0 0
+      , offset = offset i
+      , selected = False
+      , id = i
+      , zlevel = i
+      , neighbours = List.filter (isRealNeighbour i) <| possibleNeighbours i
+      }
+
+  in
+    A.map onePiece range
+
 
 
 -- UPDATE
@@ -118,7 +176,7 @@ update msg model =
     Scramble ->
       ( model
       , Random.generate ScrambledPositions
-        <| Point.randomPoints (A.length model.pieces) 0 500
+        <| Point.randomPoints (A.length model.pieces) 50 (model.image.width - 50) 50 (model.image.height - 50)
       )
 
     ScrambledPositions newPositions ->
@@ -126,7 +184,7 @@ update msg model =
         changePiecePosition ind point =
           case A.get ind model.pieces of
             Just piece ->
-              { piece | position = point }
+              { piece | position = Point.sub point piece.offset }
             Nothing ->
               defaultPiece
 
@@ -160,8 +218,8 @@ update msg model =
 
         neighbourFromId id =
           case A.get id model.pieces of
-              Nothing -> defaultPiece
-              Just piece -> piece
+            Nothing -> defaultPiece
+            Just piece -> piece
 
         distances =
           List.map (neighbourDistance << neighbourFromId) selectedPiece.neighbours
@@ -190,7 +248,7 @@ update msg model =
           A.map turnOffSelectedStatus model.pieces
 
         movedPieces =
-            A.set selectedPiece.id maybeMoveSelectedPiece pieces
+          A.set selectedPiece.id maybeMoveSelectedPiece pieces
       in
         ( { model
             | cursor = Nothing
@@ -220,13 +278,12 @@ view : Model -> Html Msg
 view model =
   let
     definitions =
-      Svg.defs [] ( definePuzzleImage :: definePieceClipPaths model )
+      Svg.defs [] ( definePuzzleImage model.image :: definePieceClipPaths model )
 
     pieces =
       List.map svgPiece
         <| List.sortBy .zlevel
         <| A.toList model.pieces
-
 
     svgPiece piece =
       Svg.g
@@ -246,7 +303,7 @@ view model =
         Just piece -> piece
 
   in
-  Html.div []
+  Html.div [ ]
     [ Html.h1 [] [ Html.text ( "Kitten jigsaw! " ) ]
     , Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
     , Html.h1 []
@@ -257,17 +314,23 @@ view model =
         ++ ", y: "
         ++ String.fromInt selectedPiece.position.y
       ]
-    , Svg.svg
-      ( svgAttributes model )
-      ( definitions :: pieces)
+    , Html.div
+        [ Html.Attributes.style "background-color" "#222222"
+        , Html.Attributes.style "width" <| String.fromInt model.width ++ "px"
+        , Html.Attributes.style "height" <| String.fromInt model.height ++ "px"
+        ]
+        [ Svg.svg
+          ( svgAttributes model )
+          ( definitions :: pieces )
+        ]
     ]
 
 
 svgAttributes model =
   let
     attributes =
-      [ Svg.Attributes.width "1000"
-      , Svg.Attributes.height "1000"
+      [ Svg.Attributes.width "100%"
+      , Svg.Attributes.height "100%"
       ]
     shouldTrackMouseMovement =
       model.cursor /=  Nothing
@@ -286,7 +349,6 @@ onMouseDown id =
   Svg.Events.on "mousedown"
     <| Json.Decode.map (MouseDown id) coordinateDecoder
 
-
 onMouseMove : Svg.Attribute Msg
 onMouseMove =
   Svg.Events.on "mousemove"
@@ -304,66 +366,32 @@ translate position =
     <| "translate(" ++ String.fromInt position.x ++ "," ++ String.fromInt position.y ++ ")"
 
 
--- =================
-
-
-createPieces : Int -> Int -> A.Array Piece
-createPieces nx ny =
-  let
-    n = nx*ny
-    width = 50
-    height = 50
-    range =
-      A.fromList <| List.range 0 (n - 1)
-    toPoint id =
-      Point (modBy nx id) (id // nx)
-    offset id =
-      Point.dot
-        ( toPoint id )
-        ( Point width height )
-    neighbourOffsets =
-      [ -nx, -1, 1, nx ]
-    possibleNeighbours i =
-      List.map ((+) i) neighbourOffsets
-    isRealNeighbour i x =
-      Point.taxiDist (toPoint i) (toPoint x) == 1
-    onePiece i =
-      { position = Point 0 0
-      , offset = offset i
-      , selected = False
-      , id = i
-      , zlevel = i
-      , neighbours = List.filter (isRealNeighbour i) <| possibleNeighbours i
-      }
-
-  in
-    A.map onePiece range
-
-
-definePuzzleImage : Svg Msg
-definePuzzleImage =
+definePuzzleImage : JigsawImage -> Svg Msg
+definePuzzleImage image =
   Svg.image
     [ Svg.Attributes.id "puzzle-image"
-    , Svg.Attributes.xlinkHref "../resources/kitten.png"
+    , Svg.Attributes.xlinkHref image.path
     ]
     []
 
 
 definePieceClipPaths : Model -> List (Svg Msg)
 definePieceClipPaths model =
-    List.map pieceClipPath (A.toList model.pieces)
+    List.map (pieceClipPath model.image) (A.toList model.pieces)
 
-pieceClipPath : Piece -> Svg Msg
-pieceClipPath piece =
+pieceClipPath : JigsawImage -> Piece -> Svg Msg
+pieceClipPath image piece =
     let
+      w = image.width // image.xpieces
+      h = image.height // image.ypieces
       px num =
         String.fromInt num ++ "px"
     in
       Svg.clipPath [ Svg.Attributes.id <| pieceClipId piece.id ]
         [ Svg.rect
           [ Svg.Attributes.id <| pieceOutlineId piece.id
-          , Svg.Attributes.width <| px 50
-          , Svg.Attributes.height <| px 50
+          , Svg.Attributes.width <| px w
+          , Svg.Attributes.height <| px h
           , Svg.Attributes.x <| px piece.offset.x
           , Svg.Attributes.y <| px piece.offset.y
           ]
