@@ -295,6 +295,14 @@ view model =
           , Svg.Attributes.clipPath <| clipPathRef piece.id
           ]
           []
+        , Svg.use
+          [ Svg.Attributes.xlinkHref <| "#" ++ pieceOutlineId piece.id
+          , Svg.Attributes.fill "white"
+          , Svg.Attributes.fillOpacity "0.0"
+          , Svg.Attributes.stroke <| if piece.selected then "green" else "black"
+          , Svg.Attributes.strokeWidth "2px"
+          ]
+          []
         ]
 
     selectedPiece =
@@ -371,6 +379,7 @@ definePuzzleImage image =
   Svg.image
     [ Svg.Attributes.id "puzzle-image"
     , Svg.Attributes.xlinkHref image.path
+    , Svg.Attributes.pointerEvents "none"
     ]
     []
 
