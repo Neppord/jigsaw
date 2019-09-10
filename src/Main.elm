@@ -174,10 +174,17 @@ update msg model =
   in
   case msg of
     Scramble ->
-      ( model
-      , Random.generate ScrambledPositions
-        <| Point.randomPoints (A.length model.pieces) 50 (model.image.width - 50) 50 (model.image.height - 50)
-      )
+      let
+        n = A.length model.pieces
+        xmin = 0
+        xmax = model.width - 50
+        ymin = 0
+        ymax = model.height - 50
+        scrambleCommand =
+          Random.generate ScrambledPositions
+            <| Point.randomPoints n xmin xmax ymin ymax
+      in
+        ( model, scrambleCommand )
 
     ScrambledPositions newPositions ->
       let
@@ -305,25 +312,12 @@ view model =
           []
         ]
 
-    selectedPiece =
-      case A.get 0 (A.filter .selected model.pieces) of
-        Nothing -> defaultPiece
-        Just piece -> piece
-
   in
   Html.div [ ]
     [ Html.h1 [] [ Html.text ( "Kitten jigsaw! " ) ]
     , Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
-    , Html.h1 []
-      [ Html.text
-        <| String.fromInt selectedPiece.id
-        ++ ", x: "
-        ++ String.fromInt selectedPiece.position.x
-        ++ ", y: "
-        ++ String.fromInt selectedPiece.position.y
-      ]
     , Html.div
-        [ Html.Attributes.style "background-color" "#222222"
+        [ Html.Attributes.style "background-color" "#CCCCCC"
         , Html.Attributes.style "width" <| String.fromInt model.width ++ "px"
         , Html.Attributes.style "height" <| String.fromInt model.height ++ "px"
         ]
