@@ -87,7 +87,7 @@ init : () -> ( Model, Cmd Msg )
 init () =
   let
     image =
-      { path = "../resources/kitten.png"
+      { path = "resources/kitten.png"
       , width = 533
       , height = 538
       , xpieces = 6
