@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Browser
 import Array as A
+import Dict as D
 import Html exposing (Html)
 import Html.Events
 import Json.Decode
@@ -27,6 +28,7 @@ main =
 type alias Model =
   { cursor : Maybe Point
   , pieces : A.Array Piece
+  , pieceGroups : D.Dict Int PieceGroup
   , maxZLevel : Int
   }
 
@@ -43,15 +45,28 @@ type alias Piece =
   , selected : Bool
   , zlevel : Int
   , id : Int
---  , neighbors : List Piece
+  , neighbours : List Int
   }
 
+type alias PieceGroup =
+    { id : Int
+    , members : List Int
+    , neighbours : List Int
+    , position : Point
+    , selected : Bool
+    , zlevel : Int
+    }
 
 
 -- Until I figure out how to handle index out of bounds
 -- exceptions more elegantly
 defaultPiece =
-  Piece (Point 0 0) (Point 0 0) False -1 -1
+  { position = (Point 0 0)
+  , offset = (Point 0 0)
+  , selected = False
+  , zlevel = -1
+  , id = -1
+  , neighbours = []}
 
 
 -- INIT
@@ -61,8 +76,9 @@ init () =
   let
     model =
       { cursor = Nothing
-      , pieces = createPieces 5 5
-      , maxZLevel = 24
+      , pieces = createPieces 10 10
+      , pieceGroups = D.empty
+      , maxZLevel = 99
       }
   in
   ( model, Cmd.none )
@@ -132,12 +148,56 @@ update msg model =
       )
 
     MouseUp ->
-      ( { model
-          | cursor = Nothing
-          , pieces = A.map turnOffSelectedStatus model.pieces
-        }
-      , Cmd.none
-      )
+      let
+        selectedPiece =
+          case A.get 0 (A.filter .selected model.pieces) of
+            Nothing -> defaultPiece
+            Just piece -> { piece | selected = False }
+
+        neighbourDistance neighbour =
+          ( Point.dist selectedPiece.position neighbour.position
+          , neighbour)
+
+        neighbourFromId id =
+          case A.get id model.pieces of
+              Nothing -> defaultPiece
+              Just piece -> piece
+
+        distances =
+          List.map (neighbourDistance << neighbourFromId) selectedPiece.neighbours
+
+        takeFirst condition list =
+          case list of
+            [] ->
+              Nothing
+            x :: xs ->
+              if condition x then
+                Just x
+              else
+                takeFirst condition xs
+
+        smallEnough (distance, _) =
+          distance < 15.0
+
+        maybeMoveSelectedPiece =
+          case takeFirst smallEnough distances of
+            Nothing ->
+              selectedPiece
+            Just (_, neighbour) ->
+              { selectedPiece | position = neighbour.position, selected = False }
+
+        pieces =
+          A.map turnOffSelectedStatus model.pieces
+
+        movedPieces =
+            A.set selectedPiece.id maybeMoveSelectedPiece pieces
+      in
+        ( { model
+            | cursor = Nothing
+            , pieces = movedPieces
+          }
+        , Cmd.none
+        )
 
     MouseMove newPos ->
       case model.cursor of
@@ -175,15 +235,28 @@ view model =
         ]
         [ Svg.use
           [ Svg.Attributes.xlinkHref <| "#puzzle-image"
-          , Svg.Attributes.clipPath <| clipPathRef piece
+          , Svg.Attributes.clipPath <| clipPathRef piece.id
           ]
           []
         ]
+
+    selectedPiece =
+      case A.get 0 (A.filter .selected model.pieces) of
+        Nothing -> defaultPiece
+        Just piece -> piece
 
   in
   Html.div []
     [ Html.h1 [] [ Html.text ( "Kitten jigsaw! " ) ]
     , Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
+    , Html.h1 []
+      [ Html.text
+        <| String.fromInt selectedPiece.id
+        ++ ", x: "
+        ++ String.fromInt selectedPiece.position.x
+        ++ ", y: "
+        ++ String.fromInt selectedPiece.position.y
+      ]
     , Svg.svg
       ( svgAttributes model )
       ( definitions :: pieces)
@@ -238,16 +311,29 @@ createPieces : Int -> Int -> A.Array Piece
 createPieces nx ny =
   let
     n = nx*ny
-    width = 100
-    height = 100
+    width = 50
+    height = 50
     range =
       A.fromList <| List.range 0 (n - 1)
+    toPoint id =
+      Point (modBy nx id) (id // nx)
+    offset id =
+      Point.dot
+        ( toPoint id )
+        ( Point width height )
+    neighbourOffsets =
+      [ -nx, -1, 1, nx ]
+    possibleNeighbours i =
+      List.map ((+) i) neighbourOffsets
+    isRealNeighbour i x =
+      Point.taxiDist (toPoint i) (toPoint x) == 1
     onePiece i =
       { position = Point 0 0
-      , offset = Point (width*(modBy nx i)) (height*(i//nx))
+      , offset = offset i
       , selected = False
       , id = i
       , zlevel = i
+      , neighbours = List.filter (isRealNeighbour i) <| possibleNeighbours i
       }
 
   in
@@ -273,26 +359,26 @@ pieceClipPath piece =
       px num =
         String.fromInt num ++ "px"
     in
-      Svg.clipPath [ Svg.Attributes.id <| pieceClipId piece ]
+      Svg.clipPath [ Svg.Attributes.id <| pieceClipId piece.id ]
         [ Svg.rect
-          [ Svg.Attributes.id <| pieceOutlineId piece
-          , Svg.Attributes.width <| px 100
-          , Svg.Attributes.height <| px 100
-          , Svg.Attributes.x <| px <| piece.offset.x
-          , Svg.Attributes.y <| px <| piece.offset.y
+          [ Svg.Attributes.id <| pieceOutlineId piece.id
+          , Svg.Attributes.width <| px 50
+          , Svg.Attributes.height <| px 50
+          , Svg.Attributes.x <| px piece.offset.x
+          , Svg.Attributes.y <| px piece.offset.y
           ]
           []
       ]
 
-pieceOutlineId : Piece -> String
-pieceOutlineId piece =
-    "piece-" ++ String.fromInt piece.id ++ "-outline"
+pieceOutlineId : Int -> String
+pieceOutlineId id =
+    "piece-" ++ String.fromInt id ++ "-outline"
 
-pieceClipId : Piece -> String
-pieceClipId piece =
-    "piece-" ++ String.fromInt piece.id ++ "-clip"
+pieceClipId : Int -> String
+pieceClipId id =
+    "piece-" ++ String.fromInt id ++ "-clip"
 
-clipPathRef : Piece -> String
-clipPathRef piece =
-    "url(#" ++ pieceClipId piece ++ ")"
+clipPathRef : Int -> String
+clipPathRef id =
+    "url(#" ++ pieceClipId id ++ ")"
 

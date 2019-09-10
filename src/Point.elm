@@ -1,4 +1,4 @@
-module Point exposing (Point, sub, add, randomPoint, randomPoints)
+module Point exposing (Point, sub, add, dot, dist, taxiDist, randomPoint, randomPoints)
 
 import Random
 
@@ -15,6 +15,17 @@ add : Point -> Point -> Point
 add a b =
   Point (a.x + b.x) (a.y + b.y)
 
+dot : Point -> Point -> Point
+dot a b =
+  Point (a.x * b.x) (a.y * b.y)
+
+dist : Point -> Point -> Float
+dist a b =
+  sqrt <| (toFloat b.x - toFloat a.x)^2 + (toFloat b.y - toFloat a.y)^2
+
+taxiDist : Point -> Point -> Int
+taxiDist a b =
+  abs (b.x - a.x) + abs (b.y - a.y)
 
 randomPoints : Int -> Int -> Int -> Random.Generator (List Point)
 randomPoints n min max =
