@@ -4824,14 +4824,14 @@ var author$project$Main$createPieces = function (image) {
 		});
 	var onePiece = function (i) {
 		return {
-			p: i,
+			o: i,
 			O: A2(
 				elm$core$List$filter,
 				isRealNeighbour(i),
 				possibleNeighbours(i)),
 			F: offset(i),
 			k: A2(author$project$Point$Point, 0, 0),
-			o: false,
+			m: false,
 			K: i
 		};
 	};
@@ -5098,11 +5098,11 @@ var author$project$Main$ScrambledPositions = function (a) {
 	return {$: 4, a: a};
 };
 var author$project$Main$defaultPiece = {
-	p: -1,
+	o: -1,
 	O: _List_Nil,
 	F: A2(author$project$Point$Point, 0, 0),
 	k: A2(author$project$Point$Point, 0, 0),
-	o: false,
+	m: false,
 	K: -1
 };
 var author$project$Point$add = F2(
@@ -5434,7 +5434,7 @@ var author$project$Main$update = F2(
 		var turnOffSelectedStatus = function (piece) {
 			return _Utils_update(
 				piece,
-				{o: false});
+				{m: false});
 		};
 		var selectPiece = function (id) {
 			var _n9 = A2(elm$core$Array$get, id, model.e);
@@ -5447,13 +5447,13 @@ var author$project$Main$update = F2(
 					id,
 					_Utils_update(
 						piece,
-						{o: true, K: model.N}),
+						{m: true, K: model.N}),
 					model.e);
 			}
 		};
 		var movePieceTo = F2(
 			function (newPosition, piece) {
-				return piece.o ? _Utils_update(
+				return piece.m ? _Utils_update(
 					piece,
 					{
 						k: A2(author$project$Point$add, piece.k, newPosition)
@@ -5540,7 +5540,7 @@ var author$project$Main$update = F2(
 						A2(
 							elm$core$Array$filter,
 							function ($) {
-								return $.o;
+								return $.m;
 							},
 							model.e));
 					if (_n6.$ === 1) {
@@ -5549,7 +5549,7 @@ var author$project$Main$update = F2(
 						var piece = _n6.a;
 						return _Utils_update(
 							piece,
-							{o: false});
+							{m: false});
 					}
 				}();
 				var pieces = A2(elm$core$Array$map, turnOffSelectedStatus, model.e);
@@ -5580,10 +5580,10 @@ var author$project$Main$update = F2(
 						var neighbour = _n4.b;
 						return _Utils_update(
 							selectedPiece,
-							{k: neighbour.k, o: false});
+							{k: neighbour.k, m: false});
 					}
 				}();
-				var movedPieces = A3(elm$core$Array$set, selectedPiece.p, maybeMoveSelectedPiece, pieces);
+				var movedPieces = A3(elm$core$Array$set, selectedPiece.o, maybeMoveSelectedPiece, pieces);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -5656,7 +5656,7 @@ var author$project$Main$pieceClipPath = F2(
 			_List_fromArray(
 				[
 					elm$svg$Svg$Attributes$id(
-					author$project$Main$pieceClipId(piece.p))
+					author$project$Main$pieceClipId(piece.o))
 				]),
 			_List_fromArray(
 				[
@@ -5665,7 +5665,7 @@ var author$project$Main$pieceClipPath = F2(
 					_List_fromArray(
 						[
 							elm$svg$Svg$Attributes$id(
-							author$project$Main$pieceOutlineId(piece.p)),
+							author$project$Main$pieceOutlineId(piece.o)),
 							elm$svg$Svg$Attributes$width(
 							px(w)),
 							elm$svg$Svg$Attributes$height(
@@ -5685,6 +5685,7 @@ var author$project$Main$definePieceClipPaths = function (model) {
 		elm$core$Array$toList(model.e));
 };
 var elm$svg$Svg$image = elm$svg$Svg$trustedNode('image');
+var elm$svg$Svg$Attributes$pointerEvents = _VirtualDom_attribute('pointer-events');
 var elm$svg$Svg$Attributes$xlinkHref = function (value) {
 	return A3(
 		_VirtualDom_attributeNS,
@@ -5698,7 +5699,8 @@ var author$project$Main$definePuzzleImage = function (image) {
 		_List_fromArray(
 			[
 				elm$svg$Svg$Attributes$id('puzzle-image'),
-				elm$svg$Svg$Attributes$xlinkHref(image.Z)
+				elm$svg$Svg$Attributes$xlinkHref(image.Z),
+				elm$svg$Svg$Attributes$pointerEvents('none')
 			]),
 		_List_Nil);
 };
@@ -5786,13 +5788,17 @@ var elm$svg$Svg$g = elm$svg$Svg$trustedNode('g');
 var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$svg$Svg$use = elm$svg$Svg$trustedNode('use');
 var elm$svg$Svg$Attributes$clipPath = _VirtualDom_attribute('clip-path');
+var elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
+var elm$svg$Svg$Attributes$fillOpacity = _VirtualDom_attribute('fill-opacity');
+var elm$svg$Svg$Attributes$stroke = _VirtualDom_attribute('stroke');
+var elm$svg$Svg$Attributes$strokeWidth = _VirtualDom_attribute('stroke-width');
 var author$project$Main$view = function (model) {
 	var svgPiece = function (piece) {
 		return A2(
 			elm$svg$Svg$g,
 			_List_fromArray(
 				[
-					author$project$Main$onMouseDown(piece.p),
+					author$project$Main$onMouseDown(piece.o),
 					author$project$Main$translate(piece.k)
 				]),
 			_List_fromArray(
@@ -5803,7 +5809,20 @@ var author$project$Main$view = function (model) {
 						[
 							elm$svg$Svg$Attributes$xlinkHref('#puzzle-image'),
 							elm$svg$Svg$Attributes$clipPath(
-							author$project$Main$clipPathRef(piece.p))
+							author$project$Main$clipPathRef(piece.o))
+						]),
+					_List_Nil),
+					A2(
+					elm$svg$Svg$use,
+					_List_fromArray(
+						[
+							elm$svg$Svg$Attributes$xlinkHref(
+							'#' + author$project$Main$pieceOutlineId(piece.o)),
+							elm$svg$Svg$Attributes$fill('white'),
+							elm$svg$Svg$Attributes$fillOpacity('0.0'),
+							elm$svg$Svg$Attributes$stroke(
+							piece.m ? 'green' : 'black'),
+							elm$svg$Svg$Attributes$strokeWidth('2px')
 						]),
 					_List_Nil)
 				]));
