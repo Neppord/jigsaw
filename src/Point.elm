@@ -1,0 +1,39 @@
+module Point exposing (Point, sub, add, dot, dist, taxiDist, randomPoint, randomPoints)
+
+import Random
+
+type alias Point =
+  { x: Int
+  , y: Int
+  }
+
+sub : Point -> Point -> Point
+sub a b =
+  Point (a.x - b.x) (a.y - b.y)
+
+add : Point -> Point -> Point
+add a b =
+  Point (a.x + b.x) (a.y + b.y)
+
+dot : Point -> Point -> Point
+dot a b =
+  Point (a.x * b.x) (a.y * b.y)
+
+dist : Point -> Point -> Float
+dist a b =
+  sqrt <| (toFloat b.x - toFloat a.x)^2 + (toFloat b.y - toFloat a.y)^2
+
+taxiDist : Point -> Point -> Int
+taxiDist a b =
+  abs (b.x - a.x) + abs (b.y - a.y)
+
+randomPoints : Int -> Int -> Int -> Int -> Int -> Random.Generator (List Point)
+randomPoints n xmin xmax ymin ymax =
+  Random.list n <| randomPoint xmin xmax ymin ymax
+
+randomPoint : Int -> Int -> Int -> Int -> Random.Generator Point
+randomPoint xmin xmax ymin ymax =
+  Random.map2
+    (\x y -> Point x y)
+    (Random.int xmin xmax)
+    (Random.int ymin ymax)
