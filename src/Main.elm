@@ -28,7 +28,6 @@ main =
 
 type alias Model =
   { cursor : Maybe Point
---  , pieces : A.Array Piece
   , pieceGroups : D.Dict Int PieceGroup
   , selectedId : Int
   , maxZLevel : Int
@@ -52,13 +51,6 @@ type Msg
   | Scramble
   | ScrambledPositions (List Point)
 
---type alias Piece =
---  { position : Point
---  , selected : Bool
---  , zlevel : Int
---  , id : Int
---  , neighbours : List Int
---  }
 
 type alias PieceGroup =
   { id : Int
@@ -97,7 +89,6 @@ init () =
       }
     model =
       { cursor = Nothing
---      , pieces = createPieces image
       , pieceGroups = createPieceGroups image
       , selectedId = -1
       , maxZLevel = image.xpieces * image.ypieces - 1
@@ -159,12 +150,6 @@ pieceIdToOffset id image =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-  let
-    turnOffSelectedStatus : PieceGroup -> PieceGroup
-    turnOffSelectedStatus pg =
-      { pg | selected = False }
-
-  in
   case msg of
     Scramble ->
       let
@@ -243,22 +228,6 @@ update msg model =
         smallEnough (distance, _) =
           distance < 15.0
 
-        maybeMoveSelectedPiece : Maybe PieceGroup -> Maybe PieceGroup
-        maybeMoveSelectedPiece pg =
-          case pg of
-            Nothing -> Nothing
-            Just selectedPiece ->
-              case takeFirst smallEnough (distances selectedPiece) of
-                Nothing ->
-                  Just { selectedPiece | selected = False }
-                Just (_, neighbour) ->
-                  Just { selectedPiece | position = neighbour.position, selected = False }
-
-        updatedPieceGroups =
-          D.update model.selectedId (maybeMoveSelectedPiece) model.pieceGroups
-
-    ---------------------------
-
         closeNeighbour : PieceGroup -> Maybe PieceGroup
         closeNeighbour selected =
           case takeFirst smallEnough (distances selected) of
@@ -274,20 +243,40 @@ update msg model =
             { b
               | selected = False
               , members = newMembers
-              , neighbours = newNeighbours}
+              , neighbours = newNeighbours
+              , zlevel = a.zlevel}
 
-        updatedPieceGroups2 : PieceGroup -> D.Dict Int PieceGroup
-        updatedPieceGroups2 selected =
+        updatedPieceGroups : PieceGroup -> D.Dict Int PieceGroup
+        updatedPieceGroups selected =
           case closeNeighbour selected of
             Just neighbour ->
-              D.remove selected.id <| D.insert neighbour.id (merge selected neighbour) model.pieceGroups
+              let
+                mergedPG =
+                  merge selected neighbour
+                addMergedPG =
+                  D.insert neighbour.id mergedPG model.pieceGroups
+                removedPG =
+                  D.remove selected.id addMergedPG
+
+                fixedNeighbour : S.Set Int -> Int -> Int -> S.Set Int
+                fixedNeighbour oldNeighbours badNeighbour goodNeighbour =
+                  if S.member badNeighbour oldNeighbours then
+                    S.insert goodNeighbour <| S.remove badNeighbour oldNeighbours
+                  else
+                    oldNeighbours
+
+                replaceSelectedIdWithNeighbourId _ pg =
+                    {pg | neighbours = fixedNeighbour pg.neighbours selected.id neighbour.id}
+
+              in
+                D.map replaceSelectedIdWithNeighbourId removedPG
             Nothing ->
               D.insert selected.id { selected | selected = False } model.pieceGroups
 
       in
         ( { model
             | cursor = Nothing
-            , pieceGroups = updatedPieceGroups2
+            , pieceGroups = updatedPieceGroups
                 <| Maybe.withDefault defaultPieceGroup
                 <| D.get model.selectedId model.pieceGroups
             , selectedId = -1
@@ -337,23 +326,28 @@ view model =
         [ onMouseDown pg.id
         , translate pg.position
         ]
-        ( List.concat <| List.map (svgPiece pg.selected) pg.members )
+        -- Apparently combining these into one call using List.concat
+        -- will make the pieces flicker for some reason.
+        ( ( List.map svgClipPath pg.members ) ++
+          ( List.map (svgOutlines pg.selected) pg.members )
+        )
 
-    svgPiece selected id =
-        [ Svg.use
-          [ Svg.Attributes.xlinkHref <| "#puzzle-image"
-          , Svg.Attributes.clipPath <| clipPathRef id
-          ]
-          []
-        , Svg.use
-          [ Svg.Attributes.xlinkHref <| "#" ++ pieceOutlineId id
-          , Svg.Attributes.fill "white"
-          , Svg.Attributes.fillOpacity "0.0"
-          , Svg.Attributes.stroke <| if selected then "green" else "black"
-          , Svg.Attributes.strokeWidth "2px"
-          ]
-          []
+    svgClipPath id =
+        Svg.use
+        [ Svg.Attributes.xlinkHref <| "#puzzle-image"
+        , Svg.Attributes.clipPath <| clipPathRef id
         ]
+        []
+
+    svgOutlines selected id =
+        Svg.use
+        [ Svg.Attributes.xlinkHref <| "#" ++ pieceOutlineId id
+        , Svg.Attributes.fill "white"
+        , Svg.Attributes.fillOpacity "0.0"
+        , Svg.Attributes.stroke <| if selected then "green" else "black"
+        , Svg.Attributes.strokeWidth "2px"
+        ]
+        []
 
   in
   Html.div [ ]
