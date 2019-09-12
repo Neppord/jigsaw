@@ -27,6 +27,13 @@ main =
 
 -- MODEL
 
+type Msg
+  = MouseDown Int Point
+  | MouseMove Point
+  | MouseUp
+  | Scramble
+  | ScrambledPositions (List Point)
+
 type alias Model =
   { cursor : Maybe Point
   , pieceGroups : D.Dict Int PieceGroup
@@ -36,6 +43,7 @@ type alias Model =
   , width : Int
   , height : Int
   , snapDistance : Float
+  , selectionBox : SelectionBox
   , debug : String
   }
 
@@ -47,14 +55,6 @@ type alias JigsawImage =
     , ypieces : Int
     }
 
-type Msg
-  = MouseDown Int Point
-  | MouseMove Point
-  | MouseUp
-  | Scramble
-  | ScrambledPositions (List Point)
-
-
 type alias PieceGroup =
   { id : Int
   , members : List Int
@@ -62,6 +62,16 @@ type alias PieceGroup =
   , position : Point
   , selected : Bool
   , zlevel : Int
+  }
+
+type SelectionBox
+  = Normal Box
+  | Inverted Box
+  | None
+
+type alias Box =
+  { staticCorner : Point
+  , movingCorner : Point
   }
 
 
@@ -106,6 +116,7 @@ resetModel image positions =
   , width = 2000
   , height = 1000
   , snapDistance = 30.0
+  , selectionBox = None
   , debug = "Nothing to see here..."
   }
 
@@ -184,8 +195,18 @@ update msg model =
       ( resetModel model.image newPositions, Cmd.none )
 
     MouseDown id coordinate ->
-      if id == -2 then
-        ({ model | debug = "background!" } , Cmd.none)
+      if id == -1 then
+        (
+          { model
+            | debug = "background!"
+            , cursor = Just coordinate
+            , selectionBox = Normal
+              { staticCorner = coordinate
+              , movingCorner = coordinate
+              }
+          },
+          Cmd.none
+        )
       else
       let
         alter : Maybe PieceGroup -> Maybe PieceGroup
@@ -214,102 +235,120 @@ update msg model =
         )
 
     MouseUp ->
-      let
-        neighbourDistance : PieceGroup -> PieceGroup -> (Float, PieceGroup)
-        neighbourDistance selectedPiece neighbour =
-          ( Point.dist selectedPiece.position neighbour.position
-          , neighbour)
+      case model.selectionBox of
+      None ->
+        let
+          neighbourDistance : PieceGroup -> PieceGroup -> (Float, PieceGroup)
+          neighbourDistance selectedPiece neighbour =
+            ( Point.dist selectedPiece.position neighbour.position
+            , neighbour)
 
-        neighbourFromId : Int -> PieceGroup
-        neighbourFromId id =
-          Maybe.withDefault defaultPieceGroup
-            <| D.get id model.pieceGroups
+          neighbourFromId : Int -> PieceGroup
+          neighbourFromId id =
+            Maybe.withDefault defaultPieceGroup
+              <| D.get id model.pieceGroups
 
-        distances : PieceGroup -> List (Float, PieceGroup)
-        distances selectedPiece =
-          List.map ((neighbourDistance selectedPiece) << neighbourFromId) (S.toList selectedPiece.neighbours)
+          distances : PieceGroup -> List (Float, PieceGroup)
+          distances selectedPiece =
+            List.map ((neighbourDistance selectedPiece) << neighbourFromId) (S.toList selectedPiece.neighbours)
 
-        smallEnough : (Float, a) -> Bool
-        smallEnough (distance, _) =
-          distance < model.snapDistance
+          smallEnough : (Float, a) -> Bool
+          smallEnough (distance, _) =
+            distance < model.snapDistance
 
-        closeNeighbour : PieceGroup -> Maybe PieceGroup
-        closeNeighbour selected =
-          case takeFirst smallEnough (distances selected) of
-            Nothing -> Nothing
-            Just (_, neighbour) -> Just neighbour
+          closeNeighbour : PieceGroup -> Maybe PieceGroup
+          closeNeighbour selected =
+            case takeFirst smallEnough (distances selected) of
+              Nothing -> Nothing
+              Just (_, neighbour) -> Just neighbour
 
-        merge : PieceGroup -> PieceGroup -> PieceGroup
-        merge a b =
-          let
-            newMembers = b.members ++ a.members
-            newNeighbours = S.diff (S.union b.neighbours a.neighbours) (S.fromList newMembers)
-          in
-            { b
-              | selected = False
-              , members = newMembers
-              , neighbours = newNeighbours
-              , zlevel = a.zlevel}
+          merge : PieceGroup -> PieceGroup -> PieceGroup
+          merge a b =
+            let
+              newMembers = b.members ++ a.members
+              newNeighbours = S.diff (S.union b.neighbours a.neighbours) (S.fromList newMembers)
+            in
+              { b
+                | selected = False
+                , members = newMembers
+                , neighbours = newNeighbours
+                , zlevel = a.zlevel}
 
-        updatedPieceGroups : PieceGroup -> D.Dict Int PieceGroup
-        updatedPieceGroups selected =
-          case closeNeighbour selected of
-            Just neighbour ->
-              let
-                mergedPG =
-                  merge selected neighbour
-                addMergedPG =
-                  D.insert neighbour.id mergedPG model.pieceGroups
-                removedPG =
-                  D.remove selected.id addMergedPG
+          updatedPieceGroups : PieceGroup -> D.Dict Int PieceGroup
+          updatedPieceGroups selected =
+            case closeNeighbour selected of
+              Just neighbour ->
+                let
+                  mergedPG =
+                    merge selected neighbour
+                  addMergedPG =
+                    D.insert neighbour.id mergedPG model.pieceGroups
+                  removedPG =
+                    D.remove selected.id addMergedPG
 
-                fixedNeighbour : S.Set Int -> Int -> Int -> S.Set Int
-                fixedNeighbour oldNeighbours badNeighbour goodNeighbour =
-                  if S.member badNeighbour oldNeighbours then
-                    S.insert goodNeighbour <| S.remove badNeighbour oldNeighbours
-                  else
-                    oldNeighbours
+                  fixedNeighbour : S.Set Int -> Int -> Int -> S.Set Int
+                  fixedNeighbour oldNeighbours badNeighbour goodNeighbour =
+                    if S.member badNeighbour oldNeighbours then
+                      S.insert goodNeighbour <| S.remove badNeighbour oldNeighbours
+                    else
+                      oldNeighbours
 
-                replaceSelectedIdWithNeighbourId _ pg =
-                    {pg | neighbours = fixedNeighbour pg.neighbours selected.id neighbour.id}
+                  replaceSelectedIdWithNeighbourId _ pg =
+                      {pg | neighbours = fixedNeighbour pg.neighbours selected.id neighbour.id}
 
-              in
-                D.map replaceSelectedIdWithNeighbourId removedPG
-            Nothing ->
-              D.insert selected.id { selected | selected = False } model.pieceGroups
+                in
+                  D.map replaceSelectedIdWithNeighbourId removedPG
+              Nothing ->
+                D.insert selected.id { selected | selected = False } model.pieceGroups
 
-      in
-        ( { model
-            | cursor = Nothing
-            , pieceGroups = updatedPieceGroups
-                <| Maybe.withDefault defaultPieceGroup
-                <| D.get model.selectedId model.pieceGroups
-            , selectedId = -1
-          }
-        , Cmd.none
-        )
+        in
+          ( { model
+              | cursor = Nothing
+              , pieceGroups = updatedPieceGroups
+                  <| Maybe.withDefault defaultPieceGroup
+                  <| D.get model.selectedId model.pieceGroups
+              , selectedId = -1
+            }
+          , Cmd.none
+          )
+
+      Normal box ->
+        ( { model | selectionBox = None }, Cmd.none )
+      Inverted box ->
+        ( { model | selectionBox = None }, Cmd.none )
 
     MouseMove newPos ->
-      let
-        movePieceGroup : Point -> Int -> PieceGroup -> PieceGroup
-        movePieceGroup pos _ pg =
-          if pg.selected then
-            { pg | position = Point.add pg.position pos}
-          else
-            pg
+      case model.cursor of
+        Nothing ->
+          ( model, Cmd.none )
 
-      in
-        case model.cursor of
-          Nothing ->
-            ( model, Cmd.none )
+        Just oldPos ->
+          case model.selectionBox of
+            None ->
+              let
+                movePieceGroup : Int -> PieceGroup -> PieceGroup
+                movePieceGroup _ pg =
+                  if pg.selected then
+                    { pg | position = Point.add pg.position <| Point.sub newPos oldPos}
+                  else
+                    pg
+                updatedModel =
+                  { model
+                  | cursor = Just newPos
+                  , pieceGroups = D.map movePieceGroup model.pieceGroups
+                  }
+              in
+                ( updatedModel, Cmd.none )
 
-          Just oldPos ->
-            ( { model
-                | cursor = Just newPos
-                , pieceGroups = D.map (movePieceGroup <| Point.sub newPos oldPos) model.pieceGroups
-              }
-            , Cmd.none
-            )
+            Normal box ->
+              ( { model
+                | selectionBox = Normal {box | movingCorner = newPos}
+                , debug = "Normal: " ++ String.fromInt box.movingCorner.x
+                }
+              , Cmd.none )
+            Inverted box ->
+              ( model, Cmd.none )
+
 
 
 
@@ -327,9 +366,42 @@ view model =
         , Svg.Attributes.height "100%"
         , Svg.Attributes.fill "blue"
         , Svg.Attributes.opacity "0.0"
-        , onMouseDown -2
+        , onMouseDown -1
         ]
         []
+
+    svgSelectionBox box =
+      let
+        topLeft =
+          Point
+            (min box.staticCorner.x box.movingCorner.x)
+            (min box.staticCorner.y box.movingCorner.y)
+
+        bottomRight =
+          Point
+            (max box.staticCorner.x box.movingCorner.x)
+            (max box.staticCorner.y box.movingCorner.y)
+
+      in
+        Svg.rect
+          [ Svg.Attributes.x <| String.fromInt topLeft.x
+          , Svg.Attributes.y <| String.fromInt topLeft.y
+          , Svg.Attributes.width <| String.fromInt (bottomRight.x - topLeft.x)
+          , Svg.Attributes.height <| String.fromInt (bottomRight.y - topLeft.y)
+          , Svg.Attributes.fill "blue"
+          , Svg.Attributes.fillOpacity "0.2"
+          , Svg.Attributes.stroke "darkblue"
+          , Svg.Attributes.strokeWidth "2px"
+          , Svg.Attributes.strokeOpacity "0.9"
+          ]
+          []
+
+    normalSelection =
+      case model.selectionBox of
+        Normal box ->
+          [ svgSelectionBox box ]
+        Inverted box -> []
+        None -> []
 
     pieces =
       List.concat
@@ -373,7 +445,7 @@ view model =
         ]
         [ Svg.svg
           ( svgAttributes model )
-          ( definitions :: background :: pieces )
+          ( definitions :: background :: pieces ++ normalSelection)
         ]
     ]
 
