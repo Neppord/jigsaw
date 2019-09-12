@@ -86,31 +86,41 @@ init () =
       { path = "../resources/kitten.png"
       , width = 533
       , height = 538
-      , xpieces = 7
-      , ypieces = 7
+      , xpieces = 4
+      , ypieces = 4
       }
     model =
-      { cursor = Nothing
-      , pieceGroups = createPieceGroups image
-      , selectedId = -1
-      , maxZLevel = image.xpieces * image.ypieces - 1
-      , image = image
-      , width = 2000
-      , height = 1000
-      , debug = "Nothing to see here..."
-      }
+      resetModel image []
   in
   ( model, Cmd.none )
 
 
-createPieceGroups : JigsawImage -> D.Dict Int PieceGroup
-createPieceGroups image =
+resetModel : JigsawImage -> List Point -> Model
+resetModel image positions =
+  { cursor = Nothing
+  , pieceGroups = createPieceGroups image positions
+  , selectedId = -1
+  , maxZLevel = image.xpieces * image.ypieces - 1
+  , image = image
+  , width = 2000
+  , height = 1000
+  , debug = "Nothing to see here..."
+  }
+
+createPieceGroups : JigsawImage -> List Point -> D.Dict Int PieceGroup
+createPieceGroups image points =
   let
     nx = image.xpieces
     ny = image.ypieces
     n = nx*ny
+
     range =
       List.range 0 (n - 1)
+    positions =
+      if List.length points < n then
+        List.map (pieceIdToOffset image) range
+      else
+        points
     neighbourOffsets =
       [ -nx, -1, 1, nx ]
     possibleNeighbours i =
@@ -120,9 +130,9 @@ createPieceGroups image =
       Point.taxiDist
         ( pieceIdToPoint i image.xpieces )
         ( pieceIdToPoint x image.xpieces ) == 1
-    onePieceGroup i =
+    onePieceGroup i pos =
       ( i
-      , { position = Point 0 0
+      , { position = Point.sub pos (pieceIdToOffset image i)
         , selected = False
         , id = i
         , zlevel = i
@@ -132,15 +142,15 @@ createPieceGroups image =
       )
 
   in
-    D.fromList <| List.map onePieceGroup range
+    D.fromList <| List.map2 onePieceGroup range positions
 
 
 pieceIdToPoint : Int -> Int -> Point
 pieceIdToPoint id xpieces =
   Point (modBy xpieces id) (id // xpieces)
 
-pieceIdToOffset : Int -> JigsawImage -> Point
-pieceIdToOffset id image =
+pieceIdToOffset : JigsawImage -> Int -> Point
+pieceIdToOffset image id =
   let
     pieceWidth = image.width // image.xpieces
     pieceHeight = image.height // image.ypieces
@@ -157,7 +167,7 @@ update msg model =
   case msg of
     Scramble ->
       let
-        n = D.size model.pieceGroups
+        n = model.image.xpieces * model.image.ypieces
         xmin = 0
         xmax = model.width - 50
         ymin = 0
@@ -169,19 +179,7 @@ update msg model =
         ( model, scrambleCommand )
 
     ScrambledPositions newPositions ->
-      let
-        updatePieceGroup : PieceGroup -> Point -> (Int, PieceGroup)
-        updatePieceGroup pg pos =
-          (pg.id, { pg | position = Point.sub pos (pieceIdToOffset pg.id model.image) } )
-
-        updatePositions : List PieceGroup -> List Point -> D.Dict Int PieceGroup
-        updatePositions pieceGroups positions =
-          D.fromList <| List.map2 updatePieceGroup pieceGroups positions
-
-        updatedPieceGroups =
-          updatePositions (D.values model.pieceGroups) newPositions
-      in
-        ( { model | pieceGroups = updatedPieceGroups }, Cmd.none )
+      ( resetModel model.image newPositions, Cmd.none )
 
     MouseDown id coordinate ->
       let
@@ -424,7 +422,7 @@ pieceClipPath image id =
   let
     w = image.width // image.xpieces
     h = image.height // image.ypieces
-    offset = pieceIdToOffset id image
+    offset = pieceIdToOffset image id
     px num =
       String.fromInt num ++ "px"
   in

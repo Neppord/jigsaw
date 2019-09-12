@@ -20,3 +20,12 @@ takeFirst condition list =
 zip : List a -> List b -> List (a, b)
 zip xs ys =
   List.map2 Tuple.pair xs ys
+
+{-| Convenience function that flips the order of arguments.
+
+    flip (>) 2 3 == True
+    flip (-) 5 10 == 5
+-}
+flip : (a -> b -> c) -> b -> a -> c
+flip f y x =
+  f x y
