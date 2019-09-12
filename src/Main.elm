@@ -13,6 +13,7 @@ import Svg.Events
 import Random
 
 import Point exposing (Point)
+import Util exposing (takeFirst)
 
 -- MAIN
 main =
@@ -224,17 +225,6 @@ update msg model =
         distances : PieceGroup -> List (Float, PieceGroup)
         distances selectedPiece =
           List.map ((neighbourDistance selectedPiece) << neighbourFromId) (S.toList selectedPiece.neighbours)
-
-        takeFirst : (a -> Bool) -> List a -> Maybe a
-        takeFirst condition list =
-          case list of
-            [] ->
-              Nothing
-            x :: xs ->
-              if condition x then
-                Just x
-              else
-                takeFirst condition xs
 
         smallEnough : (Float, a) -> Bool
         smallEnough (distance, _) =
