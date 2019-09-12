@@ -35,6 +35,7 @@ type alias Model =
   , image : JigsawImage
   , width : Int
   , height : Int
+  , snapDistance : Float
   , debug : String
   }
 
@@ -104,6 +105,7 @@ resetModel image positions =
   , image = image
   , width = 2000
   , height = 1000
+  , snapDistance = 30.0
   , debug = "Nothing to see here..."
   }
 
@@ -169,9 +171,9 @@ update msg model =
       let
         n = model.image.xpieces * model.image.ypieces
         xmin = 0
-        xmax = model.width - 50
+        xmax = model.width - model.image.width // model.image.xpieces
         ymin = 0
-        ymax = model.height - 50
+        ymax = model.height - model.image.height // model.image.ypieces
         scrambleCommand =
           Random.generate ScrambledPositions
             <| Point.randomPoints n xmin xmax ymin ymax
@@ -182,6 +184,9 @@ update msg model =
       ( resetModel model.image newPositions, Cmd.none )
 
     MouseDown id coordinate ->
+      if id == -2 then
+        ({ model | debug = "background!" } , Cmd.none)
+      else
       let
         alter : Maybe PieceGroup -> Maybe PieceGroup
         alter pieceGroup =
@@ -226,7 +231,7 @@ update msg model =
 
         smallEnough : (Float, a) -> Bool
         smallEnough (distance, _) =
-          distance < 15.0
+          distance < model.snapDistance
 
         closeNeighbour : PieceGroup -> Maybe PieceGroup
         closeNeighbour selected =
@@ -316,6 +321,16 @@ view model =
     definitions =
       Svg.defs [] ( definePuzzleImage model.image :: definePieceClipPaths model.image )
 
+    background =
+      Svg.rect
+        [ Svg.Attributes.width "100%"
+        , Svg.Attributes.height "100%"
+        , Svg.Attributes.fill "blue"
+        , Svg.Attributes.opacity "0.0"
+        , onMouseDown -2
+        ]
+        []
+
     pieces =
       List.concat
         <| List.map svgPieceGroup
@@ -358,7 +373,7 @@ view model =
         ]
         [ Svg.svg
           ( svgAttributes model )
-          ( definitions :: pieces )
+          ( definitions :: background :: pieces )
         ]
     ]
 
