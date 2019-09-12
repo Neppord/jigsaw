@@ -93,8 +93,8 @@ init () =
       , selectedId = -1
       , maxZLevel = image.xpieces * image.ypieces - 1
       , image = image
-      , width = 1200
-      , height = 850
+      , width = 2000
+      , height = 1000
       }
   in
   ( model, Cmd.none )
@@ -113,6 +113,7 @@ createPieceGroups image =
     possibleNeighbours i =
       List.map ((+) i) neighbourOffsets
     isRealNeighbour i x =
+      i >= 0 && i < n &&
       Point.taxiDist
         ( pieceIdToPoint i image.xpieces )
         ( pieceIdToPoint x image.xpieces ) == 1
@@ -317,20 +318,17 @@ view model =
       Svg.defs [] ( definePuzzleImage model.image :: definePieceClipPaths model.image )
 
     pieces =
-      List.map svgPieceGroup
+      List.concat
+        <| List.map svgPieceGroup
         <| List.sortBy .zlevel
         <| D.values model.pieceGroups
 
     svgPieceGroup pg =
-      Svg.g
-        [ onMouseDown pg.id
-        , translate pg.position
-        ]
-        -- Apparently combining these into one call using List.concat
-        -- will make the pieces flicker for some reason.
-        ( ( List.map svgClipPath pg.members ) ++
-          ( List.map (svgOutlines pg.selected) pg.members )
-        )
+      List.map (svgMember pg.id pg.position pg.selected) pg.members
+
+    svgMember groupId pos selected id =
+      Svg.g [ onMouseDown groupId, translate pos ]
+        <| [svgClipPath id] ++ [svgOutlines selected id]
 
     svgClipPath id =
         Svg.use
