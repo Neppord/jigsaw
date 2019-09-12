@@ -34,6 +34,7 @@ type alias Model =
   , image : JigsawImage
   , width : Int
   , height : Int
+  , debug : String
   }
 
 type alias JigsawImage =
@@ -69,7 +70,7 @@ defaultPieceGroup =
   { position = Point 0 0
   , selected = False
   , zlevel = -1
-  , id = -1
+  , id = -10
   , neighbours = S.empty
   , members = []
   }
@@ -84,8 +85,8 @@ init () =
       { path = "../resources/kitten.png"
       , width = 533
       , height = 538
-      , xpieces = 6
-      , ypieces = 6
+      , xpieces = 7
+      , ypieces = 7
       }
     model =
       { cursor = Nothing
@@ -95,6 +96,7 @@ init () =
       , image = image
       , width = 2000
       , height = 1000
+      , debug = "Nothing to see here..."
       }
   in
   ( model, Cmd.none )
@@ -113,7 +115,7 @@ createPieceGroups image =
     possibleNeighbours i =
       List.map ((+) i) neighbourOffsets
     isRealNeighbour i x =
-      i >= 0 && i < n &&
+       x >= 0 && x < n &&
       Point.taxiDist
         ( pieceIdToPoint i image.xpieces )
         ( pieceIdToPoint x image.xpieces ) == 1
@@ -187,13 +189,22 @@ update msg model =
           case pieceGroup of
             Nothing -> Nothing
             Just pg -> Just {pg | selected = True, zlevel = model.maxZLevel}
+        newPieceGroups =
+          D.update id alter model.pieceGroups
 
       in
         ( { model
             | cursor = Just coordinate
-            , pieceGroups = D.update id alter model.pieceGroups
+            , pieceGroups = newPieceGroups
             , maxZLevel = model.maxZLevel + 1
             , selectedId = id
+            , debug = D.get id newPieceGroups
+                |> Maybe.withDefault defaultPieceGroup
+                |> .neighbours
+                |> S.toList
+                |> List.map String.fromInt
+                |> List.intersperse ", "
+                |> String.concat
           }
         , Cmd.none
         )
@@ -351,6 +362,7 @@ view model =
   Html.div [ ]
     [ Html.h1 [] [ Html.text ( "Kitten jigsaw! " ) ]
     , Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
+    , Html.h1 [] [ Html.text model.debug ]
     , Html.div
         [ Html.Attributes.style "background-color" "#CCCCCC"
         , Html.Attributes.style "width" <| String.fromInt model.width ++ "px"
