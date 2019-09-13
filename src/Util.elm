@@ -1,4 +1,5 @@
 module Util exposing (..)
+import Random
 
 {-| Take the first element from the list that satisfies the condition.
 If no such element exists, return Nothing.
@@ -29,3 +30,29 @@ zip xs ys =
 flip : (a -> b -> c) -> b -> a -> c
 flip f y x =
   f x y
+
+{-| Remove element of given index from a List.
+
+    pop 3 [0, 1, 2, 3, 4, 5] == (Just 3, [0, 1, 2, 4, 5])
+    pop 0 [] == (Nothing, [])
+    pop 0 [1] == (Just 1, [])
+-}
+pop : Int -> List a -> (Maybe a, List a)
+pop ind lst =
+  if ind < 0 then
+    (Nothing, lst)
+  else if ind == 0 then
+    case lst of
+      x :: xs ->
+        (Just x, xs)
+      [] ->
+        (Nothing, [])
+  else
+    case lst of
+      x :: xs ->
+        let
+          (popped, tail) = pop (ind - 1) xs
+        in
+          (popped, x :: tail)
+      [] ->
+        (Nothing, [])

@@ -1,6 +1,7 @@
-module Point exposing (Point, sub, add, dot, dist, taxiDist, randomPoint, randomPoints)
+module Point exposing (Point, sub, add, dot, dist, taxiDist, randomPoint, randomPoints, randomPointsAndZ)
 
 import Random
+import Random.List exposing (shuffle)
 
 type alias Point =
   { x: Int
@@ -27,9 +28,6 @@ taxiDist : Point -> Point -> Int
 taxiDist a b =
   abs (b.x - a.x) + abs (b.y - a.y)
 
-randomPoints : Int -> Int -> Int -> Int -> Int -> Random.Generator (List Point)
-randomPoints n xmin xmax ymin ymax =
-  Random.list n <| randomPoint xmin xmax ymin ymax
 
 randomPoint : Int -> Int -> Int -> Int -> Random.Generator Point
 randomPoint xmin xmax ymin ymax =
@@ -37,3 +35,14 @@ randomPoint xmin xmax ymin ymax =
     (\x y -> Point x y)
     (Random.int xmin xmax)
     (Random.int ymin ymax)
+
+randomPoints : Int -> Int -> Int -> Int -> Int -> Random.Generator (List Point)
+randomPoints n xmin xmax ymin ymax =
+  Random.list n <| randomPoint xmin xmax ymin ymax
+
+randomPointsAndZ : Int -> Int -> Int -> Int -> Int -> Random.Generator (List Point, List Int)
+randomPointsAndZ n xmin xmax ymin ymax =
+  Random.map2
+    Tuple.pair
+    (randomPoints n xmin xmax ymin ymax)
+    (shuffle <| List.range 0 (n - 1))
