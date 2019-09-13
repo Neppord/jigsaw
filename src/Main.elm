@@ -234,152 +234,49 @@ update msg model =
       ( resetModel model.image newPositions zlevels, Cmd.none )
 
     MouseDown id coordinate ->
-      if id == -1 then
-        (
-          { model
-            | debug = "background!"
-            , cursor = Just coordinate
-            , selected = NullSelection
-            , pieceGroups = D.map (\_ pg -> {pg | isSelected = False}) model.pieceGroups
-            , selectionBox = Normal
-              { staticCorner = coordinate
-              , movingCorner = coordinate
-              }
-          },
-          Cmd.none
-        )
-      else
       let
-        selectedBefore =
-          case D.get id model.pieceGroups of
-            Just pg -> pg.isSelected
-            Nothing -> False
-
-        setZlevel pieceGroup =
-          case pieceGroup of
-            Nothing -> Nothing
-            Just pg -> Just {pg | zlevel = model.maxZLevel}
-
-        fixZlevels pieceGroups =
-          D.update id setZlevel pieceGroups
-
-        startDragging =
-          selectedBefore && model.selected == Multiple
-
-        deselectAll pieceGroups =
-          D.map (\key pg -> {pg | isSelected = key == id}) pieceGroups
-
+        clickedOnBackground = id == -1
         newModel =
-          { model
-          | maxZLevel = model.maxZLevel + 1
-          , cursor = Just coordinate
-          , selected = if startDragging then Multiple else Single id
-          , pieceGroups =
-              if startDragging then
-                fixZlevels model.pieceGroups
-              else
-                deselectAll << fixZlevels <| model.pieceGroups
-          }
-
+          if clickedOnBackground then
+            startSelectionBox model coordinate
+          else
+            selectPieceGroup model id coordinate
       in
         ( newModel, Cmd.none )
 
     MouseUp ->
-      case model.selectionBox of
-      NullBox ->
-        let
-          neighbourDistance : PieceGroup -> PieceGroup -> (Float, PieceGroup)
-          neighbourDistance selectedPiece neighbour =
-            ( Point.dist selectedPiece.position neighbour.position
-            , neighbour)
-
-          neighbourFromId : Int -> PieceGroup
-          neighbourFromId id =
-            Maybe.withDefault defaultPieceGroup
-              <| D.get id model.pieceGroups
-
-          distances : PieceGroup -> List (Float, PieceGroup)
-          distances selectedPiece =
-            List.map ((neighbourDistance selectedPiece) << neighbourFromId) (S.toList selectedPiece.neighbours)
-
-          smallEnough : (Float, a) -> Bool
-          smallEnough (distance, _) =
-            distance < model.snapDistance
-
-          closeNeighbour : PieceGroup -> Maybe PieceGroup
-          closeNeighbour selected =
-            case takeFirst smallEnough (distances selected) of
-              Nothing -> Nothing
-              Just (_, neighbour) -> Just neighbour
-
-          merge : PieceGroup -> PieceGroup -> PieceGroup
-          merge a b =
-            let
-              newMembers = b.members ++ a.members
-              newNeighbours = S.diff (S.union b.neighbours a.neighbours) (S.fromList newMembers)
-            in
-              { b
-                | isSelected = False
-                , members = newMembers
-                , neighbours = newNeighbours
-                , zlevel = a.zlevel}
-
-          updatedPieceGroups : PieceGroup -> D.Dict Int PieceGroup
-          updatedPieceGroups selected =
-            case closeNeighbour selected of
-              Just neighbour ->
-                let
-                  mergedPG =
-                    merge selected neighbour
-                  addMergedPG =
-                    D.insert neighbour.id mergedPG model.pieceGroups
-                  removedPG =
-                    D.remove selected.id addMergedPG
-
-                  fixedNeighbour : S.Set Int -> Int -> Int -> S.Set Int
-                  fixedNeighbour oldNeighbours badNeighbour goodNeighbour =
-                    if S.member badNeighbour oldNeighbours then
-                      S.insert goodNeighbour <| S.remove badNeighbour oldNeighbours
-                    else
-                      oldNeighbours
-
-                  replaceSelectedIdWithNeighbourId _ pg =
-                      {pg | neighbours = fixedNeighbour pg.neighbours selected.id neighbour.id}
-
-                in
-                  D.map replaceSelectedIdWithNeighbourId removedPG
-              Nothing ->
-                D.insert selected.id { selected | isSelected = False } model.pieceGroups
-
-        in
-          case model.selected of
-            Single id ->
-              ( { model
+      let
+        newModel =
+          case model.selectionBox of
+          Normal box ->
+            { model
+            | selectionBox = NullBox
+            , cursor = Nothing
+            , selected = currentSelection model.pieceGroups
+            }
+          Inverted box ->
+            { model
+            | selectionBox = NullBox
+            , cursor = Nothing
+            , selected = currentSelection model.pieceGroups
+            }
+          NullBox ->
+            case model.selected of
+              Multiple ->
+                { model | cursor = Nothing }
+              NullSelection ->
+                { model | cursor = Nothing }
+              Single id ->
+                { model
                   | cursor = Nothing
-                  , pieceGroups = updatedPieceGroups
-                      <| Maybe.withDefault defaultPieceGroup
-                      <| D.get id model.pieceGroups
                   , selected = NullSelection
+                  , pieceGroups =
+                      D.get id model.pieceGroups
+                      |> Maybe.withDefault defaultPieceGroup
+                      |> snapToNeighbour model
                 }
-              , Cmd.none
-              )
-            _ ->
-              ( { model | cursor = Nothing }, Cmd.none)
-
-      Normal box ->
-        ( { model
-          | selectionBox = NullBox
-          , cursor = Nothing
-          , selected = currentSelection model.pieceGroups
-          }
-        , Cmd.none )
-      Inverted box ->
-        ( { model
-          | selectionBox = NullBox
-          , cursor = Nothing
-          , selected = currentSelection model.pieceGroups
-          }
-        , Cmd.none )
+      in
+        ( newModel, Cmd.none )
 
     MouseMove newPos ->
       case model.cursor of
@@ -419,11 +316,122 @@ update msg model =
               ( { model
                 | selectionBox = Normal {box | movingCorner = newPos}
                 , pieceGroups = updatedPieceGroups
-                , debug = "Normal: " ++ String.fromInt box.movingCorner.y
                 }
               , Cmd.none )
             Inverted box ->
               ( model, Cmd.none )
+
+
+
+selectPieceGroup : Model -> Int -> Point -> Model
+selectPieceGroup model id coordinate =
+  let
+    selectedBefore =
+      D.get id model.pieceGroups
+        |> Maybe.withDefault defaultPieceGroup
+        |> .isSelected
+
+    setZlevel pieceGroup =
+      case pieceGroup of
+        Nothing -> Nothing
+        Just pg -> Just {pg | zlevel = model.maxZLevel}
+
+    fixZlevels pieceGroups =
+      D.update id setZlevel pieceGroups
+
+    startDragging =
+      selectedBefore && model.selected == Multiple
+
+    deselectAll pieceGroups =
+      D.map (\key pg -> {pg | isSelected = key == id}) pieceGroups
+  in
+    { model
+    | maxZLevel = model.maxZLevel + 1
+    , cursor = Just coordinate
+    , selected = if not selectedBefore then Single id else model.selected
+    , pieceGroups =
+        if startDragging then
+          fixZlevels model.pieceGroups
+        else
+          deselectAll << fixZlevels <| model.pieceGroups
+    }
+
+startSelectionBox : Model -> Point -> Model
+startSelectionBox model coordinate =
+  { model
+    | cursor = Just coordinate
+    , selected = NullSelection
+    , pieceGroups = D.map (\_ pg -> {pg | isSelected = False}) model.pieceGroups
+    , selectionBox = Normal
+      { staticCorner = coordinate
+      , movingCorner = coordinate
+      }
+  }
+
+
+snapToNeighbour : Model -> PieceGroup -> D.Dict Int PieceGroup
+snapToNeighbour model selected =
+  let
+    neighbourDistance : PieceGroup -> PieceGroup -> (Float, PieceGroup)
+    neighbourDistance selectedPiece neighbour =
+      ( Point.dist selectedPiece.position neighbour.position
+      , neighbour)
+
+    neighbourFromId : Int -> PieceGroup
+    neighbourFromId id =
+      Maybe.withDefault defaultPieceGroup
+        <| D.get id model.pieceGroups
+
+    distanceToSelected : List (Float, PieceGroup)
+    distanceToSelected =
+      List.map ((neighbourDistance selected) << neighbourFromId) (S.toList selected.neighbours)
+
+    smallEnough : (Float, a) -> Bool
+    smallEnough (distance, _) =
+      distance < model.snapDistance
+
+    closeNeighbour : Maybe PieceGroup
+    closeNeighbour =
+      case takeFirst smallEnough distanceToSelected of
+        Nothing -> Nothing
+        Just (_, neighbour) -> Just neighbour
+
+    merge : PieceGroup -> PieceGroup -> PieceGroup
+    merge a b =
+      let
+        newMembers = b.members ++ a.members
+        newNeighbours = S.diff (S.union b.neighbours a.neighbours) (S.fromList newMembers)
+      in
+        { b
+          | isSelected = False
+          , members = newMembers
+          , neighbours = newNeighbours
+          , zlevel = a.zlevel}
+  in
+  case closeNeighbour of
+    Just neighbour ->
+      let
+        fixNeighbours : S.Set Int -> Int -> Int -> S.Set Int
+        fixNeighbours neighbours wrong right =
+          if S.member wrong neighbours then
+            S.insert right <| S.remove wrong neighbours
+          else
+            neighbours
+
+        replaceSelectedIdWithNeighbourId _ pg =
+            {pg | neighbours = fixNeighbours pg.neighbours selected.id neighbour.id}
+
+      in
+        merge selected neighbour
+          |> Util.flip (D.insert neighbour.id) model.pieceGroups
+          |> D.remove selected.id
+          |> D.map replaceSelectedIdWithNeighbourId
+
+    Nothing ->
+      D.insert selected.id { selected | isSelected = False } model.pieceGroups
+
+
+
 
 
 allSelectedPieceGroups pieceGroups =
@@ -504,7 +512,7 @@ view model =
         , Svg.Attributes.fill "white"
         , Svg.Attributes.fillOpacity "0.0"
         , Svg.Attributes.stroke <| if selected then "red" else "black"
-        , Svg.Attributes.strokeWidth "3px"
+        , Svg.Attributes.strokeWidth "2px"
         ]
         []
 
