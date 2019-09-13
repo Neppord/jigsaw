@@ -32,7 +32,7 @@ type Msg
   | MouseMove Point
   | MouseUp
   | Scramble
-  | ScrambledPositions (List Point)
+  | ScrambledPositions (List Point, List Int)
 
 type alias Model =
   { cursor : Maybe Point
@@ -75,6 +75,18 @@ type alias Box =
   }
 
 
+boxTopLeft : Box -> Point
+boxTopLeft box =
+  Point
+    (min box.staticCorner.x box.movingCorner.x)
+    (min box.staticCorner.y box.movingCorner.y)
+
+boxBottomRight : Box -> Point
+boxBottomRight box =
+  Point
+    (max box.staticCorner.x box.movingCorner.x)
+    (max box.staticCorner.y box.movingCorner.y)
+
 -- Until I figure out how to handle index out of bounds
 -- exceptions more elegantly
 defaultPieceGroup : PieceGroup
@@ -97,19 +109,19 @@ init () =
       { path = "../resources/kitten.png"
       , width = 533
       , height = 538
-      , xpieces = 4
-      , ypieces = 4
+      , xpieces = 6
+      , ypieces = 6
       }
     model =
-      resetModel image []
+      resetModel image [] []
   in
   ( model, Cmd.none )
 
 
-resetModel : JigsawImage -> List Point -> Model
-resetModel image positions =
+resetModel : JigsawImage -> List Point -> List Int -> Model
+resetModel image positions zlevels =
   { cursor = Nothing
-  , pieceGroups = createPieceGroups image positions
+  , pieceGroups = createPieceGroups image positions zlevels
   , selectedId = -1
   , maxZLevel = image.xpieces * image.ypieces - 1
   , image = image
@@ -120,8 +132,8 @@ resetModel image positions =
   , debug = "Nothing to see here..."
   }
 
-createPieceGroups : JigsawImage -> List Point -> D.Dict Int PieceGroup
-createPieceGroups image points =
+createPieceGroups : JigsawImage -> List Point -> List Int -> D.Dict Int PieceGroup
+createPieceGroups image points levels =
   let
     nx = image.xpieces
     ny = image.ypieces
@@ -134,6 +146,11 @@ createPieceGroups image points =
         List.map (pieceIdToOffset image) range
       else
         points
+    zlevels =
+      if List.length levels < n then
+        range
+      else
+        levels
     neighbourOffsets =
       [ -nx, -1, 1, nx ]
     possibleNeighbours i =
@@ -143,19 +160,19 @@ createPieceGroups image points =
       Point.taxiDist
         ( pieceIdToPoint i image.xpieces )
         ( pieceIdToPoint x image.xpieces ) == 1
-    onePieceGroup i pos =
+    onePieceGroup i pos zlevel =
       ( i
       , { position = Point.sub pos (pieceIdToOffset image i)
         , selected = False
         , id = i
-        , zlevel = i
+        , zlevel = zlevel
         , members = [ i ]
         , neighbours = S.filter (isRealNeighbour i) <| S.fromList (possibleNeighbours i)
         }
       )
 
   in
-    D.fromList <| List.map2 onePieceGroup range positions
+    D.fromList <| List.map3 onePieceGroup range positions zlevels
 
 
 pieceIdToPoint : Int -> Int -> Point
@@ -173,6 +190,23 @@ pieceIdToOffset image id =
       ( Point pieceWidth pieceHeight )
 
 
+isPieceInsideBox : JigsawImage -> Point -> Point -> Point -> Int -> Bool
+isPieceInsideBox image pos boxTL boxBR id =
+  let
+    pieceWidth = image.width // image.xpieces
+    pieceHeight = image.height // image.ypieces
+    pieceTL = Point.add pos <| pieceIdToOffset image id
+    pieceBR = Point.add pieceTL <| Point pieceWidth pieceHeight
+  in
+    ( pieceTL.x < boxBR.x ) &&
+    ( pieceTL.y < boxBR.y ) &&
+    ( pieceBR.x > boxTL.x ) &&
+    ( pieceBR.y > boxTL.y )
+
+isPieceGroupInsideBox : JigsawImage -> Point -> Point -> PieceGroup -> Bool
+isPieceGroupInsideBox image boxTL boxBR pieceGroup =
+  List.any (isPieceInsideBox image pieceGroup.position boxTL boxBR) pieceGroup.members
+
 -- UPDATE
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -187,12 +221,12 @@ update msg model =
         ymax = model.height - model.image.height // model.image.ypieces
         scrambleCommand =
           Random.generate ScrambledPositions
-            <| Point.randomPoints n xmin xmax ymin ymax
+            <| Point.randomPointsAndZ n xmin xmax ymin ymax
       in
         ( model, scrambleCommand )
 
-    ScrambledPositions newPositions ->
-      ( resetModel model.image newPositions, Cmd.none )
+    ScrambledPositions (newPositions, zlevels) ->
+      ( resetModel model.image newPositions zlevels, Cmd.none )
 
     MouseDown id coordinate ->
       if id == -1 then
@@ -200,6 +234,8 @@ update msg model =
           { model
             | debug = "background!"
             , cursor = Just coordinate
+            , selectedId = -1
+            , pieceGroups = D.map (\_ pg -> {pg | selected = False}) model.pieceGroups
             , selectionBox = Normal
               { staticCorner = coordinate
               , movingCorner = coordinate
@@ -313,9 +349,9 @@ update msg model =
           )
 
       Normal box ->
-        ( { model | selectionBox = None }, Cmd.none )
+        ( { model | selectionBox = None, cursor = Nothing }, Cmd.none )
       Inverted box ->
-        ( { model | selectionBox = None }, Cmd.none )
+        ( { model | selectionBox = None, cursor = Nothing }, Cmd.none )
 
     MouseMove newPos ->
       case model.cursor of
@@ -341,9 +377,21 @@ update msg model =
                 ( updatedModel, Cmd.none )
 
             Normal box ->
+              let
+                tl = boxTopLeft box
+                br = boxBottomRight box
+                selectPiece _ pg =
+                  if isPieceGroupInsideBox model.image tl br pg then
+                    {pg | selected = True}
+                  else
+                    {pg | selected = False}
+                updatedPieceGroups =
+                  D.map selectPiece model.pieceGroups
+              in
               ( { model
                 | selectionBox = Normal {box | movingCorner = newPos}
-                , debug = "Normal: " ++ String.fromInt box.movingCorner.x
+                , pieceGroups = updatedPieceGroups
+                , debug = "Normal: " ++ String.fromInt box.movingCorner.y
                 }
               , Cmd.none )
             Inverted box ->
@@ -372,27 +420,18 @@ view model =
 
     svgSelectionBox box =
       let
-        topLeft =
-          Point
-            (min box.staticCorner.x box.movingCorner.x)
-            (min box.staticCorner.y box.movingCorner.y)
-
-        bottomRight =
-          Point
-            (max box.staticCorner.x box.movingCorner.x)
-            (max box.staticCorner.y box.movingCorner.y)
-
+        topLeft = boxTopLeft box
+        bottomRight = boxBottomRight box
       in
         Svg.rect
-          [ Svg.Attributes.x <| String.fromInt topLeft.x
-          , Svg.Attributes.y <| String.fromInt topLeft.y
-          , Svg.Attributes.width <| String.fromInt (bottomRight.x - topLeft.x)
+          [ Svg.Attributes.width <| String.fromInt (bottomRight.x - topLeft.x)
           , Svg.Attributes.height <| String.fromInt (bottomRight.y - topLeft.y)
           , Svg.Attributes.fill "blue"
           , Svg.Attributes.fillOpacity "0.2"
           , Svg.Attributes.stroke "darkblue"
           , Svg.Attributes.strokeWidth "2px"
           , Svg.Attributes.strokeOpacity "0.9"
+          , translate (topLeft)
           ]
           []
 
@@ -428,13 +467,14 @@ view model =
         [ Svg.Attributes.xlinkHref <| "#" ++ pieceOutlineId id
         , Svg.Attributes.fill "white"
         , Svg.Attributes.fillOpacity "0.0"
-        , Svg.Attributes.stroke <| if selected then "green" else "black"
-        , Svg.Attributes.strokeWidth "2px"
+        , Svg.Attributes.stroke <| if selected then "red" else "black"
+        , Svg.Attributes.strokeWidth "3px"
         ]
         []
 
   in
   Html.div [ ]
+--    [
     [ Html.h1 [] [ Html.text ( "Kitten jigsaw! " ) ]
     , Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
     , Html.h1 [] [ Html.text model.debug ]
@@ -481,8 +521,8 @@ onMouseMove =
 coordinateDecoder : Json.Decode.Decoder Point
 coordinateDecoder =
   Json.Decode.map2 Point
-    (Json.Decode.field "clientX" Json.Decode.int)
-    (Json.Decode.field "clientY" Json.Decode.int)
+    (Json.Decode.field "offsetX" Json.Decode.int)
+    (Json.Decode.field "offsetY" Json.Decode.int)
 
 translate : Point -> Svg.Attribute Msg
 translate position =
