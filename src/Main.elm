@@ -1,7 +1,7 @@
 module Main exposing (..)
 
 import Browser
-import Array as A
+import Set as S
 import Dict as D
 import Html exposing (Html)
 import Html.Attributes
@@ -13,6 +13,7 @@ import Svg.Events
 import Random
 
 import Point exposing (Point)
+import Util exposing (takeFirst)
 
 -- MAIN
 main =
@@ -28,12 +29,13 @@ main =
 
 type alias Model =
   { cursor : Maybe Point
-  , pieces : A.Array Piece
   , pieceGroups : D.Dict Int PieceGroup
+  , selectedId : Int
   , maxZLevel : Int
   , image : JigsawImage
   , width : Int
   , height : Int
+  , debug : String
   }
 
 type alias JigsawImage =
@@ -51,34 +53,28 @@ type Msg
   | Scramble
   | ScrambledPositions (List Point)
 
-type alias Piece =
-  { position : Point
-  , offset : Point
-  , selected : Bool
-  , zlevel : Int
-  , id : Int
-  , neighbours : List Int
-  }
 
 type alias PieceGroup =
-    { id : Int
-    , members : List Int
-    , neighbours : List Int
-    , position : Point
-    , selected : Bool
-    , zlevel : Int
-    }
+  { id : Int
+  , members : List Int
+  , neighbours : S.Set Int
+  , position : Point
+  , selected : Bool
+  , zlevel : Int
+  }
 
 
 -- Until I figure out how to handle index out of bounds
 -- exceptions more elegantly
-defaultPiece =
-  { position = (Point 0 0)
-  , offset = (Point 0 0)
+defaultPieceGroup : PieceGroup
+defaultPieceGroup =
+  { position = Point 0 0
   , selected = False
   , zlevel = -1
-  , id = -1
-  , neighbours = []}
+  , id = -10
+  , neighbours = S.empty
+  , members = []
+  }
 
 
 -- INIT
@@ -90,92 +86,88 @@ init () =
       { path = "../resources/kitten.png"
       , width = 533
       , height = 538
-      , xpieces = 6
-      , ypieces = 6
+      , xpieces = 4
+      , ypieces = 4
       }
     model =
-      { cursor = Nothing
-      , pieces = createPieces image
-      , pieceGroups = D.empty
-      , maxZLevel = image.xpieces * image.ypieces - 1
-      , image = image
-      , width = 1200
-      , height = 850
-      }
+      resetModel image []
   in
   ( model, Cmd.none )
 
 
-createPieces : JigsawImage -> A.Array Piece
-createPieces image =
+resetModel : JigsawImage -> List Point -> Model
+resetModel image positions =
+  { cursor = Nothing
+  , pieceGroups = createPieceGroups image positions
+  , selectedId = -1
+  , maxZLevel = image.xpieces * image.ypieces - 1
+  , image = image
+  , width = 2000
+  , height = 1000
+  , debug = "Nothing to see here..."
+  }
+
+createPieceGroups : JigsawImage -> List Point -> D.Dict Int PieceGroup
+createPieceGroups image points =
   let
     nx = image.xpieces
     ny = image.ypieces
     n = nx*ny
-    pieceWidth = image.width // nx
-    pieceHeight = image.height // ny
+
     range =
-      A.fromList <| List.range 0 (n - 1)
-    toPoint id =
-      Point (modBy nx id) (id // nx)
-    offset id =
-      Point.dot
-        ( toPoint id )
-        ( Point pieceWidth pieceHeight )
+      List.range 0 (n - 1)
+    positions =
+      if List.length points < n then
+        List.map (pieceIdToOffset image) range
+      else
+        points
     neighbourOffsets =
       [ -nx, -1, 1, nx ]
     possibleNeighbours i =
       List.map ((+) i) neighbourOffsets
     isRealNeighbour i x =
-      Point.taxiDist (toPoint i) (toPoint x) == 1
-    onePiece i =
-      { position = Point 0 0
-      , offset = offset i
-      , selected = False
-      , id = i
-      , zlevel = i
-      , neighbours = List.filter (isRealNeighbour i) <| possibleNeighbours i
-      }
+       x >= 0 && x < n &&
+      Point.taxiDist
+        ( pieceIdToPoint i image.xpieces )
+        ( pieceIdToPoint x image.xpieces ) == 1
+    onePieceGroup i pos =
+      ( i
+      , { position = Point.sub pos (pieceIdToOffset image i)
+        , selected = False
+        , id = i
+        , zlevel = i
+        , members = [ i ]
+        , neighbours = S.filter (isRealNeighbour i) <| S.fromList (possibleNeighbours i)
+        }
+      )
 
   in
-    A.map onePiece range
+    D.fromList <| List.map2 onePieceGroup range positions
 
+
+pieceIdToPoint : Int -> Int -> Point
+pieceIdToPoint id xpieces =
+  Point (modBy xpieces id) (id // xpieces)
+
+pieceIdToOffset : JigsawImage -> Int -> Point
+pieceIdToOffset image id =
+  let
+    pieceWidth = image.width // image.xpieces
+    pieceHeight = image.height // image.ypieces
+  in
+    Point.dot
+      ( pieceIdToPoint id image.xpieces )
+      ( Point pieceWidth pieceHeight )
 
 
 -- UPDATE
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-  let
-    selectPiece : Int -> A.Array Piece
-    selectPiece id =
-      case A.get id model.pieces of
-        Nothing ->
-          model.pieces
-        Just piece ->
-          A.set
-            id
-            { piece
-              | selected = True
-              , zlevel = model.maxZLevel
-            }
-            model.pieces
-
-    turnOffSelectedStatus : Piece -> Piece
-    turnOffSelectedStatus piece =
-      { piece | selected = False }
-
-    movePieceTo : Point -> Piece -> Piece
-    movePieceTo newPosition piece =
-      if piece.selected then
-        { piece | position = Point.add piece.position newPosition }
-      else
-        piece
-  in
   case msg of
     Scramble ->
       let
-        n = A.length model.pieces
+        n = model.image.xpieces * model.image.ypieces
         xmin = 0
         xmax = model.width - 50
         ymin = 0
@@ -187,95 +179,132 @@ update msg model =
         ( model, scrambleCommand )
 
     ScrambledPositions newPositions ->
-      let
-        changePiecePosition ind point =
-          case A.get ind model.pieces of
-            Just piece ->
-              { piece | position = Point.sub point piece.offset }
-            Nothing ->
-              defaultPiece
+      ( resetModel model.image newPositions, Cmd.none )
 
-        changeAllPiecePositions =
-          List.indexedMap changePiecePosition newPositions
+    MouseDown id coordinate ->
+      let
+        alter : Maybe PieceGroup -> Maybe PieceGroup
+        alter pieceGroup =
+          case pieceGroup of
+            Nothing -> Nothing
+            Just pg -> Just {pg | selected = True, zlevel = model.maxZLevel}
+        newPieceGroups =
+          D.update id alter model.pieceGroups
 
       in
-        ( { model | pieces = A.fromList changeAllPiecePositions }
+        ( { model
+            | cursor = Just coordinate
+            , pieceGroups = newPieceGroups
+            , maxZLevel = model.maxZLevel + 1
+            , selectedId = id
+            , debug = D.get id newPieceGroups
+                |> Maybe.withDefault defaultPieceGroup
+                |> .neighbours
+                |> S.toList
+                |> List.map String.fromInt
+                |> List.intersperse ", "
+                |> String.concat
+          }
         , Cmd.none
         )
 
-    MouseDown id coordinate ->
-      ( { model
-          | cursor = Just coordinate
-          , pieces = selectPiece id
-          , maxZLevel = model.maxZLevel + 1
-        }
-      , Cmd.none
-      )
-
     MouseUp ->
       let
-        selectedPiece =
-          case A.get 0 (A.filter .selected model.pieces) of
-            Nothing -> defaultPiece
-            Just piece -> { piece | selected = False }
-
-        neighbourDistance neighbour =
+        neighbourDistance : PieceGroup -> PieceGroup -> (Float, PieceGroup)
+        neighbourDistance selectedPiece neighbour =
           ( Point.dist selectedPiece.position neighbour.position
           , neighbour)
 
+        neighbourFromId : Int -> PieceGroup
         neighbourFromId id =
-          case A.get id model.pieces of
-            Nothing -> defaultPiece
-            Just piece -> piece
+          Maybe.withDefault defaultPieceGroup
+            <| D.get id model.pieceGroups
 
-        distances =
-          List.map (neighbourDistance << neighbourFromId) selectedPiece.neighbours
+        distances : PieceGroup -> List (Float, PieceGroup)
+        distances selectedPiece =
+          List.map ((neighbourDistance selectedPiece) << neighbourFromId) (S.toList selectedPiece.neighbours)
 
-        takeFirst condition list =
-          case list of
-            [] ->
-              Nothing
-            x :: xs ->
-              if condition x then
-                Just x
-              else
-                takeFirst condition xs
-
+        smallEnough : (Float, a) -> Bool
         smallEnough (distance, _) =
           distance < 15.0
 
-        maybeMoveSelectedPiece =
-          case takeFirst smallEnough distances of
+        closeNeighbour : PieceGroup -> Maybe PieceGroup
+        closeNeighbour selected =
+          case takeFirst smallEnough (distances selected) of
+            Nothing -> Nothing
+            Just (_, neighbour) -> Just neighbour
+
+        merge : PieceGroup -> PieceGroup -> PieceGroup
+        merge a b =
+          let
+            newMembers = b.members ++ a.members
+            newNeighbours = S.diff (S.union b.neighbours a.neighbours) (S.fromList newMembers)
+          in
+            { b
+              | selected = False
+              , members = newMembers
+              , neighbours = newNeighbours
+              , zlevel = a.zlevel}
+
+        updatedPieceGroups : PieceGroup -> D.Dict Int PieceGroup
+        updatedPieceGroups selected =
+          case closeNeighbour selected of
+            Just neighbour ->
+              let
+                mergedPG =
+                  merge selected neighbour
+                addMergedPG =
+                  D.insert neighbour.id mergedPG model.pieceGroups
+                removedPG =
+                  D.remove selected.id addMergedPG
+
+                fixedNeighbour : S.Set Int -> Int -> Int -> S.Set Int
+                fixedNeighbour oldNeighbours badNeighbour goodNeighbour =
+                  if S.member badNeighbour oldNeighbours then
+                    S.insert goodNeighbour <| S.remove badNeighbour oldNeighbours
+                  else
+                    oldNeighbours
+
+                replaceSelectedIdWithNeighbourId _ pg =
+                    {pg | neighbours = fixedNeighbour pg.neighbours selected.id neighbour.id}
+
+              in
+                D.map replaceSelectedIdWithNeighbourId removedPG
             Nothing ->
-              selectedPiece
-            Just (_, neighbour) ->
-              { selectedPiece | position = neighbour.position, selected = False }
+              D.insert selected.id { selected | selected = False } model.pieceGroups
 
-        pieces =
-          A.map turnOffSelectedStatus model.pieces
-
-        movedPieces =
-          A.set selectedPiece.id maybeMoveSelectedPiece pieces
       in
         ( { model
             | cursor = Nothing
-            , pieces = movedPieces
+            , pieceGroups = updatedPieceGroups
+                <| Maybe.withDefault defaultPieceGroup
+                <| D.get model.selectedId model.pieceGroups
+            , selectedId = -1
           }
         , Cmd.none
         )
 
     MouseMove newPos ->
-      case model.cursor of
-        Nothing ->
-          ( model, Cmd.none )
+      let
+        movePieceGroup : Point -> Int -> PieceGroup -> PieceGroup
+        movePieceGroup pos _ pg =
+          if pg.selected then
+            { pg | position = Point.add pg.position pos}
+          else
+            pg
 
-        Just oldPos ->
-          ( { model
-              | cursor = Just newPos
-              , pieces = A.map (movePieceTo <| Point.sub newPos oldPos) model.pieces
-            }
-          , Cmd.none
-          )
+      in
+        case model.cursor of
+          Nothing ->
+            ( model, Cmd.none )
+
+          Just oldPos ->
+            ( { model
+                | cursor = Just newPos
+                , pieceGroups = D.map (movePieceGroup <| Point.sub newPos oldPos) model.pieceGroups
+              }
+            , Cmd.none
+            )
 
 
 
@@ -285,37 +314,43 @@ view : Model -> Html Msg
 view model =
   let
     definitions =
-      Svg.defs [] ( definePuzzleImage model.image :: definePieceClipPaths model )
+      Svg.defs [] ( definePuzzleImage model.image :: definePieceClipPaths model.image )
 
     pieces =
-      List.map svgPiece
+      List.concat
+        <| List.map svgPieceGroup
         <| List.sortBy .zlevel
-        <| A.toList model.pieces
+        <| D.values model.pieceGroups
 
-    svgPiece piece =
-      Svg.g
-        [ onMouseDown piece.id
-        , translate piece.position
+    svgPieceGroup pg =
+      List.map (svgMember pg.id pg.position pg.selected) pg.members
+
+    svgMember groupId pos selected id =
+      Svg.g [ onMouseDown groupId, translate pos ]
+        <| [svgClipPath id] ++ [svgOutlines selected id]
+
+    svgClipPath id =
+        Svg.use
+        [ Svg.Attributes.xlinkHref <| "#puzzle-image"
+        , Svg.Attributes.clipPath <| clipPathRef id
         ]
-        [ Svg.use
-          [ Svg.Attributes.xlinkHref <| "#puzzle-image"
-          , Svg.Attributes.clipPath <| clipPathRef piece.id
-          ]
-          []
-        , Svg.use
-          [ Svg.Attributes.xlinkHref <| "#" ++ pieceOutlineId piece.id
-          , Svg.Attributes.fill "white"
-          , Svg.Attributes.fillOpacity "0.0"
-          , Svg.Attributes.stroke <| if piece.selected then "green" else "black"
-          , Svg.Attributes.strokeWidth "2px"
-          ]
-          []
+        []
+
+    svgOutlines selected id =
+        Svg.use
+        [ Svg.Attributes.xlinkHref <| "#" ++ pieceOutlineId id
+        , Svg.Attributes.fill "white"
+        , Svg.Attributes.fillOpacity "0.0"
+        , Svg.Attributes.stroke <| if selected then "green" else "black"
+        , Svg.Attributes.strokeWidth "2px"
         ]
+        []
 
   in
   Html.div [ ]
     [ Html.h1 [] [ Html.text ( "Kitten jigsaw! " ) ]
     , Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
+    , Html.h1 [] [ Html.text model.debug ]
     , Html.div
         [ Html.Attributes.style "background-color" "#CCCCCC"
         , Html.Attributes.style "width" <| String.fromInt model.width ++ "px"
@@ -378,38 +413,39 @@ definePuzzleImage image =
     []
 
 
-definePieceClipPaths : Model -> List (Svg Msg)
-definePieceClipPaths model =
-    List.map (pieceClipPath model.image) (A.toList model.pieces)
+definePieceClipPaths : JigsawImage -> List (Svg Msg)
+definePieceClipPaths image =
+  List.map (pieceClipPath image) (List.range 0 (image.xpieces * image.ypieces - 1))
 
-pieceClipPath : JigsawImage -> Piece -> Svg Msg
-pieceClipPath image piece =
-    let
-      w = image.width // image.xpieces
-      h = image.height // image.ypieces
-      px num =
-        String.fromInt num ++ "px"
-    in
-      Svg.clipPath [ Svg.Attributes.id <| pieceClipId piece.id ]
-        [ Svg.rect
-          [ Svg.Attributes.id <| pieceOutlineId piece.id
-          , Svg.Attributes.width <| px w
-          , Svg.Attributes.height <| px h
-          , Svg.Attributes.x <| px piece.offset.x
-          , Svg.Attributes.y <| px piece.offset.y
-          ]
-          []
-      ]
+pieceClipPath : JigsawImage -> Int -> Svg Msg
+pieceClipPath image id =
+  let
+    w = image.width // image.xpieces
+    h = image.height // image.ypieces
+    offset = pieceIdToOffset image id
+    px num =
+      String.fromInt num ++ "px"
+  in
+    Svg.clipPath [ Svg.Attributes.id <| pieceClipId id ]
+      [ Svg.rect
+        [ Svg.Attributes.id <| pieceOutlineId id
+        , Svg.Attributes.width <| px w
+        , Svg.Attributes.height <| px h
+        , Svg.Attributes.x <| px offset.x
+        , Svg.Attributes.y <| px offset.y
+        ]
+        []
+    ]
 
 pieceOutlineId : Int -> String
 pieceOutlineId id =
-    "piece-" ++ String.fromInt id ++ "-outline"
+  "piece-" ++ String.fromInt id ++ "-outline"
 
 pieceClipId : Int -> String
 pieceClipId id =
-    "piece-" ++ String.fromInt id ++ "-clip"
+  "piece-" ++ String.fromInt id ++ "-clip"
 
 clipPathRef : Int -> String
 clipPathRef id =
-    "url(#" ++ pieceClipId id ++ ")"
+  "url(#" ++ pieceClipId id ++ ")"
 
