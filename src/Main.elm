@@ -28,11 +28,16 @@ main =
 -- MODEL
 
 type Msg
-  = MouseDown Int Point
+  = MouseDown Int Point Keyboard
   | MouseMove Point
   | MouseUp
   | Scramble
   | ScrambledPositions (List Point, List Int)
+
+type alias Keyboard =
+  { shift : Bool
+  , ctrl : Bool
+  }
 
 type alias Model =
   { cursor : Maybe Point
@@ -48,12 +53,12 @@ type alias Model =
   }
 
 type alias JigsawImage =
-    { path : String
-    , width : Int
-    , height : Int
-    , xpieces : Int
-    , ypieces : Int
-    }
+  { path : String
+  , width : Int
+  , height : Int
+  , xpieces : Int
+  , ypieces : Int
+  }
 
 type alias PieceGroup =
   { id : Int
@@ -72,6 +77,7 @@ type SelectionBox
 type alias Box =
   { staticCorner : Point
   , movingCorner : Point
+  , selectedIds : S.Set Int
   }
 
 type Selected
@@ -233,14 +239,14 @@ update msg model =
     ScrambledPositions (newPositions, zlevels) ->
       ( resetModel model.image newPositions zlevels, Cmd.none )
 
-    MouseDown id coordinate ->
+    MouseDown id coordinate keyboard ->
       let
         clickedOnBackground = id == -1
         newModel =
           if clickedOnBackground then
-            startSelectionBox model coordinate
+            startSelectionBox model coordinate keyboard
           else
-            selectPieceGroup model id coordinate
+            selectPieceGroup model id coordinate keyboard
       in
         ( newModel, Cmd.none )
 
@@ -306,10 +312,20 @@ update msg model =
                 tl = boxTopLeft box
                 br = boxBottomRight box
                 selectPiece _ pg =
-                  if isPieceGroupInsideBox model.image tl br pg then
-                    {pg | isSelected = True}
-                  else
-                    {pg | isSelected = False}
+                  let
+                    originallySelected = S.member pg.id box.selectedIds
+                    insideBoxNow = isPieceGroupInsideBox model.image tl br pg
+                    newSelectionStatus =
+                      if originallySelected && insideBoxNow then
+                        True
+                      else if originallySelected && not insideBoxNow then
+                        True
+                      else if not originallySelected && insideBoxNow then
+                        True
+                      else
+                        False
+                  in
+                    { pg | isSelected = newSelectionStatus }
                 updatedPieceGroups =
                   D.map selectPiece model.pieceGroups
               in
@@ -319,12 +335,37 @@ update msg model =
                 }
               , Cmd.none )
             Inverted box ->
-              ( model, Cmd.none )
+              let
+                tl = boxTopLeft box
+                br = boxBottomRight box
+                selectPiece _ pg =
+                  let
+                    originallySelected = S.member pg.id box.selectedIds
+                    insideBoxNow = isPieceGroupInsideBox model.image tl br pg
+                    newSelectionStatus =
+                      if originallySelected && insideBoxNow then
+                        False
+                      else if originallySelected && not insideBoxNow then
+                        True
+                      else if not originallySelected && insideBoxNow then
+                        True
+                      else
+                        False
+                  in
+                    { pg | isSelected = newSelectionStatus }
+
+                updatedPieceGroups =
+                  D.map selectPiece model.pieceGroups
+              in
+              ( { model
+                | selectionBox = Inverted {box | movingCorner = newPos}
+                , pieceGroups = updatedPieceGroups
+                }
+              , Cmd.none )
 
 
-
-selectPieceGroup : Model -> Int -> Point -> Model
-selectPieceGroup model id coordinate =
+selectPieceGroup : Model -> Int -> Point -> Keyboard -> Model
+selectPieceGroup model id coordinate keyboard =
   let
     selectedBefore =
       D.get id model.pieceGroups
@@ -356,17 +397,42 @@ selectPieceGroup model id coordinate =
           deselectAll << fixZlevels <| model.pieceGroups
     }
 
-startSelectionBox : Model -> Point -> Model
-startSelectionBox model coordinate =
-  { model
-    | cursor = Just coordinate
-    , selected = NullSelection
-    , pieceGroups = D.map (\_ pg -> {pg | isSelected = False}) model.pieceGroups
-    , selectionBox = Normal
-      { staticCorner = coordinate
-      , movingCorner = coordinate
+startSelectionBox : Model -> Point -> Keyboard -> Model
+startSelectionBox model coordinate keyboard =
+  let
+    ids = allSelectedPieceGroups model.pieceGroups
+      |> D.keys
+      |> S.fromList
+  in
+  if keyboard.ctrl then
+    { model
+      | cursor = Just coordinate
+      , selectionBox = Inverted
+        { staticCorner = coordinate
+        , movingCorner = coordinate
+        , selectedIds = ids
+        }
       }
-  }
+  else if keyboard.shift then
+    { model
+      | cursor = Just coordinate
+      , selectionBox = Normal
+        { staticCorner = coordinate
+        , movingCorner = coordinate
+        , selectedIds = ids
+        }
+    }
+  else
+    { model
+      | cursor = Just coordinate
+      , selected = NullSelection
+      , pieceGroups = D.map (\_ pg -> {pg | isSelected = False}) model.pieceGroups
+      , selectionBox = Normal
+        { staticCorner = coordinate
+        , movingCorner = coordinate
+        , selectedIds = S.empty
+        }
+    }
 
 
 snapToNeighbour : Model -> PieceGroup -> D.Dict Int PieceGroup
@@ -431,9 +497,6 @@ snapToNeighbour model selected =
       D.insert selected.id { selected | isSelected = False } model.pieceGroups
 
 
-
-
-
 allSelectedPieceGroups pieceGroups =
   D.filter (\_ pg -> pg.isSelected) pieceGroups
 
@@ -462,7 +525,7 @@ view model =
         ]
         []
 
-    svgSelectionBox box =
+    svgSelectionBox box color =
       let
         topLeft = boxTopLeft box
         bottomRight = boxBottomRight box
@@ -470,9 +533,9 @@ view model =
         Svg.rect
           [ Svg.Attributes.width <| String.fromInt (bottomRight.x - topLeft.x)
           , Svg.Attributes.height <| String.fromInt (bottomRight.y - topLeft.y)
-          , Svg.Attributes.fill "blue"
+          , Svg.Attributes.fill color
           , Svg.Attributes.fillOpacity "0.2"
-          , Svg.Attributes.stroke "darkblue"
+          , Svg.Attributes.stroke <| "dark"++color
           , Svg.Attributes.strokeWidth "2px"
           , Svg.Attributes.strokeOpacity "0.9"
           , translate (topLeft)
@@ -482,8 +545,9 @@ view model =
     normalSelection =
       case model.selectionBox of
         Normal box ->
-          [ svgSelectionBox box ]
-        Inverted box -> []
+          [ svgSelectionBox box "blue" ]
+        Inverted box ->
+          [ svgSelectionBox box "green" ]
         NullBox -> []
 
     pieces =
@@ -512,7 +576,7 @@ view model =
         , Svg.Attributes.fill "white"
         , Svg.Attributes.fillOpacity "0.0"
         , Svg.Attributes.stroke <| if selected then "red" else "black"
-        , Svg.Attributes.strokeWidth "2px"
+        , Svg.Attributes.strokeWidth "3px"
         ]
         []
 
@@ -554,18 +618,18 @@ onMouseUp =
 onMouseDown : Int -> Svg.Attribute Msg
 onMouseDown id =
   Svg.Events.on "mousedown"
-    <| Json.Decode.map (MouseDown id) coordinateDecoder
+    <| Json.Decode.map4 (\x y shift ctrl -> MouseDown id (Point x y) {shift=shift, ctrl=ctrl})
+      (Json.Decode.field "offsetX" Json.Decode.int)
+      (Json.Decode.field "offsetY" Json.Decode.int)
+      (Json.Decode.field "shiftKey" Json.Decode.bool)
+      (Json.Decode.field "ctrlKey" Json.Decode.bool)
 
 onMouseMove : Svg.Attribute Msg
 onMouseMove =
   Svg.Events.on "mousemove"
-    <| Json.Decode.map MouseMove coordinateDecoder
-
-coordinateDecoder : Json.Decode.Decoder Point
-coordinateDecoder =
-  Json.Decode.map2 Point
-    (Json.Decode.field "offsetX" Json.Decode.int)
-    (Json.Decode.field "offsetY" Json.Decode.int)
+    <| Json.Decode.map2 (\x y -> MouseMove (Point x y))
+      (Json.Decode.field "offsetX" Json.Decode.int)
+      (Json.Decode.field "offsetY" Json.Decode.int)
 
 translate : Point -> Svg.Attribute Msg
 translate position =
