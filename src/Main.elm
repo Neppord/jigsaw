@@ -367,34 +367,43 @@ update msg model =
 selectPieceGroup : Model -> Int -> Point -> Keyboard -> Model
 selectPieceGroup model id coordinate keyboard =
   let
-    selectedBefore =
+    clickedPieceGroup =
       D.get id model.pieceGroups
         |> Maybe.withDefault defaultPieceGroup
-        |> .isSelected
 
-    setZlevel pieceGroup =
-      case pieceGroup of
-        Nothing -> Nothing
-        Just pg -> Just {pg | zlevel = model.maxZLevel}
+    wasSelectedBefore =
+      clickedPieceGroup.isSelected
 
-    fixZlevels pieceGroups =
-      D.update id setZlevel pieceGroups
+    shouldStartDragging =
+      wasSelectedBefore && model.selected == Multiple
 
-    startDragging =
-      selectedBefore && model.selected == Multiple
+    fixZlevels =
+      D.insert id { clickedPieceGroup | zlevel = model.maxZLevel}
 
-    deselectAll pieceGroups =
-      D.map (\key pg -> {pg | isSelected = key == id}) pieceGroups
+    selectClickedPieceGroup =
+      D.insert id { clickedPieceGroup | isSelected = True }
+
+    invertClickedPieceGroup =
+      D.insert id { clickedPieceGroup | isSelected = not clickedPieceGroup.isSelected }
+
+    deselectAllOther =
+      D.map (\key pg -> {pg | isSelected = key == id})
+
+    newPieceGroups =
+      if keyboard.ctrl then
+        invertClickedPieceGroup
+      else if keyboard.shift then
+        selectClickedPieceGroup << fixZlevels
+      else if shouldStartDragging then
+        fixZlevels
+      else
+        deselectAllOther << fixZlevels
   in
     { model
     | maxZLevel = model.maxZLevel + 1
     , cursor = Just coordinate
-    , selected = if not selectedBefore then Single id else model.selected
-    , pieceGroups =
-        if startDragging then
-          fixZlevels model.pieceGroups
-        else
-          deselectAll << fixZlevels <| model.pieceGroups
+    , selected = currentSelection <| newPieceGroups model.pieceGroups
+    , pieceGroups = newPieceGroups model.pieceGroups
     }
 
 startSelectionBox : Model -> Point -> Keyboard -> Model
@@ -494,7 +503,7 @@ snapToNeighbour model selected =
           |> D.map replaceSelectedIdWithNeighbourId
 
     Nothing ->
-      D.insert selected.id { selected | isSelected = False } model.pieceGroups
+      model.pieceGroups
 
 
 allSelectedPieceGroups pieceGroups =
