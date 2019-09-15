@@ -1,4 +1,4 @@
-module Point exposing (Point, sub, add, dot, dist, taxiDist, randomPoint, randomPoints, randomPointsAndZ)
+module Point exposing (Point, sub, add, dot, dist, taxiDist, toString, randomPoint, randomPoints, randomPointsAndZ)
 
 import Random
 import Random.List exposing (shuffle)
@@ -7,6 +7,10 @@ type alias Point =
   { x: Int
   , y: Int
   }
+
+toString : Point -> String
+toString p =
+  (String.fromInt p.x) ++ " " ++ (String.fromInt p.y)
 
 sub : Point -> Point -> Point
 sub a b =
