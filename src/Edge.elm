@@ -7,7 +7,7 @@ import Html.Events
 import Svg
 import Svg.Attributes
 import Random
-import Platform.Cmd exposing (Cmd)
+import Array
 
 import Point exposing (Point)
 
@@ -47,7 +47,7 @@ curveFromSingleEdge edge =
   ++ edgeToString (makeEdge False "W" edge)
 
 
-makeEdgePoints : Int -> Random.Seed -> (List EdgePoints, Random.Seed)
+makeEdgePoints : Int -> Random.Seed -> (Array.Array EdgePoints, Random.Seed)
 makeEdgePoints n seed =
   let
     (offsets, seed1) =
@@ -60,13 +60,16 @@ makeEdgePoints n seed =
     setChirality : EdgePoints -> Int -> List Point
     setChirality ep ch =
       if ch == 0 then
-        List.map2 Point.add defaultPoints (ep ++ [Point 0 0])
+        ep
       else
-        List.map (\p -> Point p.x -p.y) (ep ++ [Point 0 0])
-          |> List.map2 Point.add defaultPoints
+        List.map (\p -> Point p.x -p.y) ep
+
+    translatePoints ep =
+      List.map2 Point.add defaultPoints (ep ++ [Point 0 0])
 
     edgePoints =
-      List.map2 setChirality offsets chiralities
+      List.map2 (setChirality << translatePoints) offsets chiralities
+        |> Array.fromList
   in
     (edgePoints, seed2)
 

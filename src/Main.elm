@@ -3,6 +3,7 @@ module Main exposing (..)
 import Browser
 import Set as S
 import Dict as D
+import Array as A
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
@@ -11,9 +12,11 @@ import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Events
 import Random
+import Random.List
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
+import Edge exposing (EdgePoints, makeEdgePoints)
 
 -- MAIN
 main =
@@ -32,7 +35,6 @@ type Msg
   | MouseMove Point
   | MouseUp
   | Scramble
-  | ScrambledPositions (List Point, List Int)
 
 type alias Keyboard =
   { shift : Bool
@@ -50,6 +52,8 @@ type alias Model =
   , snapDistance : Float
   , selectionBox : SelectionBox
   , debug : String
+  , seed : Random.Seed
+  , edgePoints : A.Array EdgePoints
   }
 
 type alias JigsawImage =
@@ -124,24 +128,51 @@ init () =
       , ypieces = 6
       }
     model =
-      resetModel image [] []
+      resetModel image (Random.initialSeed 0)
   in
   ( model, Cmd.none )
 
 
-resetModel : JigsawImage -> List Point -> List Int -> Model
-resetModel image positions zlevels =
-  { cursor = Nothing
-  , pieceGroups = createPieceGroups image positions zlevels
-  , selected = NullSelection
-  , maxZLevel = image.xpieces * image.ypieces
-  , image = image
-  , width = 2000
-  , height = 1000
-  , snapDistance = 30.0
-  , selectionBox = NullBox
-  , debug = "Nothing to see here..."
-  }
+resetModel : JigsawImage -> Random.Seed -> Model
+resetModel image seed =
+  let
+    (w, h) = (1400, 900)
+    (nx, ny) = (image.xpieces, image.ypieces)
+    numberOfEdges = 2 * nx * ny - nx - ny
+
+    (positions, seed1) = shufflePiecePositions w h image seed
+    (zlevels, seed2) = shuffleZLevels (nx * ny) seed1
+    (edgePoints, seed3) = makeEdgePoints numberOfEdges seed2
+  in
+    { cursor = Nothing
+    , pieceGroups = createPieceGroups image positions zlevels
+    , selected = NullSelection
+    , maxZLevel = nx * ny
+    , image = image
+    , width = w
+    , height = h
+    , snapDistance = 30.0
+    , selectionBox = NullBox
+    , debug = "Nothing to see here..."
+    , seed = seed3
+    , edgePoints = edgePoints
+    }
+
+
+shufflePiecePositions : Int -> Int -> JigsawImage -> Random.Seed -> (List Point, Random.Seed)
+shufflePiecePositions w h image seed =
+  let
+    n = image.xpieces * image.ypieces
+    xmin = 0
+    xmax = w - image.width // image.xpieces
+    ymin = 0
+    ymax = h - image.height // image.ypieces
+  in
+    Random.step (Point.randomPoints n xmin xmax ymin ymax) seed
+
+shuffleZLevels : Int -> Random.Seed -> (List Int, Random.Seed)
+shuffleZLevels n seed =
+  Random.step (Random.List.shuffle <| List.range 0 (n - 1)) seed
 
 createPieceGroups : JigsawImage -> List Point -> List Int -> D.Dict Int PieceGroup
 createPieceGroups image points levels =
@@ -225,19 +256,9 @@ update msg model =
   case msg of
     Scramble ->
       let
-        n = model.image.xpieces * model.image.ypieces
-        xmin = 0
-        xmax = model.width - model.image.width // model.image.xpieces
-        ymin = 0
-        ymax = model.height - model.image.height // model.image.ypieces
-        scrambleCommand =
-          Random.generate ScrambledPositions
-            <| Point.randomPointsAndZ n xmin xmax ymin ymax
+        newModel = resetModel model.image model.seed
       in
-        ( model, scrambleCommand )
-
-    ScrambledPositions (newPositions, zlevels) ->
-      ( resetModel model.image newPositions zlevels, Cmd.none )
+        ( newModel, Cmd.none )
 
     MouseDown id coordinate keyboard ->
       let
@@ -669,7 +690,7 @@ pieceClipPath image id =
     px num =
       String.fromInt num ++ "px"
 
-    curve = Edge.pieceCurveFromId id
+--    curve = Edge.pieceCurveFromId id
   in
     Svg.clipPath [ Svg.Attributes.id <| pieceClipId id ]
       [ Svg.rect
