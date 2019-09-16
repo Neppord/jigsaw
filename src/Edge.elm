@@ -51,15 +51,54 @@ defaultEdge =
   , b4 = S (Point 150 20) (Point 200 0)
   }
 
+defaultPoints =
+  [ Point 50 20
+  , Point 100 25
+  , Point 80 0
+  , Point 70 -40
+  , Point 100 -40
+  , Point 140 -25
+  , Point 120 0
+  , Point 150 20
+  , Point 200 0
+  ]
 
-makeEdge : List Point -> Edge
-makeEdge points =
-  case points of
-    [p1, p2, p3, p4, p5, p6, p7, p8] ->
+
+makeEdge : String -> List Point -> Edge
+makeEdge orientation points =
+  let
+    rotate : Point -> Point
+    rotate p =
+      Point p.y p.x
+
+    translate : Point -> Point
+    translate p =
+      Point.add p (Point 0 200)
+
+    flip p q =
+      Point (2*q.x - p.x) (2*q.y - p.y)
+
+    reverse : List Point -> List Point
+    reverse ps =
+      case ps of
+        [p1, p2, p3, p4, p5, p6, p7, p8, _] ->
+          [p8, flip p6 p7, p7, flip p4 p5, p5, flip p2 p3, p3, p1, Point 0 0]
+        _ ->
+          ps
+
+    fixed =
+      case orientation of
+        "W" -> List.map rotate <| reverse points
+        "S" -> List.map translate <| reverse points
+        "E" -> List.map (rotate << translate) points
+        _ -> points
+  in
+  case fixed of
+    [p1, p2, p3, p4, p5, p6, p7, p8, p9] ->
       { b1 = C p1 p2 p3
       , b2 = S p4 p5
       , b3 = S p6 p7
-      , b4 = S p8 (Point 200 0)
+      , b4 = S p8 p9
       }
     _ -> defaultEdge
 
@@ -82,6 +121,7 @@ edgeToString e =
   List.map bezierToString [e.b1, e.b2, e.b3, e.b4]
     |> List.intersperse " "
     |> String.concat
+
 
 view : Model -> Html Msg
 view model =
@@ -109,36 +149,16 @@ view model =
       ]
       [ Svg.g
         [ Svg.Attributes.transform "translate(100,100)" ]
-        [ Svg.rect
-          [ Svg.Attributes.width "200"
-          , Svg.Attributes.height "200"
-          , Svg.Attributes.x "0"
-          , Svg.Attributes.y "0"
-          , Svg.Attributes.fillOpacity "0.0"
-          , Svg.Attributes.stroke "black"
-          ]
-          []
-        , Svg.polyline
-          [ Svg.Attributes.points "0 0, 200 200"
-          , Svg.Attributes.stroke "black"
-          ]
-          []
-        , Svg.polyline
-          [ Svg.Attributes.points "0 200, 200 0"
-          , Svg.Attributes.stroke "black"
-          ]
-          []
-        , Svg.polyline
-          [ Svg.Attributes.points "0 0, 100 -100, 200 0"
-          , Svg.Attributes.fillOpacity "0.0"
-          , Svg.Attributes.stroke "black"
-          ]
-          []
-        , Svg.path
-          [ Svg.Attributes.d <| "M 0 0 " ++ edgeToString defaultEdge
+        [ Svg.path
+          [ Svg.Attributes.d
+            <| "M 0 0 "
+            ++ edgeToString (makeEdge "N" defaultPoints)
+            ++ edgeToString (makeEdge "E" defaultPoints)
+            ++ edgeToString (makeEdge "S" defaultPoints)
+            ++ edgeToString (makeEdge "W" defaultPoints)
           , Svg.Attributes.stroke "red"
           , Svg.Attributes.strokeWidth "1px"
-          , Svg.Attributes.fillOpacity "0.0"
+          , Svg.Attributes.fillOpacity "1.0"
           ]
           []
         ]
