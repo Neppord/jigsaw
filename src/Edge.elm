@@ -3,8 +3,11 @@ module Edge exposing (..)
 import Browser
 import Html exposing (..)
 import Html.Attributes
+import Html.Events
 import Svg
 import Svg.Attributes
+import Random
+import Platform.Cmd exposing (Cmd)
 
 import Point exposing (Point)
 
@@ -16,21 +19,84 @@ main =
     , subscriptions = \_ -> Sub.none
     }
 
-
 type Msg
-  = Foo
+  = Button
 
 type alias Model =
-  { curves : List String
+  { curves : String
+  , seed : Random.Seed
+  , nx : Int
+  , ny : Int
   }
 
 init : () -> (Model, Cmd Msg)
 init () =
-  ( {curves = []}, Cmd.none )
+  ( { curves = curveFromSingleEdge defaultPoints
+    , seed = Random.initialSeed 0
+    , nx = 5
+    , ny = 5
+    }
+  , Cmd.none
+  )
+
+curveFromSingleEdge edge =
+  "M 0 0 "
+  ++ edgeToString (makeEdge True "N" edge)
+  ++ edgeToString (makeEdge True "E" edge)
+  ++ edgeToString (makeEdge False "S" edge)
+  ++ edgeToString (makeEdge False "W" edge)
+
+
+makeEdgePoints : Int -> Random.Seed -> (List EdgePoints, Random.Seed)
+makeEdgePoints n seed =
+  let
+    (offsets, seed1) =
+      Random.step (Random.list n <| Point.randomPoints 8 -5 5 -5 5) seed
+
+    (chiralities, seed2) =
+      Random.step (Random.list n <| Random.int 0 1) seed1
+
+    -- Chirality 0 means the 'ear' is pointing up, 1 means it points down
+    setChirality : EdgePoints -> Int -> List Point
+    setChirality ep ch =
+      if ch == 0 then
+        List.map2 Point.add defaultPoints (ep ++ [Point 0 0])
+      else
+        List.map (\p -> Point p.x -p.y) (ep ++ [Point 0 0])
+          |> List.map2 Point.add defaultPoints
+
+    edgePoints =
+      List.map2 setChirality offsets chiralities
+  in
+    (edgePoints, seed2)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-  (model, Cmd.none)
+  let
+    randomEdgePoints =
+      Random.map2 Tuple.pair
+        (Random.int 0 1)
+        (Point.randomPoints 8 -5 5 -5 5)
+
+    (edgePoints, seed) =
+      Random.step (Random.list 4 randomEdgePoints) model.seed
+
+    fixOffset ps =
+      List.map2 Point.add defaultPoints (ps ++ [Point 0 0])
+
+    newCurves =
+      case edgePoints of
+        [(ni, n), (ei, e), (si, s), (wi, w)] ->
+          "M 0 0 "
+          ++ (edgeToString <| makeEdge (ni == 1) "N" (fixOffset n))
+          ++ (edgeToString <| makeEdge (ei == 1) "E" (fixOffset e))
+          ++ (edgeToString <| makeEdge (si == 1) "S" (fixOffset s))
+          ++ (edgeToString <| makeEdge (wi == 1) "W" (fixOffset w))
+        _ ->
+          curveFromSingleEdge defaultPoints
+
+  in
+    ( {model | seed = seed, curves = newCurves}, Cmd.none )
 
 type alias Edge =
   { b1 : Bezier
@@ -38,6 +104,8 @@ type alias Edge =
   , b3 : Bezier
   , b4 : Bezier
   }
+
+type alias EdgePoints = List Point
 
 type Bezier
   = C Point Point Point
@@ -132,46 +200,49 @@ edgeToString e =
     |> List.intersperse " "
     |> String.concat
 
+pieceCurveFromPieceId : Int -> Int -> Int -> String
+pieceCurveFromPieceId nx ny id =
+  let
+    nv = (nx - 1) * ny
+    nh = nx * (ny - 1)
+
+    north = getHorizontalEdge (id - nx)
+    west = getVerticalEdge (id - (id // nx))
+    south = getHorizontalEdge id
+    east = getVerticalEdge (id - (id // nx))
+  in
+    "foo"
+
+getHorizontalEdge id =
+  []
+
+getVerticalEdge id =
+  []
+
+
 
 view : Model -> Html Msg
 view model =
-  let
-    edge =
-      [ Point 50 20
-      , Point 100 25
-      , Point 80 0
-      , Point 70 -40
-      , Point 100 -40
-      , Point 140 -25
-      , Point 120 0
-      , Point 150 20
-      , Point 200 0
-      ]
-  in
   Html.div
-    [ Html.Attributes.style "width" <| "1000px"
-    , Html.Attributes.style "height" <| "800px"
+  [ Html.Attributes.style "width" <| "1000px"
+  , Html.Attributes.style "height" <| "800px"
+  ]
+  [ Html.button [ Html.Events.onClick Button ] [ Html.text "scramble" ]
+  , Svg.svg
+    [ Svg.Attributes.width "100%"
+    , Svg.Attributes.height "100%"
     ]
-    [ Html.h1 [] [ Html.text "hello" ]
-    , Svg.svg
-      [ Svg.Attributes.width "100%"
-      , Svg.Attributes.height "100%"
-      ]
-      [ Svg.g
-        [ Svg.Attributes.transform "translate(100,100)" ]
-        [ Svg.path
-          [ Svg.Attributes.d
-            <| "M 0 0 "
-            ++ edgeToString (makeEdge True "N" defaultPoints)
-            ++ edgeToString (makeEdge True "E" defaultPoints)
-            ++ edgeToString (makeEdge False "S" defaultPoints)
-            ++ edgeToString (makeEdge False "W" defaultPoints)
-          , Svg.Attributes.stroke "red"
-          , Svg.Attributes.strokeWidth "1px"
-          , Svg.Attributes.fillOpacity "1.0"
-          ]
-          []
+    [ Svg.g
+      [ Svg.Attributes.transform "translate(100,100)" ]
+      [ Svg.path
+        [ Svg.Attributes.d model.curves
+        , Svg.Attributes.stroke "red"
+        , Svg.Attributes.strokeWidth "1px"
+        , Svg.Attributes.fillOpacity "1.0"
+--        , Svg.Attributes.transform "rotate(45)"
         ]
-
+        []
       ]
+
     ]
+  ]

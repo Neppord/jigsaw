@@ -35,8 +35,7 @@ taxiDist a b =
 
 randomPoint : Int -> Int -> Int -> Int -> Random.Generator Point
 randomPoint xmin xmax ymin ymax =
-  Random.map2
-    (\x y -> Point x y)
+  Random.map2 Point
     (Random.int xmin xmax)
     (Random.int ymin ymax)
 
