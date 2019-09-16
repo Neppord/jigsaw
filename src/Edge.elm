@@ -64,8 +64,8 @@ defaultPoints =
   ]
 
 
-makeEdge : String -> List Point -> Edge
-makeEdge orientation points =
+makeEdge : Bool -> String -> List Point -> Edge
+makeEdge isInverted orientation points =
   let
     rotate : Point -> Point
     rotate p =
@@ -86,14 +86,24 @@ makeEdge orientation points =
         _ ->
           ps
 
-    fixed =
+    fixOrientation ps =
       case orientation of
-        "W" -> List.map rotate <| reverse points
-        "S" -> List.map translate <| reverse points
-        "E" -> List.map (rotate << translate) points
-        _ -> points
+        "W" -> List.map rotate <| reverse ps
+        "S" -> List.map translate <| reverse ps
+        "E" -> List.map (rotate << translate) ps
+        _ -> ps
+
+    invert : Point -> Point
+    invert p =
+      Point p.x -p.y
+
+    fixInversion ps =
+      if isInverted then
+        List.map invert ps
+      else
+        ps
   in
-  case fixed of
+  case (fixOrientation << fixInversion) points of
     [p1, p2, p3, p4, p5, p6, p7, p8, p9] ->
       { b1 = C p1 p2 p3
       , b2 = S p4 p5
@@ -152,10 +162,10 @@ view model =
         [ Svg.path
           [ Svg.Attributes.d
             <| "M 0 0 "
-            ++ edgeToString (makeEdge "N" defaultPoints)
-            ++ edgeToString (makeEdge "E" defaultPoints)
-            ++ edgeToString (makeEdge "S" defaultPoints)
-            ++ edgeToString (makeEdge "W" defaultPoints)
+            ++ edgeToString (makeEdge True "N" defaultPoints)
+            ++ edgeToString (makeEdge True "E" defaultPoints)
+            ++ edgeToString (makeEdge False "S" defaultPoints)
+            ++ edgeToString (makeEdge False "W" defaultPoints)
           , Svg.Attributes.stroke "red"
           , Svg.Attributes.strokeWidth "1px"
           , Svg.Attributes.fillOpacity "1.0"
