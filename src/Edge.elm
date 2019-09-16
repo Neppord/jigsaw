@@ -41,10 +41,10 @@ init () =
 
 curveFromSingleEdge edge =
   "M 0 0 "
-  ++ edgeToString (makeEdge True "N" edge)
-  ++ edgeToString (makeEdge True "E" edge)
-  ++ edgeToString (makeEdge False "S" edge)
-  ++ edgeToString (makeEdge False "W" edge)
+  ++ edgeToString (makeEdge "N" edge)
+  ++ edgeToString (makeEdge "E" edge)
+  ++ edgeToString (makeEdge "S" edge)
+  ++ edgeToString (makeEdge "W" edge)
 
 
 makeEdgePoints : Int -> Random.Seed -> (Array.Array EdgePoints, Random.Seed)
@@ -76,37 +76,22 @@ makeEdgePoints n seed =
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   let
-    randomEdgePoints =
-      Random.map2 Tuple.pair
-        (Random.int 0 1)
-        (Point.randomPoints 8 -5 5 -5 5)
-
-    (edgePoints, seed) =
-      Random.step (Random.list 4 randomEdgePoints) model.seed
-
-    fixOffset ps =
-      List.map2 Point.add defaultPoints (ps ++ [Point 0 0])
+    (edgePoints, newSeed) =
+      makeEdgePoints 4 model.seed
 
     newCurves =
-      case edgePoints of
-        [(ni, n), (ei, e), (si, s), (wi, w)] ->
-          "M 0 0 "
-          ++ (edgeToString <| makeEdge (ni == 1) "N" (fixOffset n))
-          ++ (edgeToString <| makeEdge (ei == 1) "E" (fixOffset e))
-          ++ (edgeToString <| makeEdge (si == 1) "S" (fixOffset s))
-          ++ (edgeToString <| makeEdge (wi == 1) "W" (fixOffset w))
-        _ ->
-          curveFromSingleEdge defaultPoints
+      "M 0 0 "
+      ++ (edgeToString <| makeEdge "N" <| getHorizontalEdge 0 edgePoints)
+      ++ (edgeToString <| makeEdge "E" <| getVerticalEdge 1 edgePoints)
+      ++ (edgeToString <| makeEdge "S" <| getHorizontalEdge 2 edgePoints)
+      ++ (edgeToString <| makeEdge "W" <| getVerticalEdge 5 edgePoints)
 
   in
-    ( {model | seed = seed, curves = newCurves}, Cmd.none )
+    ( {model | seed = newSeed, curves = newCurves}, Cmd.none )
 
-type alias Edge =
-  { b1 : Bezier
-  , b2 : Bezier
-  , b3 : Bezier
-  , b4 : Bezier
-  }
+type Edge
+  = Curved { b1 : Bezier, b2 : Bezier, b3 : Bezier, b4 : Bezier}
+  | Flat { a : Point, b : Point }
 
 type alias EdgePoints = List Point
 
@@ -115,12 +100,17 @@ type Bezier
   | S Point Point
 
 
-defaultEdge =
-  { b1 = C (Point 50 20) (Point 100 25) (Point 80 0)
-  , b2 = S (Point 70 -40) (Point 100 -40)
-  , b3 = S (Point 140 -25) (Point 120 0)
-  , b4 = S (Point 150 20) (Point 200 0)
-  }
+defaultCurvedEdge =
+  Curved
+    { b1 = C (Point 50 20) (Point 100 25) (Point 80 0)
+    , b2 = S (Point 70 -40) (Point 100 -40)
+    , b3 = S (Point 140 -25) (Point 120 0)
+    , b4 = S (Point 150 20) (Point 200 0)
+    }
+
+defaultFlatEdge =
+  Flat { a = Point 0 0, b = Point 200 0 }
+
 
 defaultPoints =
   [ Point 50 20
@@ -135,8 +125,8 @@ defaultPoints =
   ]
 
 
-makeEdge : Bool -> String -> List Point -> Edge
-makeEdge isInverted orientation points =
+makeEdge : String -> List Point -> Edge
+makeEdge orientation points =
   let
     rotate : Point -> Point
     rotate p =
@@ -155,7 +145,7 @@ makeEdge isInverted orientation points =
         [p1, p2, p3, p4, p5, p6, p7, p8, _] ->
           [p8, flip p6 p7, p7, flip p4 p5, p5, flip p2 p3, p3, p1, Point 0 0]
         _ ->
-          ps
+          List.reverse ps
 
     fixOrientation ps =
       case orientation of
@@ -164,24 +154,20 @@ makeEdge isInverted orientation points =
         "E" -> List.map (rotate << translate) ps
         _ -> ps
 
-    invert : Point -> Point
-    invert p =
-      Point p.x -p.y
-
-    fixInversion ps =
-      if isInverted then
-        List.map invert ps
-      else
-        ps
   in
-  case (fixOrientation << fixInversion) points of
+  case fixOrientation points of
     [p1, p2, p3, p4, p5, p6, p7, p8, p9] ->
-      { b1 = C p1 p2 p3
-      , b2 = S p4 p5
-      , b3 = S p6 p7
-      , b4 = S p8 p9
-      }
-    _ -> defaultEdge
+      Curved
+        { b1 = C p1 p2 p3
+        , b2 = S p4 p5
+        , b3 = S p6 p7
+        , b4 = S p8 p9
+        }
+    [p1, p2] ->
+      Flat { a = p1, b = p2 }
+    _ ->
+      defaultCurvedEdge
+
 
 bezierToString : Bezier -> String
 bezierToString b =
@@ -199,28 +185,52 @@ bezierToString b =
 
 edgeToString : Edge -> String
 edgeToString e =
-  List.map bezierToString [e.b1, e.b2, e.b3, e.b4]
-    |> List.intersperse " "
-    |> String.concat
+  case e of
+    Curved {b1, b2, b3, b4} ->
+      List.map bezierToString [b1, b2, b3, b4]
+        |> List.intersperse " "
+        |> String.concat
+    Flat {a, b} ->
+      "L " ++ Point.toString a ++ ", " ++ Point.toString b
 
-pieceCurveFromPieceId : Int -> Int -> Int -> String
-pieceCurveFromPieceId nx ny id =
+pieceCurveFromPieceId : Int -> Int -> Int -> Array.Array EdgePoints -> String
+pieceCurveFromPieceId nx ny id edgePoints =
+  let
+    edge : String -> Edge
+    edge orientation = getEdge orientation nx ny id edgePoints
+
+    curveString =
+      List.map (edge >> edgeToString) ["N", "E", "S", "W"]
+        |> String.concat
+  in
+    "M 0 0 " ++ curveString
+
+getEdge : String -> Int -> Int -> Int -> Array.Array EdgePoints-> Edge
+getEdge orientation nx ny id edgePoints =
   let
     nv = (nx - 1) * ny
-    nh = nx * (ny - 1)
-
-    north = getHorizontalEdge (id - nx)
-    west = getVerticalEdge (id - (id // nx))
-    south = getHorizontalEdge id
-    east = getVerticalEdge (id - (id // nx))
+    n = nx * ny
+    index =
+      case orientation of
+        "N" ->
+          if id < nx then -1 else id - nx + nv
+        "W" ->
+          if (modBy nx id) == 0 then -1 else id - (id // nx) - 1
+        "S" ->
+          if id >= n - nx then -1 else id + nv
+        _ ->
+          if (modBy nx id) == (nx - 1) then -1 else id - (id // nx)
+    points =
+      Array.get index edgePoints
+        |> Maybe.withDefault [Point 0 0, Point 200 0]
   in
-    "foo"
+    makeEdge orientation points
 
-getHorizontalEdge id =
-  []
+getHorizontalEdge id edgePoints =
+  Array.get id edgePoints |> Maybe.withDefault [Point 0 0, Point 200 0]
 
-getVerticalEdge id =
-  []
+getVerticalEdge id edgePoints =
+  Array.get id edgePoints |> Maybe.withDefault [Point 0 0, Point 200 0]
 
 
 

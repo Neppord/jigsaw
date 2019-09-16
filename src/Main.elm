@@ -543,7 +543,7 @@ view : Model -> Html Msg
 view model =
   let
     definitions =
-      Svg.defs [] ( definePuzzleImage model.image :: definePieceClipPaths model.image )
+      Svg.defs [] ( definePuzzleImage model.image :: definePieceClipPaths model.image model.edgePoints )
 
     background =
       Svg.rect
@@ -603,10 +603,8 @@ view model =
     svgOutlines selected id =
         Svg.use
         [ Svg.Attributes.xlinkHref <| "#" ++ pieceOutlineId id
-        , Svg.Attributes.fill "white"
-        , Svg.Attributes.fillOpacity "0.0"
         , Svg.Attributes.stroke <| if selected then "red" else "black"
-        , Svg.Attributes.strokeWidth "3px"
+        , Svg.Attributes.strokeWidth "5px"
         ]
         []
 
@@ -677,28 +675,32 @@ definePuzzleImage image =
     []
 
 
-definePieceClipPaths : JigsawImage -> List (Svg Msg)
-definePieceClipPaths image =
-  List.map (pieceClipPath image) (List.range 0 (image.xpieces * image.ypieces - 1))
+definePieceClipPaths : JigsawImage -> A.Array EdgePoints -> List (Svg Msg)
+definePieceClipPaths image edgePoints =
+  List.map (pieceClipPath image edgePoints) (List.range 0 (image.xpieces * image.ypieces - 1))
 
-pieceClipPath : JigsawImage -> Int -> Svg Msg
-pieceClipPath image id =
+pieceClipPath : JigsawImage -> A.Array EdgePoints -> Int -> Svg Msg
+pieceClipPath image edgePoints id =
   let
-    w = image.width // image.xpieces
-    h = image.height // image.ypieces
+    w = toFloat (image.width // image.xpieces)
+    h = toFloat (image.height // image.ypieces)
     offset = pieceIdToOffset image id
     px num =
       String.fromInt num ++ "px"
 
---    curve = Edge.pieceCurveFromId id
+    curve = Edge.pieceCurveFromPieceId image.xpieces image.ypieces id edgePoints
+    move = "translate(" ++ Point.toString offset ++ ") "
+    scale = "scale(" ++ String.fromFloat (w / 200.0) ++ " " ++ String.fromFloat (h / 200.0) ++ ")"
   in
-    Svg.clipPath [ Svg.Attributes.id <| pieceClipId id ]
-      [ Svg.rect
+    Svg.clipPath
+      [ Svg.Attributes.id <| pieceClipId id ]
+      [ Svg.path
         [ Svg.Attributes.id <| pieceOutlineId id
-        , Svg.Attributes.width <| px w
-        , Svg.Attributes.height <| px h
-        , Svg.Attributes.x <| px offset.x
-        , Svg.Attributes.y <| px offset.y
+        , Svg.Attributes.transform <| move ++ scale
+        , Svg.Attributes.d curve
+--        , Svg.Attributes.stroke "black"
+--        , Svg.Attributes.strokeWidth "2px"
+        , Svg.Attributes.fillOpacity "0.0"
         ]
         []
     ]
