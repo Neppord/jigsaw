@@ -1,26 +1,9 @@
 module Edge exposing (..)
 
-import Browser
-import Html exposing (..)
-import Html.Attributes
-import Html.Events
-import Svg
-import Svg.Attributes
 import Random
 import Array
 
 import Point exposing (Point)
-
-main =
-  Browser.element
-    { init = init
-    , update = update
-    , view = view
-    , subscriptions = \_ -> Sub.none
-    }
-
-type Msg
-  = Button
 
 type alias Model =
   { curves : String
@@ -28,24 +11,6 @@ type alias Model =
   , nx : Int
   , ny : Int
   }
-
-init : () -> (Model, Cmd Msg)
-init () =
-  ( { curves = curveFromSingleEdge defaultPoints
-    , seed = Random.initialSeed 0
-    , nx = 5
-    , ny = 5
-    }
-  , Cmd.none
-  )
-
-curveFromSingleEdge edge =
-  "M 0 0 "
-  ++ edgeToString (makeEdge "N" edge)
-  ++ edgeToString (makeEdge "E" edge)
-  ++ edgeToString (makeEdge "S" edge)
-  ++ edgeToString (makeEdge "W" edge)
-
 
 makeEdgePoints : Int -> Random.Seed -> (Array.Array EdgePoints, Random.Seed)
 makeEdgePoints n seed =
@@ -73,21 +38,6 @@ makeEdgePoints n seed =
   in
     (edgePoints, seed2)
 
-update : Msg -> Model -> (Model, Cmd Msg)
-update msg model =
-  let
-    (edgePoints, newSeed) =
-      makeEdgePoints 4 model.seed
-
-    newCurves =
-      "M 0 0 "
-      ++ (edgeToString <| makeEdge "N" <| getHorizontalEdge 0 edgePoints)
-      ++ (edgeToString <| makeEdge "E" <| getVerticalEdge 1 edgePoints)
-      ++ (edgeToString <| makeEdge "S" <| getHorizontalEdge 2 edgePoints)
-      ++ (edgeToString <| makeEdge "W" <| getVerticalEdge 5 edgePoints)
-
-  in
-    ( {model | seed = newSeed, curves = newCurves}, Cmd.none )
 
 type Edge
   = Curved { b1 : Bezier, b2 : Bezier, b3 : Bezier, b4 : Bezier}
@@ -107,10 +57,6 @@ defaultCurvedEdge =
     , b3 = S (Point 140 -25) (Point 120 0)
     , b4 = S (Point 150 20) (Point 200 0)
     }
-
-defaultFlatEdge =
-  Flat { a = Point 0 0, b = Point 200 0 }
-
 
 defaultPoints =
   [ Point 50 20
@@ -225,37 +171,3 @@ getEdge orientation nx ny id edgePoints =
         |> Maybe.withDefault [Point 0 0, Point 200 0]
   in
     makeEdge orientation points
-
-getHorizontalEdge id edgePoints =
-  Array.get id edgePoints |> Maybe.withDefault [Point 0 0, Point 200 0]
-
-getVerticalEdge id edgePoints =
-  Array.get id edgePoints |> Maybe.withDefault [Point 0 0, Point 200 0]
-
-
-
-view : Model -> Html Msg
-view model =
-  Html.div
-  [ Html.Attributes.style "width" <| "1000px"
-  , Html.Attributes.style "height" <| "800px"
-  ]
-  [ Html.button [ Html.Events.onClick Button ] [ Html.text "scramble" ]
-  , Svg.svg
-    [ Svg.Attributes.width "100%"
-    , Svg.Attributes.height "100%"
-    ]
-    [ Svg.g
-      [ Svg.Attributes.transform "translate(100,100)" ]
-      [ Svg.path
-        [ Svg.Attributes.d model.curves
-        , Svg.Attributes.stroke "red"
-        , Svg.Attributes.strokeWidth "1px"
-        , Svg.Attributes.fillOpacity "1.0"
---        , Svg.Attributes.transform "rotate(45)"
-        ]
-        []
-      ]
-
-    ]
-  ]

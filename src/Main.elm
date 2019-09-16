@@ -685,8 +685,6 @@ pieceClipPath image edgePoints id =
     w = toFloat (image.width // image.xpieces)
     h = toFloat (image.height // image.ypieces)
     offset = pieceIdToOffset image id
-    px num =
-      String.fromInt num ++ "px"
 
     curve = Edge.pieceCurveFromPieceId image.xpieces image.ypieces id edgePoints
     move = "translate(" ++ Point.toString offset ++ ") "
@@ -698,8 +696,6 @@ pieceClipPath image edgePoints id =
         [ Svg.Attributes.id <| pieceOutlineId id
         , Svg.Attributes.transform <| move ++ scale
         , Svg.Attributes.d curve
---        , Svg.Attributes.stroke "black"
---        , Svg.Attributes.strokeWidth "2px"
         , Svg.Attributes.fillOpacity "0.0"
         ]
         []
