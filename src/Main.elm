@@ -11,6 +11,8 @@ import Json.Decode
 import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Events
+import Svg.Keyed
+import Svg.Lazy exposing (lazy, lazy2, lazy3)
 import Random
 import Random.List
 
@@ -136,7 +138,7 @@ init () =
 resetModel : JigsawImage -> Random.Seed -> Model
 resetModel image seed =
   let
-    (w, h) = (1400, 900)
+    (w, h) = (1800, 1100)
     (nx, ny) = (image.xpieces, image.ypieces)
     numberOfEdges = 2 * nx * ny - nx - ny
 
@@ -543,10 +545,14 @@ view : Model -> Html Msg
 view model =
   let
     definitions =
-      Svg.defs [] ( definePuzzleImage model.image :: definePieceClipPaths model.image model.edgePoints )
+      ( "definitions "
+      , Svg.defs []
+        ( lazy definePuzzleImage model.image :: definePieceClipPaths model.image model.edgePoints )
+      )
 
     background =
-      Svg.rect
+      ( "background"
+      , Svg.rect
         [ Svg.Attributes.width "100%"
         , Svg.Attributes.height "100%"
         , Svg.Attributes.fill "blue"
@@ -554,13 +560,15 @@ view model =
         , onMouseDown -1
         ]
         []
+      )
 
     svgSelectionBox box color =
       let
         topLeft = boxTopLeft box
         bottomRight = boxBottomRight box
       in
-        Svg.rect
+        ( "selectionBox"
+        , Svg.rect
           [ Svg.Attributes.width <| String.fromInt (bottomRight.x - topLeft.x)
           , Svg.Attributes.height <| String.fromInt (bottomRight.y - topLeft.y)
           , Svg.Attributes.fill color
@@ -571,6 +579,7 @@ view model =
           , translate (topLeft)
           ]
           []
+        )
 
     normalSelection =
       case model.selectionBox of
@@ -590,18 +599,21 @@ view model =
       List.map (svgMember pg.id pg.position pg.isSelected) pg.members
 
     svgMember groupId pos selected id =
-      Svg.g [ onMouseDown groupId, translate pos ]
-        <| [svgClipPath id] ++ [svgOutlines selected id]
+      ( "group-" ++ String.fromInt groupId
+      , Svg.g
+        [ onMouseDown groupId, translate pos ]
+        ([lazy svgClipPath id] ++ [lazy2 svgOutlines selected id])
+      )
 
     svgClipPath id =
-        Svg.use
+      Svg.use
         [ Svg.Attributes.xlinkHref <| "#puzzle-image"
         , Svg.Attributes.clipPath <| clipPathRef id
         ]
         []
 
     svgOutlines selected id =
-        Svg.use
+      Svg.use
         [ Svg.Attributes.xlinkHref <| "#" ++ pieceOutlineId id
         , Svg.Attributes.stroke <| if selected then "red" else "black"
         , Svg.Attributes.strokeWidth "5px"
@@ -610,15 +622,14 @@ view model =
 
   in
   Html.div [ ]
-    [ Html.h1 [] [ Html.text ( "Kitten jigsaw! " ) ]
-    , Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
+    [ Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
 --    , Html.h1 [] [ Html.text model.debug ]
     , Html.div
         [ Html.Attributes.style "background-color" "#CCCCCC"
         , Html.Attributes.style "width" <| String.fromInt model.width ++ "px"
         , Html.Attributes.style "height" <| String.fromInt model.height ++ "px"
         ]
-        [ Svg.svg
+        [ Svg.Keyed.node "svg"
           ( svgAttributes model )
           ( definitions :: background :: pieces ++ normalSelection)
         ]
@@ -677,7 +688,7 @@ definePuzzleImage image =
 
 definePieceClipPaths : JigsawImage -> A.Array EdgePoints -> List (Svg Msg)
 definePieceClipPaths image edgePoints =
-  List.map (pieceClipPath image edgePoints) (List.range 0 (image.xpieces * image.ypieces - 1))
+  List.map (lazy3 pieceClipPath image edgePoints) (List.range 0 (image.xpieces * image.ypieces - 1))
 
 pieceClipPath : JigsawImage -> A.Array EdgePoints -> Int -> Svg Msg
 pieceClipPath image edgePoints id =
