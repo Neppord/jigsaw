@@ -271,7 +271,7 @@ update msg model =
           else
             selectPieceGroup model id coordinate keyboard
       in
-        ( newModel, Cmd.none )
+        ( {newModel | debug = String.fromInt id}, Cmd.none )
 
     MouseUp ->
       let
@@ -640,6 +640,8 @@ view model =
         , Html.Attributes.style "position" "absolute"
         , Html.Attributes.style "top" top
         , Html.Attributes.style "left" left
+        , onMouseDown pgid
+
 --        , Html.Attributes.style "z-index" "10"
 --        , Html.Attributes.style "clipPath" "url(#mypath)"
         ]
@@ -648,7 +650,6 @@ view model =
           [ Svg.Attributes.width "100%"
           , Svg.Attributes.height "100%"
           , Svg.Attributes.viewBox <| String.fromInt (offset.x - w//4) ++ " " ++ String.fromInt (offset.y - h//4) ++ " " ++ Point.toString (Point w h)
-          , onMouseDown pgid
           ]
           [ Svg.use
             [ Svg.Attributes.xlinkHref "#puzzle-image"
@@ -661,7 +662,7 @@ view model =
   in
   Html.div [ ]
     [ Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
---    , Html.h1 [] [ Html.text model.debug ]
+    , Html.h1 [] [ Html.text model.debug ]
 --    , Html.div
 --        [ Html.Attributes.style "background-color" "#CCCCCC"
 --        , Html.Attributes.style "width" <| String.fromInt model.width ++ "px"
@@ -677,6 +678,8 @@ view model =
       , Html.Attributes.style "height" "500px"
       , Html.Attributes.style "position" "absolute"
       , Html.Attributes.style "top" "100px"
+--      , onMouseDown -1
+      , onMouseUp
       ]
       (
       [
@@ -715,13 +718,13 @@ svgAttributes model =
   else
     attributes
 
-onMouseUp : Svg.Attribute Msg
+onMouseUp : Html.Attribute Msg
 onMouseUp =
-  Svg.Events.onMouseUp MouseUp
+  Html.Events.onMouseUp MouseUp
 
-onMouseDown : Int -> Svg.Attribute Msg
+onMouseDown : Int -> Html.Attribute Msg
 onMouseDown id =
-  Svg.Events.on "mousedown"
+  Html.Events.on "mousedown"
     <| Json.Decode.map4 (\x y shift ctrl -> MouseDown id (Point x y) {shift=shift, ctrl=ctrl})
       (Json.Decode.field "offsetX" Json.Decode.int)
       (Json.Decode.field "offsetY" Json.Decode.int)
