@@ -620,19 +620,84 @@ view model =
         ]
         []
 
+    pieceGroupDiv pg =
+      List.map (pieceDiv pg.position pg.id) pg.members
+
+    pieceDiv pos pgid pid =
+      let
+        offset = pieceIdToOffset model.image pid
+        w = 2 * model.image.width // model.image.xpieces
+        h = 2 * model.image.height // model.image.ypieces
+        top = String.fromInt (pos.y + offset.y - h//4) ++ "px"
+        left = String.fromInt (pos.x + offset.x - w//4) ++ "px"
+      in
+      Html.div
+--        [ Html.Attributes.style "background-color" "#FF0000"
+        [
+          Html.Attributes.style "background" "transparent"
+        , Html.Attributes.style "width" <| String.fromInt w ++ "px"
+        , Html.Attributes.style "height" <| String.fromInt h ++ "px"
+        , Html.Attributes.style "position" "absolute"
+        , Html.Attributes.style "top" top
+        , Html.Attributes.style "left" left
+--        , Html.Attributes.style "z-index" "10"
+--        , Html.Attributes.style "clipPath" "url(#mypath)"
+        ]
+        [
+          Svg.svg
+          [ Svg.Attributes.width "100%"
+          , Svg.Attributes.height "100%"
+          , Svg.Attributes.viewBox <| String.fromInt (offset.x - w//4) ++ " " ++ String.fromInt (offset.y - h//4) ++ " " ++ Point.toString (Point w h)
+          , onMouseDown pgid
+          ]
+          [ Svg.use
+            [ Svg.Attributes.xlinkHref "#puzzle-image"
+            , Svg.Attributes.clipPath <| clipPathRef pid
+            ]
+            []
+          ]
+        ]
+
   in
   Html.div [ ]
     [ Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
 --    , Html.h1 [] [ Html.text model.debug ]
+--    , Html.div
+--        [ Html.Attributes.style "background-color" "#CCCCCC"
+--        , Html.Attributes.style "width" <| String.fromInt model.width ++ "px"
+--        , Html.Attributes.style "height" <| String.fromInt model.height ++ "px"
+--        ]
+--        [ Svg.Keyed.node "svg"
+--          ( svgAttributes model )
+--          ( definitions :: background :: pieces ++ normalSelection)
+--        ]
     , Html.div
-        [ Html.Attributes.style "background-color" "#CCCCCC"
-        , Html.Attributes.style "width" <| String.fromInt model.width ++ "px"
-        , Html.Attributes.style "height" <| String.fromInt model.height ++ "px"
+      [ Html.Attributes.style "background-color" "#CCCCCC"
+      , Html.Attributes.style "width" "1000px"
+      , Html.Attributes.style "height" "500px"
+      , Html.Attributes.style "position" "absolute"
+      , Html.Attributes.style "top" "100px"
+      ]
+      (
+      [
+        Svg.svg
+        []
+        [ Svg.defs []
+          (definePuzzleImage model.image :: definePieceClipPaths model.image model.edgePoints)
         ]
-        [ Svg.Keyed.node "svg"
-          ( svgAttributes model )
-          ( definitions :: background :: pieces ++ normalSelection)
-        ]
+--        [
+--          Html.div
+--          [ Html.Attributes.style "background-color" "#FF0000"
+--          , Html.Attributes.style "width" <| "100px"
+--          , Html.Attributes.style "height" <| "100px"
+--          , Html.Attributes.style "position" "absolute"
+--          , Html.Attributes.style "top" <| "100px"
+--          , Html.Attributes.style "left" <| "100px"
+--          , Html.Attributes.style "z-index" "10"
+--          ]
+--          []
+--        ]
+      ] ++ (List.concat <| List.map pieceGroupDiv <| D.values model.pieceGroups))
     ]
 
 
@@ -710,7 +775,7 @@ pieceClipPath image edgePoints id =
         , Svg.Attributes.fillOpacity "0.0"
         ]
         []
-    ]
+      ]
 
 pieceOutlineId : Int -> String
 pieceOutlineId id =
