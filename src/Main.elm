@@ -11,8 +11,6 @@ import Html.Events
 import Json.Decode
 import Svg exposing (Svg)
 import Svg.Attributes
-import Svg.Events
-import Svg.Keyed
 import Svg.Lazy exposing (lazy, lazy2, lazy3)
 import Random
 import Random.List
@@ -127,8 +125,8 @@ init () =
       { path = "../resources/kitten.png"
       , width = 533
       , height = 538
-      , xpieces = 6
-      , ypieces = 6
+      , xpieces = 30
+      , ypieces = 30
       }
     model =
       resetModel image (Random.initialSeed 0)
@@ -244,9 +242,9 @@ isPieceInsideBox image pos boxTL boxBR id =
     pieceBR = Point.add pieceTL <| Point pieceWidth pieceHeight
   in
     ( pieceTL.x < boxBR.x ) &&
-    ( pieceTL.y < boxBR.y ) &&
+    ( pieceTL.y + 100 < boxBR.y ) &&
     ( pieceBR.x > boxTL.x ) &&
-    ( pieceBR.y > boxTL.y )
+    ( pieceBR.y + 100 > boxTL.y )
 
 isPieceGroupInsideBox : JigsawImage -> Point -> Point -> PieceGroup -> Bool
 isPieceGroupInsideBox image boxTL boxBR pieceGroup =
@@ -274,7 +272,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   let
     trackMouseMovement =
-      if False then
+      if model.cursor /= Nothing then
         Browser.Events.onMouseMove
           <| Json.Decode.map2 (\x y -> MouseMove (Point x y))
             (Json.Decode.field "pageX" Json.Decode.int)
@@ -289,10 +287,14 @@ subscriptions model =
           (Json.Decode.field "pageY" Json.Decode.int)
           (Json.Decode.field "shiftKey" Json.Decode.bool)
           (Json.Decode.field "ctrlKey" Json.Decode.bool)
+
+    trackMouseUp =
+      Browser.Events.onMouseUp (Json.Decode.succeed MouseUp)
   in
   Sub.batch
     [ trackMouseMovement
     , trackMouseDown
+    , trackMouseUp
     ]
 
 
@@ -309,24 +311,21 @@ update msg model =
 
     MouseDown coordinate keyboard ->
       let
-        clickedPieceGroups =
-          List.filter (isPointInsidePieceGroup model.image coordinate) <| D.values model.pieceGroups
-        topPieceGroup =
-          case clickedPieceGroups of
-            x :: xs -> x
-            _ -> defaultPieceGroup
+        clickedPieceGroup =
+          D.values model.pieceGroups
+            |> List.filter (isPointInsidePieceGroup model.image coordinate)
+            |> List.foldl (\a b -> if a.zlevel > b.zlevel then a else b) defaultPieceGroup
 
+        clickedOnBackground =
+          clickedPieceGroup.id == -10
+
+        newModel =
+          if clickedOnBackground then
+            startSelectionBox model coordinate keyboard
+          else
+            selectPieceGroup model clickedPieceGroup.id coordinate keyboard
       in
-      ( { model | debug = Point.toString coordinate ++ "; " ++ String.fromInt topPieceGroup.id }, Cmd.none)
---      let
---        clickedOnBackground = id == -1
---        newModel =
---          if clickedOnBackground then
---            startSelectionBox model coordinate keyboard
---          else
---            selectPieceGroup model id coordinate keyboard
---      in
---        ( {newModel | debug = String.fromInt id}, Cmd.none )
+        ( {newModel | debug = String.fromInt clickedPieceGroup.id}, Cmd.none )
 
     MouseUp ->
       let
@@ -363,84 +362,83 @@ update msg model =
         ( newModel, Cmd.none )
 
     MouseMove newPos ->
-      ( {model | debug = Point.toString newPos}, Cmd.none )
---      case model.cursor of
---        Nothing ->
---          ( model, Cmd.none )
---
---        Just oldPos ->
---          case model.selectionBox of
---            NullBox ->
---              let
---                movePieceGroup : Int -> PieceGroup -> PieceGroup
---                movePieceGroup _ pg =
---                  if pg.isSelected then
---                    { pg | position = Point.add pg.position <| Point.sub newPos oldPos}
---                  else
---                    pg
---                updatedModel =
---                  { model
---                  | cursor = Just newPos
---                  , pieceGroups = D.map movePieceGroup model.pieceGroups
---                  }
---              in
---                ( updatedModel, Cmd.none )
---
---            Normal box ->
---              let
---                tl = boxTopLeft box
---                br = boxBottomRight box
---                selectPiece _ pg =
---                  let
---                    originallySelected = S.member pg.id box.selectedIds
---                    insideBoxNow = isPieceGroupInsideBox model.image tl br pg
---                    newSelectionStatus =
---                      if originallySelected && insideBoxNow then
---                        True
---                      else if originallySelected && not insideBoxNow then
---                        True
---                      else if not originallySelected && insideBoxNow then
---                        True
---                      else
---                        False
---                  in
---                    { pg | isSelected = newSelectionStatus }
---                updatedPieceGroups =
---                  D.map selectPiece model.pieceGroups
---              in
---              ( { model
---                | selectionBox = Normal {box | movingCorner = newPos}
---                , pieceGroups = updatedPieceGroups
---                }
---              , Cmd.none )
---            Inverted box ->
---              let
---                tl = boxTopLeft box
---                br = boxBottomRight box
---                selectPiece _ pg =
---                  let
---                    originallySelected = S.member pg.id box.selectedIds
---                    insideBoxNow = isPieceGroupInsideBox model.image tl br pg
---                    newSelectionStatus =
---                      if originallySelected && insideBoxNow then
---                        False
---                      else if originallySelected && not insideBoxNow then
---                        True
---                      else if not originallySelected && insideBoxNow then
---                        True
---                      else
---                        False
---                  in
---                    { pg | isSelected = newSelectionStatus }
---
---                updatedPieceGroups =
---                  D.map selectPiece model.pieceGroups
---              in
---              ( { model
---                | selectionBox = Inverted {box | movingCorner = newPos}
---                , pieceGroups = updatedPieceGroups
---                }
---              , Cmd.none )
+      case model.cursor of
+        Nothing ->
+          ( model, Cmd.none )
+
+        Just oldPos ->
+          case model.selectionBox of
+            NullBox ->
+              let
+                movePieceGroup : Int -> PieceGroup -> PieceGroup
+                movePieceGroup _ pg =
+                  if pg.isSelected then
+                    { pg | position = Point.add pg.position <| Point.sub newPos oldPos}
+                  else
+                    pg
+                updatedModel =
+                  { model
+                  | cursor = Just newPos
+                  , pieceGroups = D.map movePieceGroup model.pieceGroups
+                  }
+              in
+                ( updatedModel, Cmd.none )
+
+            Normal box ->
+              let
+                tl = boxTopLeft box
+                br = boxBottomRight box
+                selectPiece _ pg =
+                  let
+                    originallySelected = S.member pg.id box.selectedIds
+                    insideBoxNow = isPieceGroupInsideBox model.image tl br pg
+                    newSelectionStatus =
+                      if originallySelected && insideBoxNow then
+                        True
+                      else if originallySelected && not insideBoxNow then
+                        True
+                      else if not originallySelected && insideBoxNow then
+                        True
+                      else
+                        False
+                  in
+                    { pg | isSelected = newSelectionStatus }
+                updatedPieceGroups =
+                  D.map selectPiece model.pieceGroups
+              in
+              ( { model
+                | selectionBox = Normal {box | movingCorner = newPos}
+                , pieceGroups = updatedPieceGroups
+                }
+              , Cmd.none )
+            Inverted box ->
+              let
+                tl = boxTopLeft box
+                br = boxBottomRight box
+                selectPiece _ pg =
+                  let
+                    originallySelected = S.member pg.id box.selectedIds
+                    insideBoxNow = isPieceGroupInsideBox model.image tl br pg
+                    newSelectionStatus =
+                      if originallySelected && insideBoxNow then
+                        False
+                      else if originallySelected && not insideBoxNow then
+                        True
+                      else if not originallySelected && insideBoxNow then
+                        True
+                      else
+                        False
+                  in
+                    { pg | isSelected = newSelectionStatus }
+
+                updatedPieceGroups =
+                  D.map selectPiece model.pieceGroups
+              in
+              ( { model
+                | selectionBox = Inverted {box | movingCorner = newPos}
+                , pieceGroups = updatedPieceGroups
+                }
+              , Cmd.none )
 
 
 selectPieceGroup : Model -> Int -> Point -> Keyboard -> Model
@@ -600,215 +598,108 @@ currentSelection pieceGroups =
 view : Model -> Html Msg
 view model =
   let
-    definitions =
-      ( "definitions "
-      , Svg.defs []
-        ( lazy definePuzzleImage model.image :: definePieceClipPaths model.image model.edgePoints )
-      )
+    makeDivSelectionBox =
+      case model.selectionBox of
+        Normal box ->
+          [ divSelectionBox box "rgba(0,0,255,0.2)" ]
+        Inverted box ->
+          [ divSelectionBox box "rgba(0,255,0,0.2)" ]
+        NullBox ->
+          []
 
-    background =
-      ( "background"
-      , Svg.rect
-        [ Svg.Attributes.width "100%"
-        , Svg.Attributes.height "100%"
-        , Svg.Attributes.fill "blue"
-        , Svg.Attributes.opacity "0.0"
-        ]
-        []
-      )
-
-    svgSelectionBox box color =
+    divSelectionBox box color =
       let
         topLeft = boxTopLeft box
         bottomRight = boxBottomRight box
       in
-        ( "selectionBox"
-        , Svg.rect
-          [ Svg.Attributes.width <| String.fromInt (bottomRight.x - topLeft.x)
-          , Svg.Attributes.height <| String.fromInt (bottomRight.y - topLeft.y)
-          , Svg.Attributes.fill color
-          , Svg.Attributes.fillOpacity "0.2"
-          , Svg.Attributes.stroke <| "dark"++color
-          , Svg.Attributes.strokeWidth "2px"
-          , Svg.Attributes.strokeOpacity "0.9"
-          , translate (topLeft)
+        Html.div
+          [ Html.Attributes.style "width" <| String.fromInt (bottomRight.x - topLeft.x) ++ "px"
+          , Html.Attributes.style "height" <| String.fromInt (bottomRight.y - topLeft.y) ++ "px"
+          , Html.Attributes.style "background-color" color
+          , Html.Attributes.style "border-style" "dotted"
+          , Html.Attributes.style "top" <| String.fromInt (topLeft.y - 100) ++ "px"
+          , Html.Attributes.style "left" <| String.fromInt topLeft.x ++ "px"
+          , Html.Attributes.style "z-index" <| String.fromInt (model.maxZLevel + 1)
+          , Html.Attributes.style "position" "absolute"
           ]
           []
-        )
-
-    normalSelection =
-      case model.selectionBox of
-        Normal box ->
-          [ svgSelectionBox box "blue" ]
-        Inverted box ->
-          [ svgSelectionBox box "green" ]
-        NullBox -> []
-
-    pieces =
-      List.concat
-        <| List.map svgPieceGroup
-        <| List.sortBy .zlevel
-        <| D.values model.pieceGroups
-
-    svgPieceGroup pg =
-      List.map (svgMember pg.id pg.position pg.isSelected) pg.members
-
-    svgMember groupId pos selected id =
-      ( "group-" ++ String.fromInt groupId
-      , Svg.g
-        [ translate pos ]
-        ([lazy svgClipPath id] ++ [lazy2 svgOutlines selected id])
-      )
-
-    svgClipPath id =
-      Svg.use
-        [ Svg.Attributes.xlinkHref <| "#puzzle-image"
-        , Svg.Attributes.clipPath <| clipPathRef id
-        ]
-        []
-
-    svgOutlines selected id =
-      Svg.use
-        [ Svg.Attributes.xlinkHref <| "#" ++ pieceOutlineId id
-        , Svg.Attributes.stroke <| if selected then "red" else "black"
-        , Svg.Attributes.strokeWidth "5px"
-        ]
-        []
 
     pieceGroupDiv pg =
-      List.map (pieceDiv pg.position pg.id) pg.members
+      List.map (pieceDiv pg) pg.members
 
-    pieceDiv pos pgid pid =
+    turnOffTheBloodyImageDragging =
+      [ Html.Attributes.style "-webkit-user-select" "none"
+      , Html.Attributes.style "-khtml-user-select" "none"
+      , Html.Attributes.style "-moz-user-select" "none"
+      , Html.Attributes.style "-o-user-select" "none"
+      , Html.Attributes.style "user-select" "none"
+      , Html.Attributes.draggable "false"
+      ]
+
+    pieceDiv pg pid =
       let
         offset = pieceIdToOffset model.image pid
         w = 2 * model.image.width // model.image.xpieces
         h = 2 * model.image.height // model.image.ypieces
-        top = String.fromInt (pos.y + offset.y - h//4) ++ "px"
-        left = String.fromInt (pos.x + offset.x - w//4) ++ "px"
+        top = String.fromInt (pg.position.y + offset.y - h//4) ++ "px"
+        left = String.fromInt (pg.position.x + offset.x - w//4) ++ "px"
       in
       Html.div
---        [ Html.Attributes.style "background-color" "#FF0000"
-        [
-          Html.Attributes.style "background" "transparent"
-        , Html.Attributes.style "width" <| String.fromInt w ++ "px"
+      (
+        [ Html.Attributes.style "width" <| String.fromInt w ++ "px"
         , Html.Attributes.style "height" <| String.fromInt h ++ "px"
         , Html.Attributes.style "position" "absolute"
         , Html.Attributes.style "top" top
         , Html.Attributes.style "left" left
-
---        , Html.Attributes.style "z-index" "10"
---        , Html.Attributes.style "clipPath" "url(#mypath)"
-        ]
-        [
-          Svg.svg
-          [ Svg.Attributes.width "100%"
-          , Svg.Attributes.height "100%"
-          , Svg.Attributes.viewBox <| String.fromInt (offset.x - w//4) ++ " " ++ String.fromInt (offset.y - h//4) ++ " " ++ Point.toString (Point w h)
-          ]
-          [ Svg.use
-            [ Svg.Attributes.xlinkHref "#puzzle-image"
-            , Svg.Attributes.clipPath <| clipPathRef pid
-            ]
-            []
-          ]
-        ]
+        , Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
+        , Html.Attributes.style "clipPath" <| clipPathRef pid
+        , Html.Attributes.style "background-image" <| "url('" ++ model.image.path ++ "')"
+        , Html.Attributes.style "background-position"
+            <| (String.fromInt (w//4 - offset.x)) ++ "px " ++ (String.fromInt (h//4 - offset.y)) ++ "px"
+        ] ++ turnOffTheBloodyImageDragging
+      )
+      [
+      ]
 
   in
   Html.div [ ]
     [ Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
-    , Html.h1 [] [ Html.text model.debug ]
---    , Html.div
---        [ Html.Attributes.style "background-color" "#CCCCCC"
---        , Html.Attributes.style "width" <| String.fromInt model.width ++ "px"
---        , Html.Attributes.style "height" <| String.fromInt model.height ++ "px"
---        ]
---        [ Svg.Keyed.node "svg"
---          ( svgAttributes model )
---          ( definitions :: background :: pieces ++ normalSelection)
---        ]
+--    , Html.h1 [] [ Html.text model.debug ]
     , Html.div
       [ Html.Attributes.style "background-color" "#CCCCCC"
-      , Html.Attributes.style "width" "1000px"
-      , Html.Attributes.style "height" "500px"
+      , Html.Attributes.style "width" <| String.fromInt model.image.width ++ "px"
+      , Html.Attributes.style "height" <| String.fromInt model.image.height ++ "px"
       , Html.Attributes.style "position" "absolute"
       , Html.Attributes.style "top" "100px"
-      , onMouseUp
+      , Html.Attributes.style "left" "0px"
+      , Html.Attributes.draggable "false"
       ]
-      (
-      [
-        Svg.svg
+      ([ Html.div
         []
-        [ Svg.defs []
-          (definePuzzleImage model.image :: definePieceClipPaths model.image model.edgePoints)
+        (List.concat <| List.map pieceGroupDiv <| D.values model.pieceGroups)
+      , Html.div
+        []
+        [ Svg.svg
+          []
+          [ Svg.defs
+            []
+            (definePieceClipPaths model.image model.edgePoints)
+          ]
         ]
---        [
---          Html.div
---          [ Html.Attributes.style "background-color" "#FF0000"
---          , Html.Attributes.style "width" <| "100px"
---          , Html.Attributes.style "height" <| "100px"
---          , Html.Attributes.style "position" "absolute"
---          , Html.Attributes.style "top" <| "100px"
---          , Html.Attributes.style "left" <| "100px"
---          , Html.Attributes.style "z-index" "10"
---          ]
---          []
---        ]
-      ] ++ (List.concat <| List.map pieceGroupDiv <| D.values model.pieceGroups))
+      ] ++ makeDivSelectionBox)
     ]
-
-
-svgAttributes model =
-  let
-    attributes =
-      [ Svg.Attributes.width "100%"
-      , Svg.Attributes.height "100%"
-      ]
-    shouldTrackMouseMovement =
-      model.cursor /=  Nothing
-  in
-  if shouldTrackMouseMovement then
-    onMouseMove :: onMouseUp :: attributes
-  else
-    attributes
-
-onMouseUp : Html.Attribute Msg
-onMouseUp =
-  Html.Events.onMouseUp MouseUp
-
-onMouseMove : Svg.Attribute Msg
-onMouseMove =
-  Svg.Events.on "mousemove"
-    <| Json.Decode.map2 (\x y -> MouseMove (Point x y))
-      (Json.Decode.field "offsetX" Json.Decode.int)
-      (Json.Decode.field "offsetY" Json.Decode.int)
-
-translate : Point -> Svg.Attribute Msg
-translate position =
-  Svg.Attributes.transform
-    <| "translate(" ++ String.fromInt position.x ++ "," ++ String.fromInt position.y ++ ")"
-
-
-definePuzzleImage : JigsawImage -> Svg Msg
-definePuzzleImage image =
-  Svg.image
-    [ Svg.Attributes.id "puzzle-image"
-    , Svg.Attributes.xlinkHref image.path
-    , Svg.Attributes.pointerEvents "none"
-    ]
-    []
-
 
 definePieceClipPaths : JigsawImage -> A.Array EdgePoints -> List (Svg Msg)
 definePieceClipPaths image edgePoints =
-  List.map (lazy3 pieceClipPath image edgePoints) (List.range 0 (image.xpieces * image.ypieces - 1))
+  List.map (pieceClipPath image edgePoints) (List.range 0 (image.xpieces * image.ypieces - 1))
 
 pieceClipPath : JigsawImage -> A.Array EdgePoints -> Int -> Svg Msg
 pieceClipPath image edgePoints id =
   let
     w = toFloat (image.width // image.xpieces)
     h = toFloat (image.height // image.ypieces)
-    offset = pieceIdToOffset image id
-
+--    offset = pieceIdToOffset image id
+    offset = Point (floor (w/2)) (floor (h/2))
     curve = Edge.pieceCurveFromPieceId image.xpieces image.ypieces id edgePoints
     move = "translate(" ++ Point.toString offset ++ ") "
     scale = "scale(" ++ String.fromFloat (w / 200.0) ++ " " ++ String.fromFloat (h / 200.0) ++ ")"
