@@ -11,9 +11,12 @@ import Html.Events
 import Json.Decode
 import Svg exposing (Svg)
 import Svg.Attributes
-import Svg.Lazy exposing (lazy, lazy2, lazy3)
+import Math.Matrix4 as Mat4 exposing (Mat4)
+import Math.Vector3 as Vec3 exposing (Vec3, vec3)
+import WebGL
 import Random
 import Random.List
+
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
@@ -125,8 +128,8 @@ init () =
       { path = "../resources/kitten.png"
       , width = 533
       , height = 538
-      , xpieces = 30
-      , ypieces = 30
+      , xpieces = 60
+      , ypieces = 60
       }
     model =
       resetModel image (Random.initialSeed 0)
@@ -241,10 +244,10 @@ isPieceInsideBox image pos boxTL boxBR id =
     pieceTL = Point.add pos <| pieceIdToOffset image id
     pieceBR = Point.add pieceTL <| Point pieceWidth pieceHeight
   in
-    ( pieceTL.x < boxBR.x ) &&
-    ( pieceTL.y + 100 < boxBR.y ) &&
-    ( pieceBR.x > boxTL.x ) &&
-    ( pieceBR.y + 100 > boxTL.y )
+    ( pieceTL.x <= boxBR.x ) &&
+    ( pieceTL.y + 100 <= boxBR.y ) &&
+    ( pieceBR.x >= boxTL.x ) &&
+    ( pieceBR.y + 100 >= boxTL.y )
 
 isPieceGroupInsideBox : JigsawImage -> Point -> Point -> PieceGroup -> Bool
 isPieceGroupInsideBox image boxTL boxBR pieceGroup =
@@ -258,10 +261,10 @@ isPointInsidePiece image point pos id =
     pieceTL = Point.add pos <| pieceIdToOffset image id
     pieceBR = Point.add pieceTL <| Point pieceWidth pieceHeight
   in
-    ( pieceTL.x < point.x ) &&
-    ( pieceTL.y + 100 < point.y ) &&
-    ( pieceBR.x > point.x ) &&
-    ( pieceBR.y + 100 > point.y )
+    ( pieceTL.x <= point.x ) &&
+    ( pieceTL.y + 100 <= point.y ) &&
+    ( pieceBR.x >= point.x ) &&
+    ( pieceBR.y + 100 >= point.y )
 
 isPointInsidePieceGroup image point pieceGroup =
   List.any (isPointInsidePiece image point pieceGroup.position) pieceGroup.members
@@ -674,19 +677,20 @@ view model =
       , Html.Attributes.style "left" "0px"
       , Html.Attributes.draggable "false"
       ]
-      ([ Html.div
-        []
-        (List.concat <| List.map pieceGroupDiv <| D.values model.pieceGroups)
-      , Html.div
-        []
-        [ Svg.svg
-          []
-          [ Svg.defs
-            []
-            (definePieceClipPaths model.image model.edgePoints)
-          ]
-        ]
-      ] ++ makeDivSelectionBox)
+      [ viewWebGL model ]
+--      ([ Html.div
+--        []
+--        (List.concat <| List.map pieceGroupDiv <| D.values model.pieceGroups)
+--      , Html.div
+--        []
+--        [ Svg.svg
+--          []
+--          [ Svg.defs
+--            []
+--            (definePieceClipPaths model.image model.edgePoints)
+--          ]
+--        ]
+--      ] ++ makeDivSelectionBox)
     ]
 
 definePieceClipPaths : JigsawImage -> A.Array EdgePoints -> List (Svg Msg)
@@ -727,3 +731,96 @@ clipPathRef : Int -> String
 clipPathRef id =
   "url(#" ++ pieceClipId id ++ ")"
 
+-- WEBGL STUFF
+
+type alias Uniforms =
+  { translation : Mat4
+  , scale : Mat4
+--  , rotation : Mat4
+  }
+
+type alias Vertex =
+  { position : Vec3
+  , color : Vec3
+  }
+
+
+viewWebGL : Model -> Html Msg
+viewWebGL model =
+  let
+
+    scale =
+      let
+        pieceWidth = toFloat <| model.image.width // model.image.xpieces
+        pieceHeight = toFloat <| model.image.height // model.image.ypieces
+      in
+      Mat4.makeScale
+        <| vec3 (pieceWidth / toFloat model.width) (pieceHeight / toFloat model.height) 1
+
+    makePieceEntity pos pid =
+      let
+        w = toFloat model.width
+        h = toFloat model.height
+        pieceWidth = toFloat <| model.image.width // model.image.xpieces
+        pieceHeight = toFloat <| model.image.height // model.image.ypieces
+        offset = pieceIdToOffset model.image pid
+        xpos = toFloat <| pos.x + offset.x
+        ypos = toFloat <| pos.y + offset.y
+        x = 2 * (xpos - w / 2 + pieceWidth / 2) / w
+        y = 2 * (h / 2 - ypos - pieceHeight / 2) / h
+        translation = Mat4.makeTranslate (vec3 x y 0)
+      in
+        WebGL.entity vertexShader fragmentShader mesh { translation = translation, scale = scale }
+
+    makePieceGroupEntity : PieceGroup -> List WebGL.Entity
+    makePieceGroupEntity pg =
+      List.map (makePieceEntity pg.position) pg.members
+--      WebGL.entity vertexShader fragmentShader mesh { translation = scale, scale = scale }
+
+  in
+    WebGL.toHtml
+      [ Html.Attributes.width model.width
+      , Html.Attributes.height model.height
+      , Html.Attributes.style "display" "block"
+      ]
+    ( List.concat <| List.map makePieceGroupEntity <| List.sortBy .zlevel <| D.values model.pieceGroups )
+
+mesh : WebGL.Mesh Vertex
+mesh =
+  let
+    v0 = Vertex (vec3 -1 -1 0) (vec3 0 0 0)
+    v1 = Vertex (vec3 1 -1 0) (vec3 0 0 0)
+    v2 = Vertex (vec3 1 1 0) (vec3 0 0 0)
+    v3 = Vertex (vec3 -1 1 0) (vec3 0 0 0)
+  in
+  WebGL.triangleFan
+    [ v0, v1, v2, v3 ]
+
+vertexShader : WebGL.Shader Vertex Uniforms { vcolor : Vec3 }
+vertexShader =
+    [glsl|
+        attribute vec3 position;
+        attribute vec3 color;
+        uniform mat4 translation;
+        uniform mat4 scale;
+
+        varying vec3 vcolor;
+
+        void main () {
+            gl_Position =  translation * scale * vec4(position, 1.0);
+            //gl_Position = vec4(position, 1.0);
+            vcolor = color;
+        }
+    |]
+
+
+fragmentShader : WebGL.Shader {} Uniforms { vcolor : Vec3 }
+fragmentShader =
+    [glsl|
+        precision mediump float;
+        varying vec3 vcolor;
+
+        void main () {
+            gl_FragColor = vec4(vcolor, 1.0);
+        }
+    |]
