@@ -1,19 +1,25 @@
 module Main exposing (..)
 
+
 import Set as S
 import Dict as D
 import Array as A
 import Browser
-import Browser.Events as E
+import Browser.Events
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
 import Json.Decode
 import Svg exposing (Svg)
 import Svg.Attributes
-import Svg.Events
+
+import Math.Matrix4 as Mat4 exposing (Mat4)
+import Math.Vector3 as Vec3 exposing (Vec3, vec3)
+import WebGL
+
 import Random
 import Random.List
+
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
@@ -32,7 +38,7 @@ main =
 -- MODEL
 
 type Msg
-  = MouseDown Int Point Keyboard
+  = MouseDown Point Keyboard
   | MouseMove Point
   | MouseUp
   | Scramble
@@ -128,12 +134,12 @@ init : () -> ( Model, Cmd Msg )
 init () =
   let
     image =
-      { path = "../resources/kitten.png"
-      , width = 533
-      , height = 538
-      , xpieces = 6
-      , ypieces = 6
-      , scale = 1.0
+      { path = "../resources/hongkong.jpg"
+      , width = 6000
+      , height = 4000
+      , xpieces = 30
+      , ypieces = 20
+      , scale = 0.2
       }
     model =
       resetModel image (Random.initialSeed 0)
@@ -251,23 +257,17 @@ isPieceInsideBox image pos boxTL boxBR id =
     pieceTL = Point.add pos <| pieceIdToOffset image id
     pieceBR = Point.add pieceTL <| Point pieceWidth pieceHeight
   in
-    ( pieceTL.x < boxBR.x ) &&
-    ( pieceTL.y < boxBR.y ) &&
-    ( pieceBR.x > boxTL.x ) &&
-    ( pieceBR.y > boxTL.y )
+    ( pieceTL.x <= boxBR.x ) &&
+    ( pieceTL.y + 100 <= boxBR.y ) &&
+    ( pieceBR.x >= boxTL.x ) &&
+    ( pieceBR.y + 100 >= boxTL.y )
 
 isPieceGroupInsideBox : JigsawImage -> Point -> Point -> PieceGroup -> Bool
 isPieceGroupInsideBox image boxTL boxBR pieceGroup =
   List.any (isPieceInsideBox image pieceGroup.position boxTL boxBR) pieceGroup.members
 
--- SUBSCRIPTIONS
 
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-  Sub.batch
-    [ E.onKeyDown (Json.Decode.map (keyDecoder True) (Json.Decode.field "key" Json.Decode.string))
-    , E.onKeyUp (Json.Decode.map (keyDecoder False) (Json.Decode.field "key" Json.Decode.string))
-    ]
+-- SUBSCRIPTIONS
 
 keyDecoder isDown key =
   case key of
@@ -284,6 +284,56 @@ keyDecoder isDown key =
     "Control" -> KeyChanged isDown Control
     "Shift" -> KeyChanged isDown Shift
     _ -> KeyChanged isDown Other
+
+isPointInsidePiece : JigsawImage -> Point -> Point -> Int -> Bool
+isPointInsidePiece image point pos id =
+  let
+    pieceWidth = floor <| image.scale * toFloat (image.width // image.xpieces)
+    pieceHeight = floor <| image.scale * toFloat (image.height // image.ypieces)
+    pieceTL = Point.add pos <| pieceIdToOffset image id
+    pieceBR = Point.add pieceTL <| Point pieceWidth pieceHeight
+  in
+    ( pieceTL.x <= point.x ) &&
+    ( pieceTL.y + 100 <= point.y ) &&
+    ( pieceBR.x >= point.x ) &&
+    ( pieceBR.y + 100 >= point.y )
+
+isPointInsidePieceGroup visibleGroups image point pieceGroup =
+  (S.member pieceGroup.visibilityGroup visibleGroups) &&
+  (List.any (isPointInsidePiece image point pieceGroup.position) pieceGroup.members)
+
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  let
+    trackMouseMovement =
+      if model.cursor /= Nothing then
+        Browser.Events.onMouseMove
+          <| Json.Decode.map2 (\x y -> MouseMove (Point x y))
+            (Json.Decode.field "pageX" Json.Decode.int)
+            (Json.Decode.field "pageY" Json.Decode.int)
+      else
+        Sub.none
+
+    trackMouseDown =
+      Browser.Events.onMouseDown
+        <| Json.Decode.map4 (\x y shift ctrl -> MouseDown (Point x y) {shift=shift, ctrl=ctrl})
+          (Json.Decode.field "pageX" Json.Decode.int)
+          (Json.Decode.field "pageY" Json.Decode.int)
+          (Json.Decode.field "shiftKey" Json.Decode.bool)
+          (Json.Decode.field "ctrlKey" Json.Decode.bool)
+
+    trackMouseUp =
+      Browser.Events.onMouseUp (Json.Decode.succeed MouseUp)
+  in
+  Sub.batch
+    [ trackMouseMovement
+    , trackMouseDown
+    , trackMouseUp
+    , Browser.Events.onKeyDown (Json.Decode.map (keyDecoder True) (Json.Decode.field "key" Json.Decode.string))
+    , Browser.Events.onKeyUp (Json.Decode.map (keyDecoder False) (Json.Decode.field "key" Json.Decode.string))
+    ]
 
 -- UPDATE
 
@@ -348,16 +398,23 @@ update msg model =
       in
         ( newModel, Cmd.none )
 
-    MouseDown id coordinate keyboard ->
+    MouseDown coordinate keyboard ->
       let
-        clickedOnBackground = id == -1
+        clickedPieceGroup =
+          D.values model.pieceGroups
+            |> List.filter (isPointInsidePieceGroup model.visibleGroups model.image coordinate)
+            |> List.foldl (\a b -> if a.zlevel > b.zlevel then a else b) defaultPieceGroup
+
+        clickedOnBackground =
+          clickedPieceGroup.id == -10
+
         newModel =
           if clickedOnBackground then
             startSelectionBox model coordinate keyboard
           else
-            selectPieceGroup model id coordinate keyboard
+            selectPieceGroup model clickedPieceGroup.id coordinate keyboard
       in
-        ( newModel, Cmd.none )
+        ( {newModel | debug = String.fromInt clickedPieceGroup.id}, Cmd.none )
 
     MouseUp ->
       let
@@ -641,167 +698,152 @@ currentSelection pieceGroups =
 
 view : Model -> Html Msg
 view model =
+  Html.div
+    ( turnOffTheBloodyImageDragging )
+    [ Html.button
+      [ Html.Events.onClick Scramble ]
+      [ Html.text "scramble" ]
+    , Html.h1
+      []
+      [ Html.text model.debug ]
+    , Html.div
+      [ Html.Attributes.style "width" <| String.fromInt model.image.width ++ "px"
+      , Html.Attributes.style "height" <| String.fromInt model.image.height ++ "px"
+      , Html.Attributes.style "position" "absolute"
+      , Html.Attributes.style "top" "100px"
+      , Html.Attributes.style "left" "0px"
+      ]
+      ((viewDiv model) ++ (viewSelectionBox model))
+    ]
+
+
+turnOffTheBloodyImageDragging =
+  [ Html.Attributes.style "-webkit-user-select" "none"
+  , Html.Attributes.style "-khtml-user-select" "none"
+  , Html.Attributes.style "-moz-user-select" "none"
+  , Html.Attributes.style "-o-user-select" "none"
+  , Html.Attributes.style "user-select" "none"
+  , Html.Attributes.draggable "false"
+  ]
+
+viewSelectionBox model =
   let
-    definitions =
-      Svg.defs []
-        ( definePuzzleImage model.image ::
-          definePieceClipPaths model.image model.edgePoints (D.values model.pieceGroups) )
-
-
-    background =
-      Svg.rect
-        [ Svg.Attributes.width "100%"
-        , Svg.Attributes.height "100%"
-        , Svg.Attributes.fill "blue"
-        , Svg.Attributes.opacity "0.0"
-        , onMouseDown -1
-        ]
-        []
-
-    svgSelectionBox box color =
+    divSelectionBox box color =
       let
         topLeft = boxTopLeft box
         bottomRight = boxBottomRight box
+        top = max 100 topLeft.y
       in
-        Svg.rect
-          [ Svg.Attributes.width <| String.fromInt (bottomRight.x - topLeft.x)
-          , Svg.Attributes.height <| String.fromInt (bottomRight.y - topLeft.y)
-          , Svg.Attributes.fill color
-          , Svg.Attributes.fillOpacity "0.2"
-          , Svg.Attributes.stroke <| "dark"++color
-          , Svg.Attributes.strokeWidth "2px"
-          , Svg.Attributes.strokeOpacity "0.9"
-          , translate (topLeft)
-          ]
+        Html.div
+          ([ Html.Attributes.style "width" <| String.fromInt (bottomRight.x - topLeft.x) ++ "px"
+          , Html.Attributes.style "height" <| String.fromInt (bottomRight.y - top) ++ "px"
+          , Html.Attributes.style "background-color" color
+          , Html.Attributes.style "border-style" "dotted"
+          , Html.Attributes.style "top" <| String.fromInt (top - 100) ++ "px"
+          , Html.Attributes.style "left" <| String.fromInt topLeft.x ++ "px"
+          , Html.Attributes.style "z-index" <| String.fromInt (model.maxZLevel + 1)
+          , Html.Attributes.style "position" "absolute"
+          ] ++ turnOffTheBloodyImageDragging)
           []
+  in
+    case model.selectionBox of
+      Normal box ->
+        [ divSelectionBox box "rgba(0,0,255,0.2)" ]
+      Inverted box ->
+        [ divSelectionBox box "rgba(0,255,0,0.2)" ]
+      NullBox ->
+        []
 
-    normalSelection =
-      case model.selectionBox of
-        Normal box ->
-          [ svgSelectionBox box "blue" ]
-        Inverted box ->
-          [ svgSelectionBox box "green" ]
-        NullBox -> []
+viewDiv model =
+  let
+    pieceGroupDiv pg =
+      List.map (pieceDiv pg) pg.members
 
-    pieces =
-      List.map svgPieceGroup
-        <| List.sortBy .zlevel
+    pieceDiv pg pid =
+      let
+        offset = pieceIdToOffset model.image pid
+        w = floor <| model.image.scale * toFloat (2 * model.image.width // model.image.xpieces)
+        h = floor <| model.image.scale * toFloat (2 * model.image.height // model.image.ypieces)
+        top = String.fromInt (pg.position.y + offset.y - h//4) ++ "px"
+        left = String.fromInt (pg.position.x + offset.x - w//4) ++ "px"
+        color = if pg.isSelected then "red" else "black"
+      in
+      Html.div
+      [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
+      , Html.Attributes.style "filter" <| "drop-shadow(2px 2px 2px " ++ color ++ ")"
+      , Html.Attributes.style "position" "absolute"
+      ]
+      [
+      Html.div
+        (
+          [ Html.Attributes.style "width" <| String.fromInt w ++ "px"
+          , Html.Attributes.style "height" <| String.fromInt h ++ "px"
+          , Html.Attributes.style "position" "absolute"
+          , Html.Attributes.style "top" top
+          , Html.Attributes.style "left" left
+          , Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
+          , Html.Attributes.style "clipPath" <| clipPathRef pid
+          , Html.Attributes.style "background-image" <| "url('" ++ model.image.path ++ "')"
+          , Html.Attributes.style "background-size"
+              <| String.fromInt (floor <| model.image.scale * (toFloat model.image.width)) ++ "px "
+              ++ String.fromInt (floor <| model.image.scale * (toFloat model.image.height)) ++ "px"
+          , Html.Attributes.style "background-position"
+              <| (String.fromInt (w//4 - offset.x)) ++ "px " ++ (String.fromInt (h//4 - offset.y)) ++ "px"
+          ] ++ turnOffTheBloodyImageDragging
+        )
+        [
+        ]
+
+      ]
+
+
+    viewPieces =
+      List.concat
+        <| List.map pieceGroupDiv
         <| List.filter (\pg -> S.member pg.visibilityGroup model.visibleGroups)
         <| D.values model.pieceGroups
 
-    svgPieceGroup pg =
-      Svg.g
-        [ onMouseDown pg.id, translate pg.position ]
-        ([ Svg.use
-            [ Svg.Attributes.xlinkHref <| "#puzzle-image"
-            , Svg.Attributes.clipPath <| clipPathRef pg.id
-            ]
-            []
-        ] ++ List.map (svgOutlines pg.isSelected) pg.members)
-
-    svgOutlines selected id =
-      Svg.use
-        [ Svg.Attributes.xlinkHref <| "#" ++ pieceOutlineId id
-        , Svg.Attributes.stroke <| if selected then "red" else "black"
-        , Svg.Attributes.strokeWidth "5px"
-        ]
+    clipPathDefs =
+      Svg.defs
         []
-
+        (definePieceClipPaths model.image model.edgePoints)
   in
-  Html.div [ ]
-    [ Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
-    , Html.h1 [] [ Html.text model.debug ]
-    , Html.div
-      [ Html.Attributes.style "background-color" "#CCCCCC"
-      , Html.Attributes.style "width" <| String.fromInt model.width ++ "px"
-      , Html.Attributes.style "height" <| String.fromInt model.height ++ "px"
-      ]
-
-      [ Svg.svg
-        ( svgAttributes model )
-        ( definitions :: background :: pieces ++ normalSelection)
-      ]
+    [ Html.div
+      ( turnOffTheBloodyImageDragging )
+      ( viewPieces )
+    , Svg.svg
+      []
+      [ clipPathDefs ]
     ]
 
 
-svgAttributes model =
-  let
-    attributes =
-      [ Svg.Attributes.width "100%"
-      , Svg.Attributes.height "100%"
-      ]
-    shouldTrackMouseMovement =
-      model.cursor /=  Nothing
-  in
-  if shouldTrackMouseMovement then
-    onMouseMove :: onMouseUp :: attributes
-  else
-    attributes
 
-onMouseUp : Svg.Attribute Msg
-onMouseUp =
-  Svg.Events.onMouseUp MouseUp
+definePieceClipPaths : JigsawImage -> A.Array EdgePoints -> List (Svg Msg)
+definePieceClipPaths image edgePoints =
+  List.map (piecePath image edgePoints) (List.range 0 (image.xpieces * image.ypieces - 1))
 
-onMouseDown : Int -> Svg.Attribute Msg
-onMouseDown id =
-  Svg.Events.on "mousedown"
-    <| Json.Decode.map4 (\x y shift ctrl -> MouseDown id (Point x y) {shift=shift, ctrl=ctrl})
-      (Json.Decode.field "offsetX" Json.Decode.int)
-      (Json.Decode.field "offsetY" Json.Decode.int)
-      (Json.Decode.field "shiftKey" Json.Decode.bool)
-      (Json.Decode.field "ctrlKey" Json.Decode.bool)
-
-onMouseMove : Svg.Attribute Msg
-onMouseMove =
-  Svg.Events.on "mousemove"
-    <| Json.Decode.map2 (\x y -> MouseMove (Point x y))
-      (Json.Decode.field "offsetX" Json.Decode.int)
-      (Json.Decode.field "offsetY" Json.Decode.int)
-
-translate : Point -> Svg.Attribute Msg
-translate position =
-  Svg.Attributes.transform
-    <| "translate(" ++ Point.toString position ++ ")"
-
-
-definePuzzleImage : JigsawImage -> Svg Msg
-definePuzzleImage image =
-  Svg.image
-    [ Svg.Attributes.id "puzzle-image"
-    , Svg.Attributes.xlinkHref image.path
-    , Svg.Attributes.pointerEvents "none"
-    , Svg.Attributes.transform <| "scale(" ++ String.fromFloat image.scale ++ ")"
-    ]
-    []
-
-
-definePieceClipPaths : JigsawImage -> A.Array EdgePoints -> List PieceGroup -> List (Svg Msg)
-definePieceClipPaths image edgePoints pieceGroups =
-  List.map (pieceGroupClipPath image edgePoints) pieceGroups
-
-pieceGroupClipPath : JigsawImage -> A.Array EdgePoints -> PieceGroup -> Svg Msg
-pieceGroupClipPath image edgePoints pieceGroup =
-  Svg.clipPath [ Svg.Attributes.id <| pieceClipId pieceGroup.id ]
-    <| List.map (piecePath image edgePoints) pieceGroup.members
 
 piecePath : JigsawImage -> A.Array EdgePoints -> Int -> Svg Msg
 piecePath image edgePoints id =
   let
     w = image.scale * toFloat (image.width // image.xpieces)
     h = image.scale * toFloat (image.height // image.ypieces)
-    offset = pieceIdToOffset image id
+    offset = Point (floor (w/2)) (floor (h/2))
 
     curve = Edge.pieceCurveFromPieceId image.xpieces image.ypieces id edgePoints
     move = "translate(" ++ Point.toString offset ++ ") "
     scale = "scale(" ++ String.fromFloat (w / 200.0) ++ " " ++ String.fromFloat (h / 200.0) ++ ")"
   in
-    Svg.path
+    Svg.clipPath
+    [ Svg.Attributes.id <| pieceClipId id ]
+    [ Svg.path
       [ Svg.Attributes.id <| pieceOutlineId id
       , Svg.Attributes.transform <| move ++ scale
       , Svg.Attributes.d curve
       , Svg.Attributes.fillOpacity "0.0"
       ]
       []
+    ]
 
 pieceOutlineId : Int -> String
 pieceOutlineId id =
@@ -815,3 +857,96 @@ clipPathRef : Int -> String
 clipPathRef id =
   "url(#" ++ pieceClipId id ++ ")"
 
+-- WEBGL STUFF
+
+type alias Uniforms =
+  { translation : Mat4
+  , scale : Mat4
+--  , rotation : Mat4
+  }
+
+type alias Vertex =
+  { position : Vec3
+  , color : Vec3
+  }
+
+
+viewWebGL : Model -> Html Msg
+viewWebGL model =
+  let
+
+    scale =
+      let
+        pieceWidth = toFloat <| model.image.width // model.image.xpieces
+        pieceHeight = toFloat <| model.image.height // model.image.ypieces
+      in
+      Mat4.makeScale
+        <| vec3 (pieceWidth / toFloat model.width) (pieceHeight / toFloat model.height) 1
+
+    makePieceEntity pos pid =
+      let
+        w = toFloat model.width
+        h = toFloat model.height
+        pieceWidth = toFloat <| model.image.width // model.image.xpieces
+        pieceHeight = toFloat <| model.image.height // model.image.ypieces
+        offset = pieceIdToOffset model.image pid
+        xpos = toFloat <| pos.x + offset.x
+        ypos = toFloat <| pos.y + offset.y
+        x = 2 * (xpos - w / 2 + pieceWidth / 2) / w
+        y = 2 * (h / 2 - ypos - pieceHeight / 2) / h
+        translation = Mat4.makeTranslate (vec3 x y 0)
+      in
+        WebGL.entity vertexShader fragmentShader mesh { translation = translation, scale = scale }
+
+    makePieceGroupEntity : PieceGroup -> List WebGL.Entity
+    makePieceGroupEntity pg =
+      List.map (makePieceEntity pg.position) pg.members
+--      WebGL.entity vertexShader fragmentShader mesh { translation = scale, scale = scale }
+
+  in
+    WebGL.toHtml
+      [ Html.Attributes.width model.width
+      , Html.Attributes.height model.height
+      , Html.Attributes.style "display" "block"
+      ]
+    ( List.concat <| List.map makePieceGroupEntity <| List.sortBy .zlevel <| D.values model.pieceGroups )
+
+mesh : WebGL.Mesh Vertex
+mesh =
+  let
+    v0 = Vertex (vec3 -1 -1 0) (vec3 0 0 0)
+    v1 = Vertex (vec3 1 -1 0) (vec3 0 0 0)
+    v2 = Vertex (vec3 1 1 0) (vec3 0 0 0)
+    v3 = Vertex (vec3 -1 1 0) (vec3 0 0 0)
+  in
+  WebGL.triangleFan
+    [ v0, v1, v2, v3 ]
+
+vertexShader : WebGL.Shader Vertex Uniforms { vcolor : Vec3 }
+vertexShader =
+    [glsl|
+        attribute vec3 position;
+        attribute vec3 color;
+        uniform mat4 translation;
+        uniform mat4 scale;
+
+        varying vec3 vcolor;
+
+        void main () {
+            gl_Position =  translation * scale * vec4(position, 1.0);
+            //gl_Position = vec4(position, 1.0);
+            vcolor = color;
+        }
+    |]
+
+
+fragmentShader : WebGL.Shader {} Uniforms { vcolor : Vec3 }
+fragmentShader =
+    [glsl|
+        precision mediump float;
+        varying vec3 vcolor;
+
+        void main () {
+            gl_FragColor = vec4(vcolor, 1.0);
+        }
+    |]
