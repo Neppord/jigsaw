@@ -12,14 +12,8 @@ import Html.Events
 import Json.Decode
 import Svg exposing (Svg)
 import Svg.Attributes
-
-import Math.Matrix4 as Mat4 exposing (Mat4)
-import Math.Vector3 as Vec3 exposing (Vec3, vec3)
-import WebGL
-
 import Random
 import Random.List
-
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
@@ -134,12 +128,12 @@ init : () -> ( Model, Cmd Msg )
 init () =
   let
     image =
-      { path = "../resources/hongkong.jpg"
-      , width = 6000
-      , height = 4000
-      , xpieces = 30
-      , ypieces = 20
-      , scale = 0.2
+      { path = "../resources/kitten.png"
+      , width = 533
+      , height = 538
+      , xpieces = 6
+      , ypieces = 6
+      , scale = 1.0
       }
     model =
       resetModel image (Random.initialSeed 0)
@@ -703,9 +697,9 @@ view model =
     [ Html.button
       [ Html.Events.onClick Scramble ]
       [ Html.text "scramble" ]
-    , Html.h1
-      []
-      [ Html.text model.debug ]
+--    , Html.h1
+--      []
+--      [ Html.text model.debug ]
     , Html.div
       [ Html.Attributes.style "width" <| String.fromInt model.image.width ++ "px"
       , Html.Attributes.style "height" <| String.fromInt model.image.height ++ "px"
@@ -770,7 +764,7 @@ viewDiv model =
       in
       Html.div
       [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
-      , Html.Attributes.style "filter" <| "drop-shadow(2px 2px 2px " ++ color ++ ")"
+      , Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
       , Html.Attributes.style "position" "absolute"
       ]
       [
@@ -856,97 +850,3 @@ pieceClipId id =
 clipPathRef : Int -> String
 clipPathRef id =
   "url(#" ++ pieceClipId id ++ ")"
-
--- WEBGL STUFF
-
-type alias Uniforms =
-  { translation : Mat4
-  , scale : Mat4
---  , rotation : Mat4
-  }
-
-type alias Vertex =
-  { position : Vec3
-  , color : Vec3
-  }
-
-
-viewWebGL : Model -> Html Msg
-viewWebGL model =
-  let
-
-    scale =
-      let
-        pieceWidth = toFloat <| model.image.width // model.image.xpieces
-        pieceHeight = toFloat <| model.image.height // model.image.ypieces
-      in
-      Mat4.makeScale
-        <| vec3 (pieceWidth / toFloat model.width) (pieceHeight / toFloat model.height) 1
-
-    makePieceEntity pos pid =
-      let
-        w = toFloat model.width
-        h = toFloat model.height
-        pieceWidth = toFloat <| model.image.width // model.image.xpieces
-        pieceHeight = toFloat <| model.image.height // model.image.ypieces
-        offset = pieceIdToOffset model.image pid
-        xpos = toFloat <| pos.x + offset.x
-        ypos = toFloat <| pos.y + offset.y
-        x = 2 * (xpos - w / 2 + pieceWidth / 2) / w
-        y = 2 * (h / 2 - ypos - pieceHeight / 2) / h
-        translation = Mat4.makeTranslate (vec3 x y 0)
-      in
-        WebGL.entity vertexShader fragmentShader mesh { translation = translation, scale = scale }
-
-    makePieceGroupEntity : PieceGroup -> List WebGL.Entity
-    makePieceGroupEntity pg =
-      List.map (makePieceEntity pg.position) pg.members
---      WebGL.entity vertexShader fragmentShader mesh { translation = scale, scale = scale }
-
-  in
-    WebGL.toHtml
-      [ Html.Attributes.width model.width
-      , Html.Attributes.height model.height
-      , Html.Attributes.style "display" "block"
-      ]
-    ( List.concat <| List.map makePieceGroupEntity <| List.sortBy .zlevel <| D.values model.pieceGroups )
-
-mesh : WebGL.Mesh Vertex
-mesh =
-  let
-    v0 = Vertex (vec3 -1 -1 0) (vec3 0 0 0)
-    v1 = Vertex (vec3 1 -1 0) (vec3 0 0 0)
-    v2 = Vertex (vec3 1 1 0) (vec3 0 0 0)
-    v3 = Vertex (vec3 -1 1 0) (vec3 0 0 0)
-  in
-  WebGL.triangleFan
-    [ v0, v1, v2, v3 ]
-
-vertexShader : WebGL.Shader Vertex Uniforms { vcolor : Vec3 }
-vertexShader =
-    [glsl|
-        attribute vec3 position;
-        attribute vec3 color;
-        uniform mat4 translation;
-        uniform mat4 scale;
-
-        varying vec3 vcolor;
-
-        void main () {
-            gl_Position =  translation * scale * vec4(position, 1.0);
-            //gl_Position = vec4(position, 1.0);
-            vcolor = color;
-        }
-    |]
-
-
-fragmentShader : WebGL.Shader {} Uniforms { vcolor : Vec3 }
-fragmentShader =
-    [glsl|
-        precision mediump float;
-        varying vec3 vcolor;
-
-        void main () {
-            gl_FragColor = vec4(vcolor, 1.0);
-        }
-    |]
