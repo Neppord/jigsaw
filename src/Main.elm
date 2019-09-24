@@ -668,6 +668,8 @@ pieceClipPath image id =
     offset = pieceIdToOffset image id
     px num =
       String.fromInt num ++ "px"
+
+    curve = Edge.pieceCurveFromId id
   in
     Svg.clipPath [ Svg.Attributes.id <| pieceClipId id ]
       [ Svg.rect
