@@ -1,19 +1,23 @@
 module Main exposing (..)
 
-import Browser
+
 import Set as S
 import Dict as D
+import Array as A
+import Browser
+import Browser.Events
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
 import Json.Decode
 import Svg exposing (Svg)
 import Svg.Attributes
-import Svg.Events
 import Random
+import Random.List
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
+import Edge exposing (EdgePoints, makeEdgePoints)
 
 -- MAIN
 main =
@@ -21,18 +25,23 @@ main =
     { init = init
     , update = update
     , view = view
-    , subscriptions = \_ -> Sub.none
+    , subscriptions = subscriptions
     }
 
 
 -- MODEL
 
 type Msg
-  = MouseDown Int Point
+  = MouseDown Point Keyboard
   | MouseMove Point
   | MouseUp
   | Scramble
-  | ScrambledPositions (List Point, List Int)
+  | KeyChanged Bool Key
+
+type alias Keyboard =
+  { shift : Bool
+  , ctrl : Bool
+  }
 
 type alias Model =
   { cursor : Maybe Point
@@ -45,15 +54,20 @@ type alias Model =
   , snapDistance : Float
   , selectionBox : SelectionBox
   , debug : String
+  , seed : Random.Seed
+  , edgePoints : A.Array EdgePoints
+  , visibleGroups : S.Set Int
+  , keyboard : Keyboard
   }
 
 type alias JigsawImage =
-    { path : String
-    , width : Int
-    , height : Int
-    , xpieces : Int
-    , ypieces : Int
-    }
+  { path : String
+  , width : Int
+  , height : Int
+  , xpieces : Int
+  , ypieces : Int
+  , scale : Float
+  }
 
 type alias PieceGroup =
   { id : Int
@@ -62,6 +76,7 @@ type alias PieceGroup =
   , position : Point
   , isSelected : Bool
   , zlevel : Int
+  , visibilityGroup : Int
   }
 
 type SelectionBox
@@ -72,6 +87,7 @@ type SelectionBox
 type alias Box =
   { staticCorner : Point
   , movingCorner : Point
+  , selectedIds : S.Set Int
   }
 
 type Selected
@@ -102,6 +118,7 @@ defaultPieceGroup =
   , id = -10
   , neighbours = S.empty
   , members = []
+  , visibilityGroup = -1
   }
 
 
@@ -116,26 +133,56 @@ init () =
       , height = 538
       , xpieces = 6
       , ypieces = 6
+      , scale = 1.0
       }
     model =
-      resetModel image [] []
+      resetModel image (Random.initialSeed 0)
   in
   ( model, Cmd.none )
 
 
-resetModel : JigsawImage -> List Point -> List Int -> Model
-resetModel image positions zlevels =
-  { cursor = Nothing
-  , pieceGroups = createPieceGroups image positions zlevels
-  , selected = NullSelection
-  , maxZLevel = image.xpieces * image.ypieces
-  , image = image
-  , width = 2000
-  , height = 1000
-  , snapDistance = 30.0
-  , selectionBox = NullBox
-  , debug = "Nothing to see here..."
-  }
+resetModel : JigsawImage -> Random.Seed -> Model
+resetModel image seed =
+  let
+    (w, h) = (1800, 1100)
+    (nx, ny) = (image.xpieces, image.ypieces)
+    numberOfEdges = 2 * nx * ny - nx - ny
+
+    (positions, seed1) = shufflePiecePositions w h image seed
+    (zlevels, seed2) = shuffleZLevels (nx * ny) seed1
+    (edgePoints, seed3) = makeEdgePoints numberOfEdges seed2
+  in
+    { cursor = Nothing
+    , pieceGroups = createPieceGroups image positions zlevels
+    , selected = NullSelection
+    , maxZLevel = nx * ny
+    , image = image
+    , width = w
+    , height = h
+    , snapDistance = 30.0
+    , selectionBox = NullBox
+    , debug = "Nothing to see here..."
+    , seed = seed3
+    , edgePoints = edgePoints
+    , visibleGroups = S.fromList [-1]
+    , keyboard = { shift = False, ctrl = False }
+    }
+
+
+shufflePiecePositions : Int -> Int -> JigsawImage -> Random.Seed -> (List Point, Random.Seed)
+shufflePiecePositions w h image seed =
+  let
+    n = image.xpieces * image.ypieces
+    xmin = 0
+    xmax = w - image.width // image.xpieces
+    ymin = 0
+    ymax = h - image.height // image.ypieces
+  in
+    Random.step (Point.randomPoints n xmin xmax ymin ymax) seed
+
+shuffleZLevels : Int -> Random.Seed -> (List Int, Random.Seed)
+shuffleZLevels n seed =
+  Random.step (Random.List.shuffle <| List.range 0 (n - 1)) seed
 
 createPieceGroups : JigsawImage -> List Point -> List Int -> D.Dict Int PieceGroup
 createPieceGroups image points levels =
@@ -173,6 +220,7 @@ createPieceGroups image points levels =
         , zlevel = zlevel
         , members = [ i ]
         , neighbours = S.filter (isRealNeighbour i) <| S.fromList (possibleNeighbours i)
+        , visibilityGroup = -1
         }
       )
 
@@ -187,8 +235,8 @@ pieceIdToPoint id xpieces =
 pieceIdToOffset : JigsawImage -> Int -> Point
 pieceIdToOffset image id =
   let
-    pieceWidth = image.width // image.xpieces
-    pieceHeight = image.height // image.ypieces
+    pieceWidth =  floor <| image.scale * toFloat (image.width // image.xpieces)
+    pieceHeight = floor <| image.scale * toFloat (image.height // image.ypieces)
   in
     Point.dot
       ( pieceIdToPoint id image.xpieces )
@@ -198,51 +246,169 @@ pieceIdToOffset image id =
 isPieceInsideBox : JigsawImage -> Point -> Point -> Point -> Int -> Bool
 isPieceInsideBox image pos boxTL boxBR id =
   let
-    pieceWidth = image.width // image.xpieces
-    pieceHeight = image.height // image.ypieces
+    pieceWidth =  floor <| image.scale * toFloat (image.width // image.xpieces)
+    pieceHeight = floor <| image.scale * toFloat (image.height // image.ypieces)
     pieceTL = Point.add pos <| pieceIdToOffset image id
     pieceBR = Point.add pieceTL <| Point pieceWidth pieceHeight
   in
-    ( pieceTL.x < boxBR.x ) &&
-    ( pieceTL.y < boxBR.y ) &&
-    ( pieceBR.x > boxTL.x ) &&
-    ( pieceBR.y > boxTL.y )
+    ( pieceTL.x <= boxBR.x ) &&
+    ( pieceTL.y + 100 <= boxBR.y ) &&
+    ( pieceBR.x >= boxTL.x ) &&
+    ( pieceBR.y + 100 >= boxTL.y )
 
 isPieceGroupInsideBox : JigsawImage -> Point -> Point -> PieceGroup -> Bool
 isPieceGroupInsideBox image boxTL boxBR pieceGroup =
   List.any (isPieceInsideBox image pieceGroup.position boxTL boxBR) pieceGroup.members
 
+
+-- SUBSCRIPTIONS
+
+keyDecoder isDown key =
+  case key of
+    "0" -> KeyChanged isDown (Number 0)
+    "1" -> KeyChanged isDown (Number 1)
+    "2" -> KeyChanged isDown (Number 2)
+    "3" -> KeyChanged isDown (Number 3)
+    "4" -> KeyChanged isDown (Number 4)
+    "5" -> KeyChanged isDown (Number 5)
+    "6" -> KeyChanged isDown (Number 6)
+    "7" -> KeyChanged isDown (Number 7)
+    "8" -> KeyChanged isDown (Number 8)
+    "9" -> KeyChanged isDown (Number 9)
+    "Control" -> KeyChanged isDown Control
+    "Shift" -> KeyChanged isDown Shift
+    _ -> KeyChanged isDown Other
+
+isPointInsidePiece : JigsawImage -> Point -> Point -> Int -> Bool
+isPointInsidePiece image point pos id =
+  let
+    pieceWidth = floor <| image.scale * toFloat (image.width // image.xpieces)
+    pieceHeight = floor <| image.scale * toFloat (image.height // image.ypieces)
+    pieceTL = Point.add pos <| pieceIdToOffset image id
+    pieceBR = Point.add pieceTL <| Point pieceWidth pieceHeight
+  in
+    ( pieceTL.x <= point.x ) &&
+    ( pieceTL.y + 100 <= point.y ) &&
+    ( pieceBR.x >= point.x ) &&
+    ( pieceBR.y + 100 >= point.y )
+
+isPointInsidePieceGroup visibleGroups image point pieceGroup =
+  (S.member pieceGroup.visibilityGroup visibleGroups) &&
+  (List.any (isPointInsidePiece image point pieceGroup.position) pieceGroup.members)
+
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  let
+    trackMouseMovement =
+      if model.cursor /= Nothing then
+        Browser.Events.onMouseMove
+          <| Json.Decode.map2 (\x y -> MouseMove (Point x y))
+            (Json.Decode.field "pageX" Json.Decode.int)
+            (Json.Decode.field "pageY" Json.Decode.int)
+      else
+        Sub.none
+
+    trackMouseDown =
+      Browser.Events.onMouseDown
+        <| Json.Decode.map4 (\x y shift ctrl -> MouseDown (Point x y) {shift=shift, ctrl=ctrl})
+          (Json.Decode.field "pageX" Json.Decode.int)
+          (Json.Decode.field "pageY" Json.Decode.int)
+          (Json.Decode.field "shiftKey" Json.Decode.bool)
+          (Json.Decode.field "ctrlKey" Json.Decode.bool)
+
+    trackMouseUp =
+      Browser.Events.onMouseUp (Json.Decode.succeed MouseUp)
+  in
+  Sub.batch
+    [ trackMouseMovement
+    , trackMouseDown
+    , trackMouseUp
+    , Browser.Events.onKeyDown (Json.Decode.map (keyDecoder True) (Json.Decode.field "key" Json.Decode.string))
+    , Browser.Events.onKeyUp (Json.Decode.map (keyDecoder False) (Json.Decode.field "key" Json.Decode.string))
+    ]
+
 -- UPDATE
+
+type Key
+  = Number Int
+  | Control
+  | Shift
+  | Other
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
+    KeyChanged isDown key ->
+      let
+
+        assignVisibilityGroup visibilityGroup _ pg  =
+          if pg.isSelected && pg.visibilityGroup /= visibilityGroup then
+            {pg | visibilityGroup = visibilityGroup, isSelected = False}
+          else
+            pg
+
+        newPieceGroups visibilityGroup =
+          D.map (assignVisibilityGroup visibilityGroup) model.pieceGroups
+
+        toggleVisibilityOf group number =
+          if S.member number group then
+            S.remove number group
+          else
+            S.insert number group
+      in
+      case key of
+        Number x ->
+          case (model.keyboard.ctrl, isDown) of
+            (True, True) ->
+              ( {model | pieceGroups = newPieceGroups x}, Cmd.none)
+            (False, True) ->
+              ( {model | visibleGroups = toggleVisibilityOf model.visibleGroups x
+                , debug =
+                  S.toList (toggleVisibilityOf model.visibleGroups x)
+                    |> List.map String.fromInt
+                    |> List.intersperse ", "
+                    |> String.concat
+              }, Cmd.none )
+            (_, False) ->
+              ( model, Cmd.none )
+
+        Control ->
+          let
+            newKeyboard keyboard = {keyboard | ctrl = isDown}
+          in
+            ( {model | keyboard = newKeyboard model.keyboard}, Cmd.none )
+        Shift ->
+          let
+            newKeyboard keyboard = {keyboard | shift = isDown}
+          in
+            ( {model | keyboard = newKeyboard model.keyboard}, Cmd.none )
+        Other -> ( model, Cmd.none )
+
     Scramble ->
       let
-        n = model.image.xpieces * model.image.ypieces
-        xmin = 0
-        xmax = model.width - model.image.width // model.image.xpieces
-        ymin = 0
-        ymax = model.height - model.image.height // model.image.ypieces
-        scrambleCommand =
-          Random.generate ScrambledPositions
-            <| Point.randomPointsAndZ n xmin xmax ymin ymax
-      in
-        ( model, scrambleCommand )
-
-    ScrambledPositions (newPositions, zlevels) ->
-      ( resetModel model.image newPositions zlevels, Cmd.none )
-
-    MouseDown id coordinate ->
-      let
-        clickedOnBackground = id == -1
-        newModel =
-          if clickedOnBackground then
-            startSelectionBox model coordinate
-          else
-            selectPieceGroup model id coordinate
+        newModel = resetModel model.image model.seed
       in
         ( newModel, Cmd.none )
+
+    MouseDown coordinate keyboard ->
+      let
+        clickedPieceGroup =
+          D.values model.pieceGroups
+            |> List.filter (isPointInsidePieceGroup model.visibleGroups model.image coordinate)
+            |> List.foldl (\a b -> if a.zlevel > b.zlevel then a else b) defaultPieceGroup
+
+        clickedOnBackground =
+          clickedPieceGroup.id == -10
+
+        newModel =
+          if clickedOnBackground then
+            startSelectionBox model coordinate keyboard
+          else
+            selectPieceGroup model clickedPieceGroup.id coordinate keyboard
+      in
+        ( {newModel | debug = String.fromInt clickedPieceGroup.id}, Cmd.none )
 
     MouseUp ->
       let
@@ -306,10 +472,24 @@ update msg model =
                 tl = boxTopLeft box
                 br = boxBottomRight box
                 selectPiece _ pg =
-                  if isPieceGroupInsideBox model.image tl br pg then
-                    {pg | isSelected = True}
-                  else
-                    {pg | isSelected = False}
+                  let
+                    isVisible = S.member pg.visibilityGroup model.visibleGroups
+                    originallySelected = S.member pg.id box.selectedIds
+                    insideBoxNow = isPieceGroupInsideBox model.image tl br pg
+                    newSelectionStatus =
+                      if isVisible then
+                        if originallySelected && insideBoxNow then
+                          True
+                        else if originallySelected && not insideBoxNow then
+                          True
+                        else if not originallySelected && insideBoxNow then
+                          True
+                        else
+                          False
+                      else
+                        False
+                  in
+                    { pg | isSelected = newSelectionStatus }
                 updatedPieceGroups =
                   D.map selectPiece model.pieceGroups
               in
@@ -319,54 +499,117 @@ update msg model =
                 }
               , Cmd.none )
             Inverted box ->
-              ( model, Cmd.none )
+              let
+                tl = boxTopLeft box
+                br = boxBottomRight box
+                selectPiece _ pg =
+                  let
+                    isVisible = S.member pg.visibilityGroup model.visibleGroups
+                    originallySelected = S.member pg.id box.selectedIds
+                    insideBoxNow = isPieceGroupInsideBox model.image tl br pg
+                    newSelectionStatus =
+                      if isVisible then
+                        if originallySelected && insideBoxNow then
+                          False
+                        else if originallySelected && not insideBoxNow then
+                          True
+                        else if not originallySelected && insideBoxNow then
+                          True
+                        else
+                          False
+                      else
+                        False
+                  in
+                    { pg | isSelected = newSelectionStatus }
+
+                updatedPieceGroups =
+                  D.map selectPiece model.pieceGroups
+              in
+              ( { model
+                | selectionBox = Inverted {box | movingCorner = newPos}
+                , pieceGroups = updatedPieceGroups
+                }
+              , Cmd.none )
 
 
-
-selectPieceGroup : Model -> Int -> Point -> Model
-selectPieceGroup model id coordinate =
+selectPieceGroup : Model -> Int -> Point -> Keyboard -> Model
+selectPieceGroup model id coordinate keyboard =
   let
-    selectedBefore =
+    clickedPieceGroup =
       D.get id model.pieceGroups
         |> Maybe.withDefault defaultPieceGroup
-        |> .isSelected
 
-    setZlevel pieceGroup =
-      case pieceGroup of
-        Nothing -> Nothing
-        Just pg -> Just {pg | zlevel = model.maxZLevel}
+    wasSelectedBefore =
+      clickedPieceGroup.isSelected
 
-    fixZlevels pieceGroups =
-      D.update id setZlevel pieceGroups
+    shouldStartDragging =
+      wasSelectedBefore && model.selected == Multiple
 
-    startDragging =
-      selectedBefore && model.selected == Multiple
+    fixZlevels =
+      D.insert id { clickedPieceGroup | zlevel = model.maxZLevel}
 
-    deselectAll pieceGroups =
-      D.map (\key pg -> {pg | isSelected = key == id}) pieceGroups
+    selectClickedPieceGroup =
+      D.insert id { clickedPieceGroup | isSelected = True }
+
+    invertClickedPieceGroup =
+      D.insert id { clickedPieceGroup | isSelected = not clickedPieceGroup.isSelected }
+
+    deselectAllOther =
+      D.map (\key pg -> {pg | isSelected = key == id})
+
+    newPieceGroups =
+      if keyboard.ctrl then
+        invertClickedPieceGroup
+      else if keyboard.shift then
+        selectClickedPieceGroup << fixZlevels
+      else if shouldStartDragging then
+        fixZlevels
+      else
+        deselectAllOther << fixZlevels
   in
     { model
     | maxZLevel = model.maxZLevel + 1
     , cursor = Just coordinate
-    , selected = if not selectedBefore then Single id else model.selected
-    , pieceGroups =
-        if startDragging then
-          fixZlevels model.pieceGroups
-        else
-          deselectAll << fixZlevels <| model.pieceGroups
+    , selected = currentSelection <| newPieceGroups model.pieceGroups
+    , pieceGroups = newPieceGroups model.pieceGroups
     }
 
-startSelectionBox : Model -> Point -> Model
-startSelectionBox model coordinate =
-  { model
-    | cursor = Just coordinate
-    , selected = NullSelection
-    , pieceGroups = D.map (\_ pg -> {pg | isSelected = False}) model.pieceGroups
-    , selectionBox = Normal
-      { staticCorner = coordinate
-      , movingCorner = coordinate
+startSelectionBox : Model -> Point -> Keyboard -> Model
+startSelectionBox model coordinate keyboard =
+  let
+    ids = allSelectedPieceGroups model.pieceGroups
+      |> D.keys
+      |> S.fromList
+  in
+  if keyboard.ctrl then
+    { model
+      | cursor = Just coordinate
+      , selectionBox = Inverted
+        { staticCorner = coordinate
+        , movingCorner = coordinate
+        , selectedIds = ids
+        }
       }
-  }
+  else if keyboard.shift then
+    { model
+      | cursor = Just coordinate
+      , selectionBox = Normal
+        { staticCorner = coordinate
+        , movingCorner = coordinate
+        , selectedIds = ids
+        }
+    }
+  else
+    { model
+      | cursor = Just coordinate
+      , selected = NullSelection
+      , pieceGroups = D.map (\_ pg -> {pg | isSelected = False}) model.pieceGroups
+      , selectionBox = Normal
+        { staticCorner = coordinate
+        , movingCorner = coordinate
+        , selectedIds = S.empty
+        }
+    }
 
 
 snapToNeighbour : Model -> PieceGroup -> D.Dict Int PieceGroup
@@ -394,7 +637,11 @@ snapToNeighbour model selected =
     closeNeighbour =
       case takeFirst smallEnough distanceToSelected of
         Nothing -> Nothing
-        Just (_, neighbour) -> Just neighbour
+        Just (_, neighbour) ->
+          if S.member neighbour.visibilityGroup model.visibleGroups then
+            Just neighbour
+          else
+            Nothing
 
     merge : PieceGroup -> PieceGroup -> PieceGroup
     merge a b =
@@ -428,10 +675,7 @@ snapToNeighbour model selected =
           |> D.map replaceSelectedIdWithNeighbourId
 
     Nothing ->
-      D.insert selected.id { selected | isSelected = False } model.pieceGroups
-
-
-
+      model.pieceGroups
 
 
 allSelectedPieceGroups pieceGroups =
@@ -448,163 +692,151 @@ currentSelection pieceGroups =
 
 view : Model -> Html Msg
 view model =
+  Html.div
+    ( turnOffTheBloodyImageDragging )
+    [ Html.button
+      [ Html.Events.onClick Scramble ]
+      [ Html.text "scramble" ]
+--    , Html.h1
+--      []
+--      [ Html.text model.debug ]
+    , Html.div
+      [ Html.Attributes.style "width" <| String.fromInt model.image.width ++ "px"
+      , Html.Attributes.style "height" <| String.fromInt model.image.height ++ "px"
+      , Html.Attributes.style "position" "absolute"
+      , Html.Attributes.style "top" "100px"
+      , Html.Attributes.style "left" "0px"
+      ]
+      ((viewDiv model) ++ (viewSelectionBox model))
+    ]
+
+
+turnOffTheBloodyImageDragging =
+  [ Html.Attributes.style "-webkit-user-select" "none"
+  , Html.Attributes.style "-khtml-user-select" "none"
+  , Html.Attributes.style "-moz-user-select" "none"
+  , Html.Attributes.style "-o-user-select" "none"
+  , Html.Attributes.style "user-select" "none"
+  , Html.Attributes.draggable "false"
+  ]
+
+viewSelectionBox model =
   let
-    definitions =
-      Svg.defs [] ( definePuzzleImage model.image :: definePieceClipPaths model.image )
-
-    background =
-      Svg.rect
-        [ Svg.Attributes.width "100%"
-        , Svg.Attributes.height "100%"
-        , Svg.Attributes.fill "blue"
-        , Svg.Attributes.opacity "0.0"
-        , onMouseDown -1
-        ]
-        []
-
-    svgSelectionBox box =
+    divSelectionBox box color =
       let
         topLeft = boxTopLeft box
         bottomRight = boxBottomRight box
+        top = max 100 topLeft.y
       in
-        Svg.rect
-          [ Svg.Attributes.width <| String.fromInt (bottomRight.x - topLeft.x)
-          , Svg.Attributes.height <| String.fromInt (bottomRight.y - topLeft.y)
-          , Svg.Attributes.fill "blue"
-          , Svg.Attributes.fillOpacity "0.2"
-          , Svg.Attributes.stroke "darkblue"
-          , Svg.Attributes.strokeWidth "2px"
-          , Svg.Attributes.strokeOpacity "0.9"
-          , translate (topLeft)
-          ]
+        Html.div
+          ([ Html.Attributes.style "width" <| String.fromInt (bottomRight.x - topLeft.x) ++ "px"
+          , Html.Attributes.style "height" <| String.fromInt (bottomRight.y - top) ++ "px"
+          , Html.Attributes.style "background-color" color
+          , Html.Attributes.style "border-style" "dotted"
+          , Html.Attributes.style "top" <| String.fromInt (top - 100) ++ "px"
+          , Html.Attributes.style "left" <| String.fromInt topLeft.x ++ "px"
+          , Html.Attributes.style "z-index" <| String.fromInt (model.maxZLevel + 1)
+          , Html.Attributes.style "position" "absolute"
+          ] ++ turnOffTheBloodyImageDragging)
           []
+  in
+    case model.selectionBox of
+      Normal box ->
+        [ divSelectionBox box "rgba(0,0,255,0.2)" ]
+      Inverted box ->
+        [ divSelectionBox box "rgba(0,255,0,0.2)" ]
+      NullBox ->
+        []
 
-    normalSelection =
-      case model.selectionBox of
-        Normal box ->
-          [ svgSelectionBox box ]
-        Inverted box -> []
-        NullBox -> []
+viewDiv model =
+  let
+    pieceGroupDiv pg =
+      List.map (pieceDiv pg) pg.members
 
-    pieces =
+    pieceDiv pg pid =
+      let
+        offset = pieceIdToOffset model.image pid
+        w = floor <| model.image.scale * toFloat (2 * model.image.width // model.image.xpieces)
+        h = floor <| model.image.scale * toFloat (2 * model.image.height // model.image.ypieces)
+        top = String.fromInt (pg.position.y + offset.y - h//4) ++ "px"
+        left = String.fromInt (pg.position.x + offset.x - w//4) ++ "px"
+        color = if pg.isSelected then "red" else "black"
+      in
+      Html.div
+      [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
+      , Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
+      , Html.Attributes.style "position" "absolute"
+      ]
+      [
+      Html.div
+        (
+          [ Html.Attributes.style "width" <| String.fromInt w ++ "px"
+          , Html.Attributes.style "height" <| String.fromInt h ++ "px"
+          , Html.Attributes.style "position" "absolute"
+          , Html.Attributes.style "top" top
+          , Html.Attributes.style "left" left
+          , Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
+          , Html.Attributes.style "clipPath" <| clipPathRef pid
+          , Html.Attributes.style "background-image" <| "url('" ++ model.image.path ++ "')"
+          , Html.Attributes.style "background-size"
+              <| String.fromInt (floor <| model.image.scale * (toFloat model.image.width)) ++ "px "
+              ++ String.fromInt (floor <| model.image.scale * (toFloat model.image.height)) ++ "px"
+          , Html.Attributes.style "background-position"
+              <| (String.fromInt (w//4 - offset.x)) ++ "px " ++ (String.fromInt (h//4 - offset.y)) ++ "px"
+          ] ++ turnOffTheBloodyImageDragging
+        )
+        [
+        ]
+
+      ]
+
+
+    viewPieces =
       List.concat
-        <| List.map svgPieceGroup
-        <| List.sortBy .zlevel
+        <| List.map pieceGroupDiv
+        <| List.filter (\pg -> S.member pg.visibilityGroup model.visibleGroups)
         <| D.values model.pieceGroups
 
-    svgPieceGroup pg =
-      List.map (svgMember pg.id pg.position pg.isSelected) pg.members
-
-    svgMember groupId pos selected id =
-      Svg.g [ onMouseDown groupId, translate pos ]
-        <| [svgClipPath id] ++ [svgOutlines selected id]
-
-    svgClipPath id =
-        Svg.use
-        [ Svg.Attributes.xlinkHref <| "#puzzle-image"
-        , Svg.Attributes.clipPath <| clipPathRef id
-        ]
+    clipPathDefs =
+      Svg.defs
         []
-
-    svgOutlines selected id =
-        Svg.use
-        [ Svg.Attributes.xlinkHref <| "#" ++ pieceOutlineId id
-        , Svg.Attributes.fill "white"
-        , Svg.Attributes.fillOpacity "0.0"
-        , Svg.Attributes.stroke <| if selected then "red" else "black"
-        , Svg.Attributes.strokeWidth "2px"
-        ]
-        []
-
+        (definePieceClipPaths model.image model.edgePoints)
   in
-  Html.div [ ]
-    [ Html.h1 [] [ Html.text ( "Kitten jigsaw! " ) ]
-    , Html.button [ Html.Events.onClick Scramble ] [ Html.text "scramble" ]
---    , Html.h1 [] [ Html.text model.debug ]
-    , Html.div
-        [ Html.Attributes.style "background-color" "#CCCCCC"
-        , Html.Attributes.style "width" <| String.fromInt model.width ++ "px"
-        , Html.Attributes.style "height" <| String.fromInt model.height ++ "px"
-        ]
-        [ Svg.svg
-          ( svgAttributes model )
-          ( definitions :: background :: pieces ++ normalSelection)
-        ]
+    [ Html.div
+      ( turnOffTheBloodyImageDragging )
+      ( viewPieces )
+    , Svg.svg
+      []
+      [ clipPathDefs ]
     ]
 
 
-svgAttributes model =
+
+definePieceClipPaths : JigsawImage -> A.Array EdgePoints -> List (Svg Msg)
+definePieceClipPaths image edgePoints =
+  List.map (piecePath image edgePoints) (List.range 0 (image.xpieces * image.ypieces - 1))
+
+
+piecePath : JigsawImage -> A.Array EdgePoints -> Int -> Svg Msg
+piecePath image edgePoints id =
   let
-    attributes =
-      [ Svg.Attributes.width "100%"
-      , Svg.Attributes.height "100%"
+    w = image.scale * toFloat (image.width // image.xpieces)
+    h = image.scale * toFloat (image.height // image.ypieces)
+    offset = Point (floor (w/2)) (floor (h/2))
+
+    curve = Edge.pieceCurveFromPieceId image.xpieces image.ypieces id edgePoints
+    move = "translate(" ++ Point.toString offset ++ ") "
+    scale = "scale(" ++ String.fromFloat (w / 200.0) ++ " " ++ String.fromFloat (h / 200.0) ++ ")"
+  in
+    Svg.clipPath
+    [ Svg.Attributes.id <| pieceClipId id ]
+    [ Svg.path
+      [ Svg.Attributes.id <| pieceOutlineId id
+      , Svg.Attributes.transform <| move ++ scale
+      , Svg.Attributes.d curve
+      , Svg.Attributes.fillOpacity "0.0"
       ]
-    shouldTrackMouseMovement =
-      model.cursor /=  Nothing
-  in
-  if shouldTrackMouseMovement then
-    onMouseMove :: onMouseUp :: attributes
-  else
-    attributes
-
-onMouseUp : Svg.Attribute Msg
-onMouseUp =
-  Svg.Events.onMouseUp MouseUp
-
-onMouseDown : Int -> Svg.Attribute Msg
-onMouseDown id =
-  Svg.Events.on "mousedown"
-    <| Json.Decode.map (MouseDown id) coordinateDecoder
-
-onMouseMove : Svg.Attribute Msg
-onMouseMove =
-  Svg.Events.on "mousemove"
-    <| Json.Decode.map MouseMove coordinateDecoder
-
-coordinateDecoder : Json.Decode.Decoder Point
-coordinateDecoder =
-  Json.Decode.map2 Point
-    (Json.Decode.field "offsetX" Json.Decode.int)
-    (Json.Decode.field "offsetY" Json.Decode.int)
-
-translate : Point -> Svg.Attribute Msg
-translate position =
-  Svg.Attributes.transform
-    <| "translate(" ++ String.fromInt position.x ++ "," ++ String.fromInt position.y ++ ")"
-
-
-definePuzzleImage : JigsawImage -> Svg Msg
-definePuzzleImage image =
-  Svg.image
-    [ Svg.Attributes.id "puzzle-image"
-    , Svg.Attributes.xlinkHref image.path
-    , Svg.Attributes.pointerEvents "none"
-    ]
-    []
-
-
-definePieceClipPaths : JigsawImage -> List (Svg Msg)
-definePieceClipPaths image =
-  List.map (pieceClipPath image) (List.range 0 (image.xpieces * image.ypieces - 1))
-
-pieceClipPath : JigsawImage -> Int -> Svg Msg
-pieceClipPath image id =
-  let
-    w = image.width // image.xpieces
-    h = image.height // image.ypieces
-    offset = pieceIdToOffset image id
-    px num =
-      String.fromInt num ++ "px"
-  in
-    Svg.clipPath [ Svg.Attributes.id <| pieceClipId id ]
-      [ Svg.rect
-        [ Svg.Attributes.id <| pieceOutlineId id
-        , Svg.Attributes.width <| px w
-        , Svg.Attributes.height <| px h
-        , Svg.Attributes.x <| px offset.x
-        , Svg.Attributes.y <| px offset.y
-        ]
-        []
+      []
     ]
 
 pieceOutlineId : Int -> String
@@ -618,4 +850,3 @@ pieceClipId id =
 clipPathRef : Int -> String
 clipPathRef id =
   "url(#" ++ pieceClipId id ++ ")"
-
