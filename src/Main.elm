@@ -133,7 +133,7 @@ init () =
       , height = 538
       , xpieces = 6
       , ypieces = 6
-      , scale = 1.0
+      , scale = 1
       }
     model =
       resetModel image (Random.initialSeed 0)
@@ -408,7 +408,10 @@ update msg model =
           else
             selectPieceGroup model clickedPieceGroup.id coordinate keyboard
       in
-        ( {newModel | debug = String.fromInt clickedPieceGroup.id}, Cmd.none )
+        ( {newModel
+          | debug = String.concat <| List.intersperse ", " <| List.map String.fromInt clickedPieceGroup.members
+          }
+        , Cmd.none )
 
     MouseUp ->
       let
@@ -748,18 +751,38 @@ viewSelectionBox model =
       NullBox ->
         []
 
+pieceGroupSize members nx =
+  let
+    xpos = modBy nx
+    ypos id = id // nx
+
+    left = List.map xpos members |> List.minimum |> Maybe.withDefault 0
+    right = List.map xpos members |> List.maximum |> Maybe.withDefault 0
+    top = List.map ypos members |> List.minimum |> Maybe.withDefault 0
+    bottom = List.map ypos members |> List.maximum |> Maybe.withDefault 0
+  in
+    {t=top, l=left, r=right, b=bottom}
+
+
 viewDiv model =
   let
+    pieceGroupDiv : PieceGroup -> Html Msg
     pieceGroupDiv pg =
-      List.map (pieceDiv pg) pg.members
-
-    pieceDiv pg pid =
       let
-        offset = pieceIdToOffset model.image pid
-        w = floor <| model.image.scale * toFloat (2 * model.image.width // model.image.xpieces)
-        h = floor <| model.image.scale * toFloat (2 * model.image.height // model.image.ypieces)
-        top = String.fromInt (pg.position.y + offset.y - h//4) ++ "px"
-        left = String.fromInt (pg.position.x + offset.x - w//4) ++ "px"
+        {t, l, r, b} = pieceGroupSize pg.members model.image.xpieces
+
+        imageWidth = model.image.scale * toFloat model.image.width
+        imageHeight = model.image.scale * toFloat model.image.height
+        pieceWidth =  (floor imageWidth // model.image.xpieces)
+        pieceHeight = (floor imageHeight // model.image.ypieces)
+
+        top =  pg.position.y + t * pieceHeight - pieceHeight // 2
+        left = pg.position.x + l * pieceWidth - pieceWidth // 2
+        w =  (r - l + 2) * pieceWidth
+        h =  (b - t + 2) * pieceHeight
+        bgx = pieceWidth // 2 - l * pieceWidth
+        bgy = pieceHeight // 2 - t * pieceHeight
+
         color = if pg.isSelected then "red" else "black"
       in
       Html.div
@@ -770,37 +793,36 @@ viewDiv model =
       [
       Html.div
         (
-          [ Html.Attributes.style "width" <| String.fromInt w ++ "px"
+          [ Html.Attributes.style "position" "absolute"
+          , Html.Attributes.style "width" <| String.fromInt w ++ "px"
           , Html.Attributes.style "height" <| String.fromInt h ++ "px"
-          , Html.Attributes.style "position" "absolute"
-          , Html.Attributes.style "top" top
-          , Html.Attributes.style "left" left
+          , Html.Attributes.style "top" <| String.fromInt top ++ "px"
+          , Html.Attributes.style "left" <| String.fromInt left ++ "px"
           , Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
-          , Html.Attributes.style "clipPath" <| clipPathRef pid
+          , Html.Attributes.style "clipPath" <| clipPathRef pg.id
           , Html.Attributes.style "background-image" <| "url('" ++ model.image.path ++ "')"
           , Html.Attributes.style "background-size"
-              <| String.fromInt (floor <| model.image.scale * (toFloat model.image.width)) ++ "px "
-              ++ String.fromInt (floor <| model.image.scale * (toFloat model.image.height)) ++ "px"
+              <| String.fromInt (floor imageWidth) ++ "px "
+              ++ String.fromInt (floor imageHeight) ++ "px"
           , Html.Attributes.style "background-position"
-              <| (String.fromInt (w//4 - offset.x)) ++ "px " ++ (String.fromInt (h//4 - offset.y)) ++ "px"
+              <| String.fromInt bgx ++ "px "
+              ++ String.fromInt bgy ++ "px"
           ] ++ turnOffTheBloodyImageDragging
         )
-        [
-        ]
-
+        []
       ]
 
 
     viewPieces =
-      List.concat
-        <| List.map pieceGroupDiv
+      List.map pieceGroupDiv
         <| List.filter (\pg -> S.member pg.visibilityGroup model.visibleGroups)
         <| D.values model.pieceGroups
 
     clipPathDefs =
       Svg.defs
         []
-        (definePieceClipPaths model.image model.edgePoints)
+        ( definePieceGroupClipPaths model.image model.edgePoints (D.values model.pieceGroups))
+--        (definePieceClipPaths model.image model.edgePoints)
   in
     [ Html.div
       ( turnOffTheBloodyImageDragging )
@@ -810,6 +832,34 @@ viewDiv model =
       [ clipPathDefs ]
     ]
 
+
+definePieceGroupClipPaths image edgePoints pieceGroups =
+  List.map (pieceGroupPath image edgePoints) pieceGroups
+
+pieceGroupPath : JigsawImage -> A.Array EdgePoints -> PieceGroup -> Svg Msg
+pieceGroupPath image edgePoints pieceGroup =
+  let
+    {t, l, r, b} = pieceGroupSize pieceGroup.members image.xpieces
+    imageWidth = floor <| image.scale * toFloat (image.width // image.xpieces)
+    imageHeight = floor <| image.scale * toFloat (image.height // image.ypieces)
+
+    offsetx = (imageWidth // 2 - l * imageWidth)
+    offsety = (imageHeight // 2 - t * imageHeight)
+
+    curve = Edge.pieceGroupCurve pieceGroup.members image.xpieces image.ypieces edgePoints
+    move = "translate(" ++ String.fromInt offsetx ++ " " ++ String.fromInt offsety ++ ") "
+    scale = "scale(" ++ String.fromFloat (toFloat imageWidth / 200.0) ++ " " ++ String.fromFloat (toFloat imageHeight / 200.0) ++ ")"
+  in
+    Svg.clipPath
+    [ Svg.Attributes.id <| pieceClipId pieceGroup.id ]
+    [ Svg.path
+      [ Svg.Attributes.id <| pieceOutlineId pieceGroup.id
+      , Svg.Attributes.transform <| move ++ scale
+      , Svg.Attributes.d curve
+      , Svg.Attributes.fillOpacity "0.0"
+      ]
+      []
+    ]
 
 
 definePieceClipPaths : JigsawImage -> A.Array EdgePoints -> List (Svg Msg)

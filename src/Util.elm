@@ -1,5 +1,4 @@
 module Util exposing (..)
-import Random
 
 {-| Take the first element from the list that satisfies the condition.
 If no such element exists, return Nothing.
@@ -56,3 +55,14 @@ pop ind lst =
           (popped, x :: tail)
       [] ->
         (Nothing, [])
+
+{-| Unpack a tuple and apply it to a function that takes two arguments.
+
+    applyTuple (\x y -> x + y) (1, 2) == 3
+-}
+applyTuple : (a -> b -> c) -> (a, b) -> c
+applyTuple f tuple =
+  let
+    (x, y) = tuple
+  in
+    f x y
