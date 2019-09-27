@@ -81,11 +81,10 @@ defaultPoints =
 makeEdge : String -> List Point -> Edge
 makeEdge orientation points =
   let
+    -- Rotates q pi/2 clockwise around p
     rotate : Point -> Point -> Point
     rotate p q =
       Point (q.y - p.y + p.x) (q.x - p.x + p.y)
---      Point (q.y + p.x) (q.x - p.x)
---      Point p.y p.x
 
     translate : Point -> Point
     translate p =
@@ -146,46 +145,53 @@ edgeToString : Edge -> String
 edgeToString e =
   case e of
     Curved {start, b1, b2, b3, b4} ->
-      let
-        curve =
-          List.map bezierToString [b1, b2, b3, b4]
-            |> List.intersperse " "
-            |> String.concat
-      in
---        "M " ++ Point.toString start ++ curve
-        curve
+      List.map bezierToString [b1, b2, b3, b4]
+        |> List.intersperse " "
+        |> String.concat
+
     Flat {start, end} ->
       "L " ++ Point.toString start ++ ", " ++ Point.toString end
 
-pieceCurveFromPieceId : Int -> Int -> Int -> Array.Array EdgePoints -> String
-pieceCurveFromPieceId nx ny id edgePoints =
-  let
-    edge : String -> Edge
-    edge orientation = getEdge orientation nx ny id edgePoints
-  in
-    List.map (edge >> edgeToString) ["N", "E", "S", "W"]
-      |> String.concat
+edgeEndPoint : Edge -> Point
+edgeEndPoint edge =
+  case edge of
+    Curved {b4} ->
+      case b4 of
+        S _ p2 -> p2
+        C _ _ p3 -> p3
+    Flat {end} ->
+      end
 
-getEdge : String -> Int -> Int -> Int -> Array.Array EdgePoints-> Edge
-getEdge orientation nx ny id edgePoints =
+{-| All the EdgePoints are stored in an array where they are indexed in a specific way. All vertical edges are
+    enumerated first, going from top left to bottom right. Then the horizontal edges follow. Only internal edges are
+    kept in this way - flat edges have an "id" corresponding to -1.
+
+    All the pieces in the puzzle are also ordered in a specific way: piece 0 in the top left corner and piece n in the
+    bottom right corner. If we know the width and height (in pieces) of the puzzle, we can therefore deduce the id
+    of any specific edge for a specific piece id.
+
+    The eastern edge of the top left corner is the vertical corner with index 0. This is the same as the western edge
+    of the second piece:
+
+    getEdgePointsId nx ny 0 "E" == 0
+    getEdgePointsId nx ny 1 "W" == 0
+-}
+getEdgePointsId : Int -> Int -> Int -> String -> Int
+getEdgePointsId nx ny pid orientation =
   let
     nv = (nx - 1) * ny
     n = nx * ny
-    index =
-      case orientation of
-        "N" ->
-          if id < nx then -1 else id - nx + nv
-        "W" ->
-          if (modBy nx id) == 0 then -1 else id - (id // nx) - 1
-        "S" ->
-          if id >= n - nx then -1 else id + nv
-        _ ->
-          if (modBy nx id) == (nx - 1) then -1 else id - (id // nx)
-    points =
-      Array.get index edgePoints
-        |> Maybe.withDefault [Point 0 0, Point 200 0]
   in
-    makeEdge orientation points
+  case orientation of
+    "N" ->
+      if pid < nx then -1 else pid - nx + nv
+    "W" ->
+      if (modBy nx pid) == 0 then -1 else pid - (pid // nx) - 1
+    "S" ->
+      if pid >= n - nx then -1 else pid + nv
+    _ ->
+      if (modBy nx pid) == (nx - 1) then -1 else pid - (pid // nx)
+
 
 {-
 TODO: Refactor this function to make it readable. In the meanwhile, here's some (hopefully) clarifying words:
@@ -241,50 +247,41 @@ The algorithm works like follows (you can read it pretty much from top to bottom
 
 pieceGroupCurve pids nx ny edgePoints =
   let
-    pidToEpid : Int -> String -> Int
-    pidToEpid pid orientation =
+    translate : Int -> EdgePoints -> EdgePoints
+    translate pid pts =
       let
-        nv = (nx - 1) * ny
-        n = nx * ny
+        offset = Point
+          (200 * (modBy nx pid))
+          (200 * (pid // nx))
       in
-      case orientation of
-        "N" ->
-          if pid < nx then -1 else pid - nx + nv
-        "W" ->
-          if (modBy nx pid) == 0 then -1 else pid - (pid // nx) - 1
-        "S" ->
-          if pid >= n - nx then -1 else pid + nv
-        _ ->
-          if (modBy nx pid) == (nx - 1) then -1 else pid - (pid // nx)
-
-    fixTranslation : Int -> EdgePoints -> EdgePoints
-    fixTranslation pid pts =
-      List.map (Point.add (Point (200 * (modBy nx pid)) (200 * (pid // nx)))) pts
+        List.map (Point.add offset) pts
 
     points : Int -> Int -> EdgePoints
     points pid epid =
       Array.get epid edgePoints
         |> Maybe.withDefault [Point 0 0, Point 200 0]
-        |> fixTranslation pid
+        |> translate pid
 
-
-
-    pidToEdge : Int -> List (Int, Edge)
-    pidToEdge pid =
-      let
-        epid =
-          pidToEpid pid
-        epidEdge o =
-          (epid o, makeEdge o <| points pid (epid o))
-      in
-        List.map epidEdge ["N", "E", "S", "W"]
 
     epidEdges : List (Int, Edge)
     epidEdges =
-      List.concat <| List.map pidToEdge pids
+      let
+        epidEdge pid orientation =
+          let
+            epid = getEdgePointsId nx ny pid orientation
+            edge = makeEdge orientation <| points pid epid
+          in
+            (epid, edge)
 
-    (epids, _) = List.unzip epidEdges
+        pidToEdge pid =
+          List.map (epidEdge pid) ["N", "E", "S", "W"]
+      in
+        List.concat <| List.map pidToEdge pids
 
+    epids : List Int
+    epids = Tuple.first <| List.unzip epidEdges
+
+    epidCounts : D.Dict Int Int
     epidCounts =
       let
         updateCount c =
@@ -296,51 +293,63 @@ pieceGroupCurve pids nx ny edgePoints =
       in
         List.foldl countEpid D.empty epids
 
+    uniqueEdges : List Edge
     uniqueEdges =
-      List.filter (\(epid, _) -> epid < 0 || (Maybe.withDefault 0 (D.get epid epidCounts) == 1)) epidEdges
+      let
+        filterAwayInnerEdges (epid, edge) edges =
+          if (isBorder epid) || (edgeCount epid == 1) then
+            edge :: edges
+          else
+            edges
 
-    edgeKey : Edge -> String
-    edgeKey e =
-      case e of
-        Curved c -> Point.toString c.start
-        Flat f -> Point.toString f.start
+        isBorder epid =
+          epid < 0
+        edgeCount epid =
+          D.get epid epidCounts |> Maybe.withDefault 0
+      in
+        List.foldl filterAwayInnerEdges [] epidEdges
 
+    edgeDict : D.Dict String (List Edge)
     edgeDict =
       let
-        update e value =
-          case value of
-            Nothing -> Just [e]
-            Just es -> Just (e :: es)
+        insertEdge edge dict =
+          D.update (edgeKey edge) (update edge) dict
+
+        edgeKey : Edge -> String
+        edgeKey e =
+          case e of
+            Curved c -> Point.toString c.start
+            Flat f -> Point.toString f.start
+
+        update : Edge -> Maybe (List Edge) -> Maybe (List Edge)
+        update newEdge existingEdges =
+          case existingEdges of
+            Nothing -> Just [newEdge]
+            Just edges -> Just (newEdge :: edges)
       in
-      List.foldl (\(_, edge) dict -> D.update (edgeKey edge) (update edge) dict) D.empty uniqueEdges
+        List.foldl insertEdge D.empty uniqueEdges
 
-    endPoint e =
-      case e of
-        Curved {b4} ->
-          case b4 of
-            S _ p2 -> p2
-            C _ _ p3 -> p3
-        Flat {end} ->
-          end
-
-    connectedPath start dict str =
+    connectedPath : String -> String -> D.Dict String (List Edge) -> (String, D.Dict String (List Edge))
+    connectedPath str start dict =
       let
         update new old =
           case old of
             Nothing -> Nothing
             Just _ -> Just new
+        recurse e =
+          connectedPath (str ++ edgeToString e) (Point.toString (edgeEndPoint e))
       in
       case D.get start dict of
-        Nothing -> (dict, str)
-        Just (e :: []) -> connectedPath (Point.toString (endPoint e)) (D.remove start dict) (str ++ edgeToString e)
-        Just (e :: es) -> connectedPath (Point.toString (endPoint e)) (D.update start (update es) dict) (str ++ edgeToString e)
-        Just [] -> (dict, str)
+        Just (edge :: []) -> recurse edge <| D.remove start dict
+        Just (edge :: edges) -> recurse edge <| D.update start (update edges) dict
+        _ -> (str, dict)
 
-    entireClipPath dict str =
+    allConnectedPaths : String -> D.Dict String (List Edge) -> String
+    allConnectedPaths str dict =
       case List.head (D.keys dict) of
         Just start ->
-          Util.applyTuple entireClipPath (connectedPath start dict (str ++ "M " ++ start))
+          Util.applyTuple allConnectedPaths <| connectedPath (str ++ "M " ++ start) start dict
         Nothing ->
           str
   in
-    entireClipPath edgeDict ""
+    allConnectedPaths "" edgeDict

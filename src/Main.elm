@@ -408,9 +408,7 @@ update msg model =
           else
             selectPieceGroup model clickedPieceGroup.id coordinate keyboard
       in
-        ( {newModel
-          | debug = String.concat <| List.intersperse ", " <| List.map String.fromInt clickedPieceGroup.members
-          }
+        ( newModel
         , Cmd.none )
 
     MouseUp ->
@@ -822,7 +820,6 @@ viewDiv model =
       Svg.defs
         []
         ( definePieceGroupClipPaths model.image model.edgePoints (D.values model.pieceGroups))
---        (definePieceClipPaths model.image model.edgePoints)
   in
     [ Html.div
       ( turnOffTheBloodyImageDragging )
@@ -847,41 +844,17 @@ pieceGroupPath image edgePoints pieceGroup =
     offsety = (imageHeight // 2 - t * imageHeight)
 
     curve = Edge.pieceGroupCurve pieceGroup.members image.xpieces image.ypieces edgePoints
-    move = "translate(" ++ String.fromInt offsetx ++ " " ++ String.fromInt offsety ++ ") "
-    scale = "scale(" ++ String.fromFloat (toFloat imageWidth / 200.0) ++ " " ++ String.fromFloat (toFloat imageHeight / 200.0) ++ ")"
+    move = "translate("
+      ++ String.fromInt offsetx ++ " "
+      ++ String.fromInt offsety ++ ") "
+    scale = "scale("
+      ++ String.fromFloat (toFloat imageWidth / 200.0) ++ " "
+      ++ String.fromFloat (toFloat imageHeight / 200.0) ++ ")"
   in
     Svg.clipPath
     [ Svg.Attributes.id <| pieceClipId pieceGroup.id ]
     [ Svg.path
       [ Svg.Attributes.id <| pieceOutlineId pieceGroup.id
-      , Svg.Attributes.transform <| move ++ scale
-      , Svg.Attributes.d curve
-      , Svg.Attributes.fillOpacity "0.0"
-      ]
-      []
-    ]
-
-
-definePieceClipPaths : JigsawImage -> A.Array EdgePoints -> List (Svg Msg)
-definePieceClipPaths image edgePoints =
-  List.map (piecePath image edgePoints) (List.range 0 (image.xpieces * image.ypieces - 1))
-
-
-piecePath : JigsawImage -> A.Array EdgePoints -> Int -> Svg Msg
-piecePath image edgePoints id =
-  let
-    w = image.scale * toFloat (image.width // image.xpieces)
-    h = image.scale * toFloat (image.height // image.ypieces)
-    offset = Point (floor (w/2)) (floor (h/2))
-
-    curve = Edge.pieceCurveFromPieceId image.xpieces image.ypieces id edgePoints
-    move = "translate(" ++ Point.toString offset ++ ") "
-    scale = "scale(" ++ String.fromFloat (w / 200.0) ++ " " ++ String.fromFloat (h / 200.0) ++ ")"
-  in
-    Svg.clipPath
-    [ Svg.Attributes.id <| pieceClipId id ]
-    [ Svg.path
-      [ Svg.Attributes.id <| pieceOutlineId id
       , Svg.Attributes.transform <| move ++ scale
       , Svg.Attributes.d curve
       , Svg.Attributes.fillOpacity "0.0"
