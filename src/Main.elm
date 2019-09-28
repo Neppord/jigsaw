@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 
 import Set as S
@@ -14,6 +14,10 @@ import Svg exposing (Svg)
 import Svg.Attributes
 import Random
 import Random.List
+import File exposing (File)
+import File.Select
+import Task
+--import File.Download
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
@@ -37,6 +41,10 @@ type Msg
   | MouseUp
   | Scramble
   | KeyChanged Bool Key
+  | PickImage
+  | GotImage File
+  | EncodedImage String
+  | UpdateDim (Int, Int)
 
 type alias Keyboard =
   { shift : Bool
@@ -128,18 +136,17 @@ init : () -> ( Model, Cmd Msg )
 init () =
   let
     image =
-      { path = "../resources/kitten.png"
-      , width = 533
-      , height = 538
-      , xpieces = 6
-      , ypieces = 6
-      , scale = 1
+      { path = "resources/hongkong.jpg"
+      , width = 6000
+      , height = 4000
+      , xpieces = 30
+      , ypieces = 20
+      , scale = 0.2
       }
     model =
       resetModel image (Random.initialSeed 0)
   in
   ( model, Cmd.none )
-
 
 resetModel : JigsawImage -> Random.Seed -> Model
 resetModel image seed =
@@ -327,6 +334,7 @@ subscriptions model =
     , trackMouseUp
     , Browser.Events.onKeyDown (Json.Decode.map (keyDecoder True) (Json.Decode.field "key" Json.Decode.string))
     , Browser.Events.onKeyUp (Json.Decode.map (keyDecoder False) (Json.Decode.field "key" Json.Decode.string))
+    , newDim UpdateDim
     ]
 
 -- UPDATE
@@ -340,6 +348,26 @@ type Key
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
+    UpdateDim (x, y) ->
+      let
+        oldImage = model.image
+        newImage = {oldImage | width = x, height = y}
+        newModel = resetModel newImage model.seed
+      in
+      ( newModel
+      , Cmd.none)
+    PickImage ->
+      ( model, File.Select.file ["image/*"] GotImage )
+    GotImage file ->
+      ( {model | debug = "got a file!"}, Task.perform EncodedImage (File.toUrl file))
+
+    EncodedImage url ->
+      let
+        oldImage = model.image
+        newImage = {oldImage | path = url}
+      in
+      ( {model | debug = "file url length: " ++ String.fromInt (String.length url), image = newImage}
+      , getDim url )
     KeyChanged isDown key ->
       let
 
@@ -695,12 +723,11 @@ view : Model -> Html Msg
 view model =
   Html.div
     ( turnOffTheBloodyImageDragging )
-    [ Html.button
-      [ Html.Events.onClick Scramble ]
-      [ Html.text "scramble" ]
+    [
 --    , Html.h1
 --      []
 --      [ Html.text model.debug ]
+      viewMenu model
     , Html.div
       [ Html.Attributes.style "width" <| String.fromInt model.image.width ++ "px"
       , Html.Attributes.style "height" <| String.fromInt model.image.height ++ "px"
@@ -782,6 +809,7 @@ viewDiv model =
         bgy = pieceHeight // 2 - t * pieceHeight
 
         color = if pg.isSelected then "red" else "black"
+        display = if S.member pg.visibilityGroup model.visibleGroups then "block" else "none"
       in
       Html.div
       [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
@@ -790,31 +818,31 @@ viewDiv model =
       ]
       [
       Html.div
-        (
-          [ Html.Attributes.style "position" "absolute"
-          , Html.Attributes.style "width" <| String.fromInt w ++ "px"
-          , Html.Attributes.style "height" <| String.fromInt h ++ "px"
-          , Html.Attributes.style "top" <| String.fromInt top ++ "px"
-          , Html.Attributes.style "left" <| String.fromInt left ++ "px"
-          , Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
-          , Html.Attributes.style "clipPath" <| clipPathRef pg.id
-          , Html.Attributes.style "background-image" <| "url('" ++ model.image.path ++ "')"
-          , Html.Attributes.style "background-size"
-              <| String.fromInt (floor imageWidth) ++ "px "
-              ++ String.fromInt (floor imageHeight) ++ "px"
-          , Html.Attributes.style "background-position"
-              <| String.fromInt bgx ++ "px "
-              ++ String.fromInt bgy ++ "px"
-          ] ++ turnOffTheBloodyImageDragging
-        )
-        []
+        [ Html.Attributes.style "position" "absolute"
+        , Html.Attributes.style "width" <| String.fromInt w ++ "px"
+        , Html.Attributes.style "height" <| String.fromInt h ++ "px"
+        , Html.Attributes.style "top" <| String.fromInt top ++ "px"
+        , Html.Attributes.style "left" <| String.fromInt left ++ "px"
+        , Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
+        , Html.Attributes.style "clipPath" <| clipPathRef pg.id
+        , Html.Attributes.style "display" display
+        ]
+        [
+          Html.img
+          ([ Html.Attributes.src model.image.path
+          , Html.Attributes.width <| floor imageWidth
+          , Html.Attributes.height <| floor imageHeight
+          , Html.Attributes.style "position" "absolute"
+          , Html.Attributes.style "top" <| String.fromInt bgy ++ "px"
+          , Html.Attributes.style "left" <| String.fromInt bgx ++ "px"
+          ] ++ turnOffTheBloodyImageDragging)
+          []
+        ]
       ]
 
 
     viewPieces =
-      List.map pieceGroupDiv
-        <| List.filter (\pg -> S.member pg.visibilityGroup model.visibleGroups)
-        <| D.values model.pieceGroups
+      List.map pieceGroupDiv <| D.values model.pieceGroups
 
     clipPathDefs =
       Svg.defs
@@ -873,3 +901,41 @@ pieceClipId id =
 clipPathRef : Int -> String
 clipPathRef id =
   "url(#" ++ pieceClipId id ++ ")"
+
+-- MENU
+
+viewMenu : Model -> Html Msg
+viewMenu model =
+  Html.div
+  [ Html.Attributes.style "width" "100%"
+  , Html.Attributes.style "height" "50px"
+  , Html.Attributes.style "position" "fixed"
+  , Html.Attributes.style "top" "0"
+  , Html.Attributes.style "left" "0px"
+  , Html.Attributes.style "background-color" "#CCCCCC"
+  , Html.Attributes.style "box-shadow" "-2px 5px 4px grey"
+  , Html.Attributes.style "z-index" <| String.fromInt <| model.maxZLevel + 10
+  , Html.Attributes.style "flex-direction" "column"
+  ]
+  [ Html.button
+    [ Html.Events.onClick Scramble ]
+    [ Html.text "scramble" ]
+
+  , Html.button
+    [ Html.Events.onClick PickImage ]
+    [ Html.text "Choose image" ]
+  , Html.p
+    [ Html.Attributes.style "height" "1000px"
+    , Html.Attributes.style "width" "1000px"]
+    [ Html.text model.debug ]
+  ]
+
+
+port newDim : ((Int, Int) -> msg) -> Sub msg
+port getDim : String -> Cmd msg
+
+
+
+
+
+
