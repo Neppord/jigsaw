@@ -17,7 +17,12 @@ import Random.List
 import File exposing (File)
 import File.Select
 import Task
---import File.Download
+import WebGL
+import WebGL.Texture as Texture
+import Math.Vector2 exposing (Vec2, vec2)
+import Math.Vector3 exposing (Vec3, vec3)
+import Math.Matrix4 as Mat4 exposing (Mat4)
+
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
@@ -45,6 +50,7 @@ type Msg
   | GotImage File
   | EncodedImage String
   | UpdateDim (Int, Int)
+  | GotTexture (Result Texture.Error Texture.Texture)
 
 type alias Keyboard =
   { shift : Bool
@@ -66,6 +72,7 @@ type alias Model =
   , edgePoints : A.Array EdgePoints
   , visibleGroups : S.Set Int
   , keyboard : Keyboard
+  , texture : Maybe Texture.Texture
   }
 
 type alias JigsawImage =
@@ -136,17 +143,17 @@ init : () -> ( Model, Cmd Msg )
 init () =
   let
     image =
-      { path = "resources/hongkong.jpg"
-      , width = 6000
-      , height = 4000
-      , xpieces = 30
-      , ypieces = 20
-      , scale = 0.2
+      { path = "resources/kitten.png"
+      , width = 537
+      , height = 533
+      , xpieces = 3
+      , ypieces = 3
+      , scale = 1
       }
     model =
       resetModel image (Random.initialSeed 0)
   in
-  ( model, Cmd.none )
+  ( model, Task.attempt GotTexture (Texture.loadWith Texture.nonPowerOfTwoOptions image.path) )
 
 resetModel : JigsawImage -> Random.Seed -> Model
 resetModel image seed =
@@ -173,6 +180,7 @@ resetModel image seed =
     , edgePoints = edgePoints
     , visibleGroups = S.fromList [-1]
     , keyboard = { shift = False, ctrl = False }
+    , texture = Nothing
     }
 
 
@@ -348,6 +356,10 @@ type Key
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
+    GotTexture result ->
+      ( { model | texture = Result.toMaybe result, debug = "got that texture!" }
+      , Cmd.none
+      )
     UpdateDim (x, y) ->
       let
         oldImage = model.image
@@ -355,7 +367,7 @@ update msg model =
         newModel = resetModel newImage model.seed
       in
       ( newModel
-      , Cmd.none)
+      , Task.attempt GotTexture (Texture.loadWith Texture.nonPowerOfTwoOptions model.image.path))
     PickImage ->
       ( model, File.Select.file ["image/*"] GotImage )
     GotImage file ->
@@ -735,7 +747,7 @@ view model =
       , Html.Attributes.style "top" "100px"
       , Html.Attributes.style "left" "0px"
       ]
-      ((viewDiv model) ++ (viewSelectionBox model))
+      ((viewWebGL model) :: (viewSelectionBox model))
     ]
 
 
@@ -935,6 +947,103 @@ port newDim : ((Int, Int) -> msg) -> Sub msg
 port getDim : String -> Cmd msg
 
 
+-- WEBGL
+type alias Uniforms =
+  { translation : Mat4
+  , scale : Mat4
+  , texture : Texture.Texture
+--  , rotation : Mat4
+  }
+
+type alias Vertex =
+  { position : Vec3
+  , coord : Vec2
+  }
+
+
+viewWebGL : Model -> Html Msg
+viewWebGL model =
+  let
+
+    scale =
+      let
+        pieceWidth = toFloat <| model.image.width // model.image.xpieces
+        pieceHeight = toFloat <| model.image.height // model.image.ypieces
+      in
+      Mat4.makeScale
+        <| vec3 (pieceWidth / toFloat model.width) (pieceHeight / toFloat model.height) 1
+
+    makePieceEntity texture pos pid =
+      let
+        w = toFloat model.width
+        h = toFloat model.height
+        pieceWidth = toFloat <| model.image.width // model.image.xpieces
+        pieceHeight = toFloat <| model.image.height // model.image.ypieces
+        offset = pieceIdToOffset model.image pid
+        xpos = toFloat <| pos.x + offset.x
+        ypos = toFloat <| pos.y + offset.y
+        x = 2 * (xpos - w / 2 + pieceWidth / 2) / w
+        y = 2 * (h / 2 - ypos - pieceHeight / 2) / h
+        translation = Mat4.makeTranslate (vec3 x y 0)
+      in
+        WebGL.entity vertexShader fragmentShader mesh { translation = translation, scale = scale, texture = texture }
+
+    makePieceGroupEntity : Texture.Texture -> PieceGroup -> List WebGL.Entity
+    makePieceGroupEntity texture pg =
+      List.map (makePieceEntity texture pg.position) pg.members
+--      WebGL.entity vertexShader fragmentShader mesh { translation = scale, scale = scale }
+
+  in
+  case model.texture of
+    Nothing ->
+      Html.text "Loading texture..."
+    Just texture ->
+      WebGL.toHtml
+        [ Html.Attributes.width model.width
+        , Html.Attributes.height model.height
+        , Html.Attributes.style "display" "block"
+        ]
+      ( List.concat <| List.map (makePieceGroupEntity texture) <| List.sortBy .zlevel <| D.values model.pieceGroups )
+
+mesh : WebGL.Mesh Vertex
+mesh =
+  let
+    v0 = Vertex (vec3 -1 -1 0) (vec2 0.5 0)
+    v1 = Vertex (vec3 1 -1 0) (vec2 1 0)
+    v2 = Vertex (vec3 1 1 0) (vec2 1 0.5)
+    v3 = Vertex (vec3 -1 1 0) (vec2 0.5 0.5)
+  in
+  WebGL.triangleFan
+    [ v0, v1, v2, v3 ]
+
+vertexShader : WebGL.Shader Vertex Uniforms { vcoord : Vec2 }
+vertexShader =
+    [glsl|
+        attribute vec3 position;
+        attribute vec2 coord;
+        uniform mat4 translation;
+        uniform mat4 scale;
+
+        varying vec2 vcoord;
+
+        void main () {
+            gl_Position =  translation * scale * vec4(position, 1.0);
+            //gl_Position = vec4(position, 1.0);
+            vcoord = coord;
+        }
+    |]
+
+
+fragmentShader : WebGL.Shader {} Uniforms { vcoord : Vec2 }
+fragmentShader =
+    [glsl|
+        precision mediump float;
+        varying vec2 vcoord;
+        uniform sampler2D texture;
+        void main () {
+            gl_FragColor = texture2D(texture, vcoord);
+        }
+    |]
 
 
 
