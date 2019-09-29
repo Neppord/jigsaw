@@ -1,6 +1,5 @@
 port module Main exposing (..)
 
-
 import Set as S
 import Dict as D
 import Array as A
@@ -22,7 +21,6 @@ import WebGL.Texture as Texture
 import Math.Vector2 exposing (Vec2, vec2)
 import Math.Vector3 exposing (Vec3, vec3)
 import Math.Matrix4 as Mat4 exposing (Mat4)
-
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
@@ -143,9 +141,9 @@ init : () -> ( Model, Cmd Msg )
 init () =
   let
     image =
-      { path = "resources/kitten.png"
-      , width = 537
-      , height = 533
+      { path = "../resources/kitten.png"
+      , width = 533
+      , height = 538
       , xpieces = 3
       , ypieces = 3
       , scale = 1
@@ -357,9 +355,18 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
     GotTexture result ->
-      ( { model | texture = Result.toMaybe result, debug = "got that texture!" }
-      , Cmd.none
-      )
+      case result of
+        Result.Ok texture ->
+          ( { model | texture = Just texture, debug = "got that texture!" }
+          , Cmd.none
+          )
+        Result.Err foo ->
+          case foo of
+            Texture.LoadError ->
+              ( {model | texture = Nothing, debug = "Texture load error!"}, Cmd.none )
+            Texture.SizeError x y ->
+              ( {model | texture = Nothing, debug = "Texture size error! "++String.fromInt x ++ ", " ++ String.fromInt y}, Cmd.none )
+
     UpdateDim (x, y) ->
       let
         oldImage = model.image
@@ -430,7 +437,7 @@ update msg model =
       let
         newModel = resetModel model.image model.seed
       in
-        ( newModel, Cmd.none )
+        ( newModel, Task.attempt GotTexture (Texture.loadWith Texture.nonPowerOfTwoOptions newModel.image.path) )
 
     MouseDown coordinate keyboard ->
       let
@@ -736,9 +743,6 @@ view model =
   Html.div
     ( turnOffTheBloodyImageDragging )
     [
---    , Html.h1
---      []
---      [ Html.text model.debug ]
       viewMenu model
     , Html.div
       [ Html.Attributes.style "width" <| String.fromInt model.image.width ++ "px"
@@ -827,6 +831,7 @@ viewDiv model =
       [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
       , Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
       , Html.Attributes.style "position" "absolute"
+
       ]
       [
       Html.div
@@ -925,17 +930,35 @@ viewMenu model =
   , Html.Attributes.style "top" "0"
   , Html.Attributes.style "left" "0px"
   , Html.Attributes.style "background-color" "#CCCCCC"
-  , Html.Attributes.style "box-shadow" "-2px 5px 4px grey"
+  , Html.Attributes.style "box-shadow" "-2px 5px 4px rgba(0,0,0,0.8)"
   , Html.Attributes.style "z-index" <| String.fromInt <| model.maxZLevel + 10
   , Html.Attributes.style "flex-direction" "column"
   ]
-  [ Html.button
-    [ Html.Events.onClick Scramble ]
-    [ Html.text "scramble" ]
+  [
+    Html.div
+    [ Html.Attributes.class "dropdown"
+    ]
+    [
+      Html.button
+      [ Html.Attributes.class "dropbtn"
+      ]
+      [ Html.text "Menu"
+      ]
+    , Html.div
+      [ Html.Attributes.class "dropdown-content"
+      ]
+      [ Html.a
+        [ Html.Events.onClick Scramble ]
+        [ Html.text "Scramble" ]
+      , Html.a
+        [ Html.Events.onClick PickImage ]
+        [ Html.text "Choose image" ]
+      , Html.a
+        []
+        [ Html.text "[TODO] Options" ]
+      ]
+    ]
 
-  , Html.button
-    [ Html.Events.onClick PickImage ]
-    [ Html.text "Choose image" ]
   , Html.p
     [ Html.Attributes.style "height" "1000px"
     , Html.Attributes.style "width" "1000px"]
@@ -986,12 +1009,11 @@ viewWebGL model =
         y = 2 * (h / 2 - ypos - pieceHeight / 2) / h
         translation = Mat4.makeTranslate (vec3 x y 0)
       in
-        WebGL.entity vertexShader fragmentShader mesh { translation = translation, scale = scale, texture = texture }
+        WebGL.entity vertexShader fragmentShader (pieceMesh model.image pid) { translation = translation, scale = scale, texture = texture }
 
     makePieceGroupEntity : Texture.Texture -> PieceGroup -> List WebGL.Entity
     makePieceGroupEntity texture pg =
       List.map (makePieceEntity texture pg.position) pg.members
---      WebGL.entity vertexShader fragmentShader mesh { translation = scale, scale = scale }
 
   in
   case model.texture of
@@ -1003,7 +1025,7 @@ viewWebGL model =
         , Html.Attributes.height model.height
         , Html.Attributes.style "display" "block"
         ]
-      ( List.concat <| List.map (makePieceGroupEntity texture) <| List.sortBy .zlevel <| D.values model.pieceGroups )
+      ( List.concat <| List.map (makePieceGroupEntity texture) <| List.reverse <| List.sortBy .zlevel <| D.values model.pieceGroups )
 
 mesh : WebGL.Mesh Vertex
 mesh =
@@ -1015,6 +1037,32 @@ mesh =
   in
   WebGL.triangleFan
     [ v0, v1, v2, v3 ]
+
+
+foobar : JigsawImage -> Int -> (Float, Float) -> (Float, Float)
+foobar image id (x, y) =
+  let
+    pieceWidth = image.scale * toFloat (image.width // image.xpieces)
+    pieceHeight = image.scale * toFloat (image.height // image.ypieces)
+    imageWidth = toFloat image.width
+    imageHeight = toFloat image.height
+    offset = pieceIdToOffset image id
+
+    newx = (x + 1) * pieceWidth / (2 * imageWidth) + (toFloat offset.x) / imageWidth
+    newy = (y - 1) * pieceHeight / (2 * imageHeight) + 1 - (toFloat offset.y) / imageHeight
+  in
+    (newx, newy)
+
+
+pieceMesh : JigsawImage -> Int -> WebGL.Mesh Vertex
+pieceMesh image id =
+  let
+    points = [ (-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0) ]
+    magic (x, y) =
+      Vertex (vec3 x y 0) (Util.applyTuple vec2 (foobar image id (x, y)))
+  in
+    WebGL.triangleFan
+      <| List.map (magic) points
 
 vertexShader : WebGL.Shader Vertex Uniforms { vcoord : Vec2 }
 vertexShader =
@@ -1028,7 +1076,6 @@ vertexShader =
 
         void main () {
             gl_Position =  translation * scale * vec4(position, 1.0);
-            //gl_Position = vec4(position, 1.0);
             vcoord = coord;
         }
     |]
