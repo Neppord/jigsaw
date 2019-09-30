@@ -987,12 +987,9 @@ type alias Vertex =
 viewWebGL : Model -> Html Msg
 viewWebGL model =
   let
-
+    pieceWidth = toFloat <| model.image.width // model.image.xpieces
+    pieceHeight = toFloat <| model.image.height // model.image.ypieces
     scale =
-      let
-        pieceWidth = toFloat <| model.image.width // model.image.xpieces
-        pieceHeight = toFloat <| model.image.height // model.image.ypieces
-      in
       Mat4.makeScale
         <| vec3 (pieceWidth / toFloat model.width) (pieceHeight / toFloat model.height) 1
 
@@ -1000,8 +997,6 @@ viewWebGL model =
       let
         w = toFloat model.width
         h = toFloat model.height
-        pieceWidth = toFloat <| model.image.width // model.image.xpieces
-        pieceHeight = toFloat <| model.image.height // model.image.ypieces
         offset = pieceIdToOffset model.image pid
         xpos = toFloat <| pos.x + offset.x
         ypos = toFloat <| pos.y + offset.y
@@ -1009,7 +1004,13 @@ viewWebGL model =
         y = 2 * (h / 2 - ypos - pieceHeight / 2) / h
         translation = Mat4.makeTranslate (vec3 x y 0)
       in
-        WebGL.entity vertexShader fragmentShader (pieceMesh model.image pid) { translation = translation, scale = scale, texture = texture }
+        WebGL.entity
+          vertexShader
+          fragmentShader
+          (pieceMesh model.image pid)
+          { translation = translation
+          , scale = scale
+          , texture = texture }
 
     makePieceGroupEntity : Texture.Texture -> PieceGroup -> List WebGL.Entity
     makePieceGroupEntity texture pg =
@@ -1021,26 +1022,19 @@ viewWebGL model =
       Html.text "Loading texture..."
     Just texture ->
       WebGL.toHtml
-        [ Html.Attributes.width model.width
-        , Html.Attributes.height model.height
-        , Html.Attributes.style "display" "block"
-        ]
-      ( List.concat <| List.map (makePieceGroupEntity texture) <| List.reverse <| List.sortBy .zlevel <| D.values model.pieceGroups )
-
-mesh : WebGL.Mesh Vertex
-mesh =
-  let
-    v0 = Vertex (vec3 -1 -1 0) (vec2 0.5 0)
-    v1 = Vertex (vec3 1 -1 0) (vec2 1 0)
-    v2 = Vertex (vec3 1 1 0) (vec2 1 0.5)
-    v3 = Vertex (vec3 -1 1 0) (vec2 0.5 0.5)
-  in
-  WebGL.triangleFan
-    [ v0, v1, v2, v3 ]
+      [ Html.Attributes.width model.width
+      , Html.Attributes.height model.height
+      , Html.Attributes.style "display" "block"
+      ]
+      ( List.concat
+        <| List.map (makePieceGroupEntity texture)
+        <| List.reverse
+        <| List.sortBy .zlevel
+        <| D.values model.pieceGroups )
 
 
-foobar : JigsawImage -> Int -> (Float, Float) -> (Float, Float)
-foobar image id (x, y) =
+texturePosition : JigsawImage -> Int -> Float -> Float -> Vec2
+texturePosition image id x y =
   let
     pieceWidth = image.scale * toFloat (image.width // image.xpieces)
     pieceHeight = image.scale * toFloat (image.height // image.ypieces)
@@ -1051,18 +1045,18 @@ foobar image id (x, y) =
     newx = (x + 1) * pieceWidth / (2 * imageWidth) + (toFloat offset.x) / imageWidth
     newy = (y - 1) * pieceHeight / (2 * imageHeight) + 1 - (toFloat offset.y) / imageHeight
   in
-    (newx, newy)
+    vec2 newx newy
 
 
 pieceMesh : JigsawImage -> Int -> WebGL.Mesh Vertex
 pieceMesh image id =
   let
     points = [ (-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0) ]
-    magic (x, y) =
-      Vertex (vec3 x y 0) (Util.applyTuple vec2 (foobar image id (x, y)))
+    pointToVertex (x, y) =
+      Vertex (vec3 x y 0) (texturePosition image id x y)
   in
     WebGL.triangleFan
-      <| List.map (magic) points
+      <| List.map pointToVertex points
 
 vertexShader : WebGL.Shader Vertex Uniforms { vcoord : Vec2 }
 vertexShader =
@@ -1091,7 +1085,3 @@ fragmentShader =
             gl_FragColor = texture2D(texture, vcoord);
         }
     |]
-
-
-
-
