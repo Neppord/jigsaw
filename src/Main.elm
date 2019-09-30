@@ -21,6 +21,7 @@ import WebGL.Texture as Texture
 import Math.Vector2 exposing (Vec2, vec2)
 import Math.Vector3 exposing (Vec3, vec3)
 import Math.Matrix4 as Mat4 exposing (Mat4)
+import Float.Extra
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
@@ -1083,3 +1084,5 @@ fragmentShader =
             gl_FragColor = texture2D(texture, vcoord);
         }
     |]
+
+

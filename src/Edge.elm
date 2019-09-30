@@ -3,6 +3,7 @@ module Edge exposing (..)
 import Random
 import Array
 import Dict as D
+import Float.Extra
 
 import Point exposing (Point)
 import Util
@@ -126,6 +127,52 @@ makeEdge orientation points =
     _ ->
       defaultCurvedEdge
 
+
+getPointOnBezierCurve : Point -> Point -> Point -> Point -> Float -> Point
+getPointOnBezierCurve p1 p2 p3 p4 t =
+  let
+    s = clamp 0.0 1.0 t
+    points =
+      [ Point.mul p1 <| (1.0 - s)^3
+      , Point.mul p2 <| 3.0 * s * (1.0 - s)^2
+      , Point.mul p3 <| 3.0 * s^2 * (1.0 - s)
+      , Point.mul p4 <| s^3
+      ]
+  in
+    Point.sum points |> Maybe.withDefault p1
+
+getPointsOnBezierCurve : Point -> Point -> Point -> Point -> Int -> List Point
+getPointsOnBezierCurve p1 p2 p3 p4 n =
+  List.map (getPointOnBezierCurve p1 p2 p3 p4) <| Float.Extra.range {start=0.0, end=1.0, steps=n}
+
+generatePointsFromEdge : Edge -> Int -> List Point
+generatePointsFromEdge edge n =
+  let
+    edgeToPoints =
+      case edge of
+        Flat {start, end} ->
+          [start, end]
+        Curved {start, b1, b2, b3, b4} ->
+          start :: (List.concat <| List.map bezierToPoints [b1, b2, b3, b4])
+
+    bezierToPoints b =
+      case b of
+        C p1 p2 p3 -> [p1, p2, p3]
+        S p1 p2 -> [p1, p2]
+
+    flip p q =
+      Point (2*q.x - p.x) (2*q.y - p.y)
+  in
+  case edgeToPoints of
+    [p0, p1, p2, p3, p4, p5, p6, p7, p8, p9] ->
+      List.concat
+        [ getPointsOnBezierCurve p0 p1 p2 p3 n |> List.tail |> Maybe.withDefault []
+        , getPointsOnBezierCurve p3 (flip p2 p3) p4 p5 n |> List.tail |> Maybe.withDefault []
+        , getPointsOnBezierCurve p5 (flip p4 p5) p6 p7 n |> List.tail |> Maybe.withDefault []
+        , getPointsOnBezierCurve p7 (flip p6 p7) p8 p9 n |> List.tail |> Maybe.withDefault []
+        ]
+    [p0, p1] -> [p1]
+    _ -> []
 
 bezierToString : Bezier -> String
 bezierToString b =

@@ -1,4 +1,4 @@
-module Point exposing (Point, sub, add, mulPointWise, dist, taxiDist, toIntString, randomPoint, randomPoints, xToPixel, yToPixel)
+module Point exposing (Point, sub, add, sum, mul, mulPointWise, dist, taxiDist, toIntString, randomPoint, randomPoints, xToPixel, yToPixel)
 
 import Random
 
@@ -31,9 +31,19 @@ add : Point -> Point -> Point
 add a b =
   Point (a.x + b.x) (a.y + b.y)
 
+sum : List Point -> Maybe Point
+sum points =
+  case points of
+    p :: ps -> Just (List.foldl add p ps)
+    [] -> Nothing
+
 mulPointWise : Point -> Point -> Point
 mulPointWise a b =
   Point (a.x * b.x) (a.y * b.y)
+
+mul : Point -> Float -> Point
+mul p a =
+  Point (a * p.x) (a * p.y)
 
 dist : Point -> Point -> Float
 dist a b =
