@@ -21,11 +21,15 @@ import WebGL.Texture as Texture
 import Math.Vector2 exposing (Vec2, vec2)
 import Math.Vector3 exposing (Vec3, vec3)
 import Math.Matrix4 as Mat4 exposing (Mat4)
-import Float.Extra
+
+import TriangularMesh exposing (TriangularMesh)
+import Point2d exposing (Point2d)
+import Pixels exposing (Pixels)
+
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
-import Edge exposing (EdgePoints, makeEdgePoints)
+import Edge exposing (EdgePoints, makeEdgePoints, pieceToTriangularMesh)
 
 -- MAIN
 main =
@@ -145,8 +149,8 @@ init () =
       { path = "../resources/kitten.png"
       , width = 533
       , height = 538
-      , xpieces = 3
-      , ypieces = 3
+      , xpieces = 20
+      , ypieces = 20
       , scale = 1
       }
     model =
@@ -889,7 +893,8 @@ pieceGroupPath image edgePoints pieceGroup =
 
     offset = Point (imageWidth * (0.5 - l)) (imageHeight * (0.5 - t))
 
-    curve = Edge.pieceGroupCurve pieceGroup.members image.xpieces image.ypieces edgePoints
+--    curve = Edge.pieceGroupCurve pieceGroup.members image.xpieces image.ypieces edgePoints
+    curve = ""
     move = "translate(" ++ Point.toIntString offset ++ ") "
     scale = "scale("
       ++ String.fromFloat (imageWidth / 200.0) ++ " "
@@ -972,7 +977,8 @@ port getDim : String -> Cmd msg
 -- WEBGL
 type alias Uniforms =
   { translation : Mat4
-  , scale : Mat4
+  , camera : Mat4
+  , perspective : Mat4
   , texture : Texture.Texture
 --  , rotation : Mat4
   }
@@ -986,29 +992,22 @@ type alias Vertex =
 viewWebGL : Model -> Html Msg
 viewWebGL model =
   let
-    pieceWidth = (toFloat model.image.width) / (toFloat model.image.xpieces)
-    pieceHeight = (toFloat model.image.height) / (toFloat model.image.ypieces)
-    scale =
-      Mat4.makeScale
-        <| vec3 (pieceWidth / toFloat model.width) (pieceHeight / toFloat model.height) 1
+    perspective = Mat4.mul
+      (Mat4.makeScale <| vec3 1 -1 1) -- flips the y-axis
+      (Mat4.makeOrtho2D 0 (toFloat model.width) 0 (toFloat model.height))
+    scale = Mat4.identity
 
     makePieceEntity texture pos pid =
       let
-        w = toFloat model.width
-        h = toFloat model.height
-        offset = pieceIdToOffset model.image pid
-        xpos = pos.x + offset.x
-        ypos = pos.y + offset.y
-        x = -1 + (2 * xpos + pieceWidth) / w
-        y =  1 - (2 * ypos + pieceHeight) / h
-        translation = Mat4.makeTranslate (vec3 x y 0)
+        translation = Mat4.makeTranslate (vec3 pos.x pos.y 0)
       in
         WebGL.entity
           vertexShader
           fragmentShader
-          (pieceMesh model.image pid)
+          (pieceMesh model.image model.edgePoints pid)
           { translation = translation
-          , scale = scale
+          , camera = scale
+          , perspective = perspective
           , texture = texture }
 
     makePieceGroupEntity : Texture.Texture -> PieceGroup -> List WebGL.Entity
@@ -1032,30 +1031,37 @@ viewWebGL model =
         <| D.values model.pieceGroups )
 
 
-texturePosition : JigsawImage -> Int -> Float -> Float -> Vec2
-texturePosition image id x y =
+texturePosition : JigsawImage -> Float -> Float -> Vec2
+texturePosition image x y =
+  let
+    imageWidth = toFloat image.width
+    imageHeight = toFloat image.height
+  in
+    vec2
+      (x / imageWidth)
+      (1 - y / imageHeight)
+
+pieceMesh : JigsawImage -> A.Array EdgePoints -> Int -> WebGL.Mesh Vertex
+pieceMesh image edgePoints id =
   let
     pieceWidth = image.scale * (toFloat image.width) / (toFloat image.xpieces)
     pieceHeight = image.scale * (toFloat image.height) / (toFloat image.ypieces)
-    imageWidth = toFloat image.width
-    imageHeight = toFloat image.height
-    offset = pieceIdToOffset image id
+    mesh =
+      pieceToTriangularMesh [id] image.xpieces image.ypieces edgePoints
 
-    newx = (x + 1) * pieceWidth / (2 * imageWidth) + offset.x / imageWidth
-    newy = (y - 1) * pieceHeight / (2 * imageHeight) + 1 - offset.y / imageHeight
+    makeVertex : Point2d Pixels coordinates -> Vertex
+    makeVertex p =
+      let
+        {x, y} = Point2d.toPixels p
+        newx = x * pieceWidth / 200.0
+        newy = y * pieceHeight / 200.0
+      in
+        Vertex (vec3 newx newy 0) (texturePosition image newx newy)
+
   in
-    vec2 newx newy
-
-
-pieceMesh : JigsawImage -> Int -> WebGL.Mesh Vertex
-pieceMesh image id =
-  let
-    points = [ (-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0) ]
-    pointToVertex (x, y) =
-      Vertex (vec3 x y 0) (texturePosition image id x y)
-  in
-    WebGL.triangleFan
-      <| List.map pointToVertex points
+    WebGL.indexedTriangles
+      (TriangularMesh.vertices mesh |> A.toList |> List.map makeVertex)
+      (TriangularMesh.faceIndices mesh)
 
 vertexShader : WebGL.Shader Vertex Uniforms { vcoord : Vec2 }
 vertexShader =
@@ -1063,12 +1069,13 @@ vertexShader =
         attribute vec3 position;
         attribute vec2 coord;
         uniform mat4 translation;
-        uniform mat4 scale;
+        uniform mat4 camera;
+        uniform mat4 perspective;
 
         varying vec2 vcoord;
 
         void main () {
-            gl_Position =  translation * scale * vec4(position, 1.0);
+            gl_Position = perspective * camera * translation * vec4(position, 1.0);
             vcoord = coord;
         }
     |]

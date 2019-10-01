@@ -4,6 +4,12 @@ import Random
 import Array
 import Dict as D
 import Float.Extra
+import Polygon2d
+import Point2d
+import Vector2d
+import TriangularMesh
+import Pixels
+
 
 import Point exposing (Point)
 import Util
@@ -14,6 +20,9 @@ type alias Model =
   , nx : Int
   , ny : Int
   }
+
+
+
 
 makeEdgePoints : Int -> Random.Seed -> (Array.Array EdgePoints, Random.Seed)
 makeEdgePoints n seed =
@@ -145,8 +154,8 @@ getPointsOnBezierCurve : Point -> Point -> Point -> Point -> Int -> List Point
 getPointsOnBezierCurve p1 p2 p3 p4 n =
   List.map (getPointOnBezierCurve p1 p2 p3 p4) <| Float.Extra.range {start=0.0, end=1.0, steps=n}
 
-generatePointsFromEdge : Edge -> Int -> List Point
-generatePointsFromEdge edge n =
+generatePointsFromEdge : Int -> Edge -> List Point
+generatePointsFromEdge n edge =
   let
     edgeToPoints =
       case edge of
@@ -173,6 +182,35 @@ generatePointsFromEdge edge n =
         ]
     [p0, p1] -> [p1]
     _ -> []
+
+pointToPoint2d p =
+  Point2d.pixels p.x p.y
+
+edgeToPolygon : Edge -> TriangularMesh.TriangularMesh (Point2d.Point2d Pixels.Pixels coordinates)
+edgeToPolygon edge =
+  generatePointsFromEdge 5 edge
+    |> List.map pointToPoint2d
+    |> Polygon2d.singleLoop
+    |> Polygon2d.triangulate
+
+pieceToTriangularMesh pids nx ny edgePoints =
+  let
+    paths = pieceGroupEdges pids nx ny edgePoints
+    pathToPoints path =
+      List.concatMap (generatePointsFromEdge 3) path
+
+  in
+    case paths of
+      p :: ps ->
+        pathToPoints p
+          |> List.map pointToPoint2d
+          |> Polygon2d.singleLoop
+--          |> Polygon2d.scaleAbout Point2d.origin 0.01
+--          |> Polygon2d.translateBy (Vector2d.pixels -1 -1)
+          |> Polygon2d.triangulate
+      _ ->
+        TriangularMesh.empty
+
 
 bezierToString : Bezier -> String
 bezierToString b =
@@ -292,7 +330,7 @@ The algorithm works like follows (you can read it pretty much from top to bottom
    the resulting strings as we go along. Phew!
 -}
 
-pieceGroupCurve pids nx ny edgePoints =
+pieceGroupEdges pids nx ny edgePoints =
   let
     translate : Int -> EdgePoints -> EdgePoints
     translate pid pts =
@@ -376,27 +414,43 @@ pieceGroupCurve pids nx ny edgePoints =
       in
         List.foldl insertEdge D.empty uniqueEdges
 
-    connectedPath : String -> String -> D.Dict String (List Edge) -> (String, D.Dict String (List Edge))
-    connectedPath str start dict =
+    -- TODO: This constructs the list by adding elements to the end, which is slow
+    -- Can do better by using the end-point as dict key instead and move backwards, as it were.
+    connectedPath : List Edge -> String -> D.Dict String (List Edge) -> (List Edge, D.Dict String (List Edge))
+    connectedPath edges start dict =
       let
         update new old =
           case old of
             Nothing -> Nothing
             Just _ -> Just new
-        recurse e =
-          connectedPath (str ++ edgeToString e) (Point.toIntString (edgeEndPoint e))
+        recurse edge =
+          connectedPath (edges ++ [edge]) (Point.toIntString (edgeEndPoint edge))
       in
       case D.get start dict of
         Just (edge :: []) -> recurse edge <| D.remove start dict
-        Just (edge :: edges) -> recurse edge <| D.update start (update edges) dict
-        _ -> (str, dict)
+        Just (edge :: remainder) -> recurse edge <| D.update start (update remainder) dict
+        _ -> (edges, dict)
 
-    allConnectedPaths : String -> D.Dict String (List Edge) -> String
-    allConnectedPaths str dict =
+    allConnectedPaths : List (List Edge) -> D.Dict String (List Edge) -> List (List Edge)
+    allConnectedPaths paths dict =
       case List.head (D.keys dict) of
         Just start ->
-          Util.applyTuple allConnectedPaths <| connectedPath (str ++ "M " ++ start) start dict
+          let
+            (path, newDict) = (connectedPath [] start dict)
+          in
+            allConnectedPaths (paths ++ [path]) newDict
         Nothing ->
-          str
+          paths
+--        Just start ->
+--          Util.applyTuple allConnectedPaths <| connectedPath (str ++ "M " ++ start) start dict
+--        Nothing ->
+--          str
   in
-    allConnectedPaths "" edgeDict
+    allConnectedPaths [] edgeDict
+
+
+--pieceGroupCurve pids nx ny edgePoints =
+--  let
+--    paths = pieceGroupEdges pids nx ny edgePoints
+--  in
+--    List.map (\(e::es) -> "M " ++ e.start (String.concat <| List.map edgeToString path)) paths

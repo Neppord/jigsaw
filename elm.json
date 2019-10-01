@@ -19,11 +19,17 @@
             "elm-community/random-extra": "3.1.0",
             "elm-explorations/linear-algebra": "1.0.3",
             "elm-explorations/webgl": "1.1.1",
-            "ianmackenzie/elm-float-extra": "1.1.0"
+            "ianmackenzie/elm-float-extra": "1.1.0",
+            "ianmackenzie/elm-geometry": "2.0.0",
+            "ianmackenzie/elm-triangular-mesh": "1.0.2",
+            "ianmackenzie/elm-units": "2.2.0"
         },
         "indirect": {
             "elm/bytes": "1.0.8",
             "elm/virtual-dom": "1.0.2",
+            "ianmackenzie/elm-1d-parameter": "1.0.1",
+            "ianmackenzie/elm-interval": "2.0.0",
+            "ianmackenzie/elm-units-interval": "1.0.0",
             "owanturist/elm-union-find": "1.0.0"
         }
     },
