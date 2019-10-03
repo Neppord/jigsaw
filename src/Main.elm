@@ -17,7 +17,6 @@ import Random.List
 import File exposing (File)
 import File.Select
 import Task
---import File.Download
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
@@ -726,9 +725,6 @@ view model =
   Html.div
     ( turnOffTheBloodyImageDragging )
     [
---    , Html.h1
---      []
---      [ Html.text model.debug ]
       viewMenu model
     , Html.div
       [ Html.Attributes.style "width" <| String.fromInt model.image.width ++ "px"
@@ -915,17 +911,30 @@ viewMenu model =
   , Html.Attributes.style "z-index" <| String.fromInt <| model.maxZLevel + 10
   , Html.Attributes.style "flex-direction" "column"
   ]
-  [ Html.button
-    [ Html.Events.onClick Scramble ]
-    [ Html.text "scramble" ]
-
-  , Html.button
-    [ Html.Events.onClick PickImage ]
-    [ Html.text "Choose image" ]
-  , Html.p
-    [ Html.Attributes.style "height" "1000px"
-    , Html.Attributes.style "width" "1000px"]
-    [ Html.text model.debug ]
+  [
+    Html.div
+    [ Html.Attributes.class "dropdown"
+    ]
+    [
+      Html.button
+      [ Html.Attributes.class "dropbtn"
+      ]
+      [ Html.text "Menu"
+      ]
+    , Html.div
+      [ Html.Attributes.class "dropdown-content"
+      ]
+      [ Html.a
+        [ Html.Events.onClick Scramble ]
+        [ Html.text "Scramble" ]
+      , Html.a
+        [ Html.Events.onClick PickImage ]
+        [ Html.text "Choose image" ]
+      , Html.a
+        []
+        [ Html.text "[TODO] Options" ]
+      ]
+    ]
   ]
 
 
