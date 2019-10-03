@@ -181,9 +181,9 @@ shufflePiecePositions w h image seed =
   let
     n = image.xpieces * image.ypieces
     xmin = 0
-    xmax = w - image.width // image.xpieces
+    xmax = toFloat w - (toFloat image.width) / (toFloat image.xpieces)
     ymin = 0
-    ymax = h - image.height // image.ypieces
+    ymax = toFloat h - (toFloat image.height) / (toFloat image.ypieces)
   in
     Random.step (Point.randomPoints n xmin xmax ymin ymax) seed
 
@@ -234,27 +234,29 @@ createPieceGroups image points levels =
   in
     D.fromList <| List.map3 onePieceGroup range positions zlevels
 
-
+--
 pieceIdToPoint : Int -> Int -> Point
 pieceIdToPoint id xpieces =
-  Point (modBy xpieces id) (id // xpieces)
+  Point (toFloat (modBy xpieces id)) (toFloat (id // xpieces))
 
 pieceIdToOffset : JigsawImage -> Int -> Point
 pieceIdToOffset image id =
   let
-    pieceWidth =  floor <| image.scale * toFloat (image.width // image.xpieces)
-    pieceHeight = floor <| image.scale * toFloat (image.height // image.ypieces)
+    pieceWidth =  image.scale * (toFloat image.width) / (toFloat image.xpieces)
+    pieceHeight = image.scale * (toFloat image.height) / (toFloat image.ypieces)
   in
-    Point.dot
-      ( pieceIdToPoint id image.xpieces )
-      ( Point pieceWidth pieceHeight )
+    Point
+      (pieceWidth * (toFloat <| modBy image.xpieces id))
+      (pieceHeight * (toFloat <| id // image.xpieces))
+
 
 
 isPieceInsideBox : JigsawImage -> Point -> Point -> Point -> Int -> Bool
 isPieceInsideBox image pos boxTL boxBR id =
   let
-    pieceWidth =  floor <| image.scale * toFloat (image.width // image.xpieces)
-    pieceHeight = floor <| image.scale * toFloat (image.height // image.ypieces)
+    foo = toFloat image.ypieces
+    pieceWidth = image.scale * (toFloat image.width) / (toFloat image.xpieces)
+    pieceHeight = image.scale * (toFloat image.height) / (toFloat image.ypieces)
     pieceTL = Point.add pos <| pieceIdToOffset image id
     pieceBR = Point.add pieceTL <| Point pieceWidth pieceHeight
   in
@@ -289,8 +291,8 @@ keyDecoder isDown key =
 isPointInsidePiece : JigsawImage -> Point -> Point -> Int -> Bool
 isPointInsidePiece image point pos id =
   let
-    pieceWidth = floor <| image.scale * toFloat (image.width // image.xpieces)
-    pieceHeight = floor <| image.scale * toFloat (image.height // image.ypieces)
+    pieceWidth = image.scale * (toFloat image.width) / (toFloat image.xpieces)
+    pieceHeight = image.scale * (toFloat image.height) / (toFloat image.ypieces)
     pieceTL = Point.add pos <| pieceIdToOffset image id
     pieceBR = Point.add pieceTL <| Point pieceWidth pieceHeight
   in
@@ -311,7 +313,7 @@ subscriptions model =
     trackMouseMovement =
       if model.cursor /= Nothing then
         Browser.Events.onMouseMove
-          <| Json.Decode.map2 (\x y -> MouseMove (Point x y))
+          <| Json.Decode.map2 (\x y -> MouseMove (Point (toFloat x) (toFloat y)))
             (Json.Decode.field "pageX" Json.Decode.int)
             (Json.Decode.field "pageY" Json.Decode.int)
       else
@@ -319,7 +321,7 @@ subscriptions model =
 
     trackMouseDown =
       Browser.Events.onMouseDown
-        <| Json.Decode.map4 (\x y shift ctrl -> MouseDown (Point x y) {shift=shift, ctrl=ctrl})
+        <| Json.Decode.map4 (\x y shift ctrl -> MouseDown (Point (toFloat x) (toFloat y)) {shift=shift, ctrl=ctrl})
           (Json.Decode.field "pageX" Json.Decode.int)
           (Json.Decode.field "pageY" Json.Decode.int)
           (Json.Decode.field "shiftKey" Json.Decode.bool)
@@ -755,14 +757,15 @@ viewSelectionBox model =
         topLeft = boxTopLeft box
         bottomRight = boxBottomRight box
         top = max 100 topLeft.y
+        coord = Point.sub bottomRight topLeft
       in
         Html.div
-          ([ Html.Attributes.style "width" <| String.fromInt (bottomRight.x - topLeft.x) ++ "px"
-          , Html.Attributes.style "height" <| String.fromInt (bottomRight.y - top) ++ "px"
+          ([ Html.Attributes.style "width" <| Point.xToPixel coord
+          , Html.Attributes.style "height" <| String.fromInt (floor (bottomRight.y - top)) ++ "px"
           , Html.Attributes.style "background-color" color
           , Html.Attributes.style "border-style" "dotted"
-          , Html.Attributes.style "top" <| String.fromInt (top - 100) ++ "px"
-          , Html.Attributes.style "left" <| String.fromInt topLeft.x ++ "px"
+          , Html.Attributes.style "top" <| String.fromInt (floor top - 100) ++ "px"
+          , Html.Attributes.style "left" <| Point.xToPixel topLeft
           , Html.Attributes.style "z-index" <| String.fromInt (model.maxZLevel + 1)
           , Html.Attributes.style "position" "absolute"
           ] ++ turnOffTheBloodyImageDragging)
@@ -781,10 +784,10 @@ pieceGroupSize members nx =
     xpos = modBy nx
     ypos id = id // nx
 
-    left = List.map xpos members |> List.minimum |> Maybe.withDefault 0
-    right = List.map xpos members |> List.maximum |> Maybe.withDefault 0
-    top = List.map ypos members |> List.minimum |> Maybe.withDefault 0
-    bottom = List.map ypos members |> List.maximum |> Maybe.withDefault 0
+    left = List.map xpos members |> List.minimum |> Maybe.withDefault 0 |> toFloat
+    right = List.map xpos members |> List.maximum |> Maybe.withDefault 0 |> toFloat
+    top = List.map ypos members |> List.minimum |> Maybe.withDefault 0 |> toFloat
+    bottom = List.map ypos members |> List.maximum |> Maybe.withDefault 0 |> toFloat
   in
     {t=top, l=left, r=right, b=bottom}
 
@@ -798,15 +801,13 @@ viewDiv model =
 
         imageWidth = model.image.scale * toFloat model.image.width
         imageHeight = model.image.scale * toFloat model.image.height
-        pieceWidth =  (floor imageWidth // model.image.xpieces)
-        pieceHeight = (floor imageHeight // model.image.ypieces)
+        pieceWidth =  imageWidth / toFloat model.image.xpieces
+        pieceHeight = imageHeight / toFloat model.image.ypieces
 
-        top =  pg.position.y + t * pieceHeight - pieceHeight // 2
-        left = pg.position.x + l * pieceWidth - pieceWidth // 2
-        w =  (r - l + 2) * pieceWidth
-        h =  (b - t + 2) * pieceHeight
-        bgx = pieceWidth // 2 - l * pieceWidth
-        bgy = pieceHeight // 2 - t * pieceHeight
+        tl = Point.add pg.position <|
+          Point (pieceWidth * (l - 0.5)) (pieceHeight * (t - 0.5))
+        wh = Point ((r - l + 2) * pieceWidth) ((b - t + 2) * pieceHeight)
+        bg = Point (pieceWidth * (0.5 - l)) (pieceHeight * (0.5 - t))
 
         color = if pg.isSelected then "red" else "black"
         display = if S.member pg.visibilityGroup model.visibleGroups then "block" else "none"
@@ -819,10 +820,10 @@ viewDiv model =
       [
       Html.div
         [ Html.Attributes.style "position" "absolute"
-        , Html.Attributes.style "width" <| String.fromInt w ++ "px"
-        , Html.Attributes.style "height" <| String.fromInt h ++ "px"
-        , Html.Attributes.style "top" <| String.fromInt top ++ "px"
-        , Html.Attributes.style "left" <| String.fromInt left ++ "px"
+        , Html.Attributes.style "width" <| Point.xToPixel wh
+        , Html.Attributes.style "height" <| Point.yToPixel wh
+        , Html.Attributes.style "top" <| Point.yToPixel tl
+        , Html.Attributes.style "left" <| Point.xToPixel tl
         , Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
         , Html.Attributes.style "clipPath" <| clipPathRef pg.id
         , Html.Attributes.style "display" display
@@ -833,8 +834,8 @@ viewDiv model =
           , Html.Attributes.width <| floor imageWidth
           , Html.Attributes.height <| floor imageHeight
           , Html.Attributes.style "position" "absolute"
-          , Html.Attributes.style "top" <| String.fromInt bgy ++ "px"
-          , Html.Attributes.style "left" <| String.fromInt bgx ++ "px"
+          , Html.Attributes.style "top" <| Point.yToPixel bg
+          , Html.Attributes.style "left" <| Point.xToPixel bg
           ] ++ turnOffTheBloodyImageDragging)
           []
         ]
@@ -865,19 +866,16 @@ pieceGroupPath : JigsawImage -> A.Array EdgePoints -> PieceGroup -> Svg Msg
 pieceGroupPath image edgePoints pieceGroup =
   let
     {t, l, r, b} = pieceGroupSize pieceGroup.members image.xpieces
-    imageWidth = floor <| image.scale * toFloat (image.width // image.xpieces)
-    imageHeight = floor <| image.scale * toFloat (image.height // image.ypieces)
+    imageWidth = image.scale * (toFloat image.width) / (toFloat image.xpieces)
+    imageHeight = image.scale * (toFloat image.height) / (toFloat image.ypieces)
 
-    offsetx = (imageWidth // 2 - l * imageWidth)
-    offsety = (imageHeight // 2 - t * imageHeight)
+    offset = Point (imageWidth * (0.5 - l)) (imageHeight * (0.5 - t))
 
     curve = Edge.pieceGroupCurve pieceGroup.members image.xpieces image.ypieces edgePoints
-    move = "translate("
-      ++ String.fromInt offsetx ++ " "
-      ++ String.fromInt offsety ++ ") "
+    move = "translate(" ++ Point.toIntString offset ++ ") "
     scale = "scale("
-      ++ String.fromFloat (toFloat imageWidth / 200.0) ++ " "
-      ++ String.fromFloat (toFloat imageHeight / 200.0) ++ ")"
+      ++ String.fromFloat (imageWidth / 200.0) ++ " "
+      ++ String.fromFloat (imageHeight / 200.0) ++ ")"
   in
     Svg.clipPath
     [ Svg.Attributes.id <| pieceClipId pieceGroup.id ]
@@ -933,9 +931,3 @@ viewMenu model =
 
 port newDim : ((Int, Int) -> msg) -> Sub msg
 port getDim : String -> Cmd msg
-
-
-
-
-
-

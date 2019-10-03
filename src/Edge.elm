@@ -133,7 +133,7 @@ bezierToString b =
     combine pts =
       String.concat
         <| List.intersperse ", "
-        <| List.map Point.toString pts
+        <| List.map Point.toIntString pts
   in
   case b of
     C p1 p2 p3 ->
@@ -150,7 +150,7 @@ edgeToString e =
         |> String.concat
 
     Flat {start, end} ->
-      "L " ++ Point.toString start ++ ", " ++ Point.toString end
+      "L " ++ Point.toIntString start ++ ", " ++ Point.toIntString end
 
 edgeEndPoint : Edge -> Point
 edgeEndPoint edge =
@@ -251,8 +251,8 @@ pieceGroupCurve pids nx ny edgePoints =
     translate pid pts =
       let
         offset = Point
-          (200 * (modBy nx pid))
-          (200 * (pid // nx))
+          (200 * toFloat (modBy nx pid))
+          (200 * toFloat (pid // nx))
       in
         List.map (Point.add offset) pts
 
@@ -318,8 +318,8 @@ pieceGroupCurve pids nx ny edgePoints =
         edgeKey : Edge -> String
         edgeKey e =
           case e of
-            Curved c -> Point.toString c.start
-            Flat f -> Point.toString f.start
+            Curved c -> Point.toIntString c.start
+            Flat f -> Point.toIntString f.start
 
         update : Edge -> Maybe (List Edge) -> Maybe (List Edge)
         update newEdge existingEdges =
@@ -337,7 +337,7 @@ pieceGroupCurve pids nx ny edgePoints =
             Nothing -> Nothing
             Just _ -> Just new
         recurse e =
-          connectedPath (str ++ edgeToString e) (Point.toString (edgeEndPoint e))
+          connectedPath (str ++ edgeToString e) (Point.toIntString (edgeEndPoint e))
       in
       case D.get start dict of
         Just (edge :: []) -> recurse edge <| D.remove start dict
