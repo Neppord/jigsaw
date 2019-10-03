@@ -60,7 +60,6 @@ type alias Model =
   , height : Int
   , snapDistance : Float
   , selectionBox : SelectionBox
-  , debug : String
   , seed : Random.Seed
   , edgePoints : A.Array EdgePoints
   , visibleGroups : S.Set Int
@@ -167,7 +166,6 @@ resetModel image seed =
     , height = h
     , snapDistance = 30.0
     , selectionBox = NullBox
-    , debug = "Nothing to see here..."
     , seed = seed3
     , edgePoints = edgePoints
     , visibleGroups = S.fromList [-1]
@@ -253,7 +251,6 @@ pieceIdToOffset image id =
 isPieceInsideBox : JigsawImage -> Point -> Point -> Point -> Int -> Bool
 isPieceInsideBox image pos boxTL boxBR id =
   let
-    foo = toFloat image.ypieces
     pieceWidth = image.scale * (toFloat image.width) / (toFloat image.xpieces)
     pieceHeight = image.scale * (toFloat image.height) / (toFloat image.ypieces)
     pieceTL = Point.add pos <| pieceIdToOffset image id
@@ -360,14 +357,14 @@ update msg model =
     PickImage ->
       ( model, File.Select.file ["image/*"] GotImage )
     GotImage file ->
-      ( {model | debug = "got a file!"}, Task.perform EncodedImage (File.toUrl file))
+      ( model, Task.perform EncodedImage (File.toUrl file))
 
     EncodedImage url ->
       let
         oldImage = model.image
         newImage = {oldImage | path = url}
       in
-      ( {model | debug = "file url length: " ++ String.fromInt (String.length url), image = newImage}
+      ( {model | image = newImage}
       , getDim url )
     KeyChanged isDown key ->
       let
@@ -393,13 +390,7 @@ update msg model =
             (True, True) ->
               ( {model | pieceGroups = newPieceGroups x}, Cmd.none)
             (False, True) ->
-              ( {model | visibleGroups = toggleVisibilityOf model.visibleGroups x
-                , debug =
-                  S.toList (toggleVisibilityOf model.visibleGroups x)
-                    |> List.map String.fromInt
-                    |> List.intersperse ", "
-                    |> String.concat
-              }, Cmd.none )
+              ( {model | visibleGroups = toggleVisibilityOf model.visibleGroups x}, Cmd.none )
             (_, False) ->
               ( model, Cmd.none )
 
