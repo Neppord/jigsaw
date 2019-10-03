@@ -17,6 +17,10 @@ import Random.List
 import File exposing (File)
 import File.Select
 import Task
+import Canvas
+import Canvas.Settings
+import Canvas.Texture as Texture exposing (Texture)
+import Color
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
@@ -44,6 +48,7 @@ type Msg
   | GotImage File
   | EncodedImage String
   | UpdateDim (Int, Int)
+  | TextureLoaded (Maybe Texture)
 
 type alias Keyboard =
   { shift : Bool
@@ -73,6 +78,7 @@ type alias JigsawImage =
   , xpieces : Int
   , ypieces : Int
   , scale : Float
+  , texture : Load Texture
   }
 
 type alias PieceGroup =
@@ -84,6 +90,11 @@ type alias PieceGroup =
   , zlevel : Int
   , visibilityGroup : Int
   }
+
+type Load a
+  = Loading
+  | Success a
+  | Failure
 
 type SelectionBox
   = Normal Box
@@ -137,9 +148,10 @@ init () =
       { path = "resources/hongkong.jpg"
       , width = 6000
       , height = 4000
-      , xpieces = 30
-      , ypieces = 20
+      , xpieces = 3
+      , ypieces = 2
       , scale = 0.2
+      , texture = Loading
       }
     model =
       resetModel image (Random.initialSeed 0)
@@ -346,6 +358,23 @@ type Key
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
+    TextureLoaded Nothing ->
+      ( {model | image =
+          let
+            oldImage = model.image
+          in
+            {oldImage | texture = Failure}
+        }
+      , Cmd.none)
+    TextureLoaded (Just texture) ->
+      ( {model | image =
+          let
+            oldImage = model.image
+          in
+            {oldImage | texture = Success texture}
+        }
+      , Cmd.none
+      )
     UpdateDim (x, y) ->
       let
         oldImage = model.image
@@ -724,7 +753,7 @@ view model =
       , Html.Attributes.style "top" "100px"
       , Html.Attributes.style "left" "0px"
       ]
-      ((viewDiv model) ++ (viewSelectionBox model))
+      ((viewCanvas model) :: (viewSelectionBox model))
     ]
 
 
@@ -927,6 +956,57 @@ viewMenu model =
       ]
     ]
   ]
+
+-- CANVAS
+
+viewCanvas : Model -> Html Msg
+viewCanvas model =
+  Canvas.toHtmlWith
+    { width = model.width
+    , height = model.height
+    , textures = [ Texture.loadFromImageUrl model.image.path TextureLoaded ]
+    }
+    []
+    ([ clearCanvas (toFloat model.width) (toFloat model.height)
+--    , drawPieces model.image model.pieceGroups
+    ] ++ (drawPieces model.image model.pieceGroups))
+
+clearCanvas width height =
+  Canvas.shapes
+    [ Canvas.Settings.fill Color.white ]
+    [ Canvas.rect (0, 0) width height ]
+
+
+drawPieces : JigsawImage -> D.Dict Int PieceGroup -> List Canvas.Renderable
+drawPieces image pieceGroups =
+  let
+    foobar txt pg =
+      Canvas.texture [] (pg.position.x, pg.position.y) txt
+    pieceGroupToRenderable pg =
+      List.map (pieceToRenderable image pg.position) pg.members
+  in
+  case image.texture of
+    Loading ->
+      [ Canvas.text [] (100, 100) "Loading texture" ]
+    Failure ->
+      [ Canvas.text [] (100, 100) "Failed to load texture" ]
+    Success texture ->
+      List.map (foobar texture) (D.values pieceGroups)
+--      Canvas.shapes
+--        [ Canvas.Settings.fill (Color.rgba 1 0 0 1) ]
+--        ( List.concatMap pieceGroupToRenderable <| D.values pieceGroups)
+
+pieceToRenderable : JigsawImage -> Point -> Int -> Canvas.Shape
+pieceToRenderable image pos pid =
+  let
+    imageWidth = image.scale * toFloat image.width
+    imageHeight = image.scale * toFloat image.height
+    pieceWidth =  imageWidth / toFloat image.xpieces
+    pieceHeight = imageHeight / toFloat image.ypieces
+    offset = pieceIdToOffset image pid
+  in
+    Canvas.rect (pos.x + offset.x, pos.y + offset.y) pieceWidth pieceHeight
+
 
 
 port newDim : ((Int, Int) -> msg) -> Sub msg
