@@ -19,6 +19,7 @@ import File.Select
 import Task
 import Canvas
 import Canvas.Settings
+import Canvas.Settings.Advanced as Settings
 import Canvas.Texture as Texture exposing (Texture)
 import Color
 
@@ -48,7 +49,9 @@ type Msg
   | GotImage File
   | EncodedImage String
   | UpdateDim (Int, Int)
+  | UpdateSerialize String
   | TextureLoaded (Maybe Texture)
+  | FooBar
 
 type alias Keyboard =
   { shift : Bool
@@ -78,7 +81,7 @@ type alias JigsawImage =
   , xpieces : Int
   , ypieces : Int
   , scale : Float
-  , texture : Load Texture
+  , texture : Load Sprites
   }
 
 type alias PieceGroup =
@@ -95,6 +98,9 @@ type Load a
   = Loading
   | Success a
   | Failure
+
+type alias Sprites =
+  A.Array Texture
 
 type SelectionBox
   = Normal Box
@@ -148,15 +154,15 @@ init () =
       { path = "resources/hongkong.jpg"
       , width = 6000
       , height = 4000
-      , xpieces = 3
-      , ypieces = 2
+      , xpieces = 6
+      , ypieces = 4
       , scale = 0.2
       , texture = Loading
       }
     model =
       resetModel image (Random.initialSeed 0)
   in
-  ( model, Cmd.none )
+  ( model, svgToDataUrl "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><circle cx='100' cy='100' r='50' stroke='black' stroke-width='5' fill='red' /></svg>" )
 
 resetModel : JigsawImage -> Random.Seed -> Model
 resetModel image seed =
@@ -214,6 +220,7 @@ createPieceGroups image points levels =
         List.map (pieceIdToOffset image) range
       else
         points
+--        List.map (Point.mul image.scale) points
     zlevels =
       if List.length levels < n then
         range
@@ -230,7 +237,7 @@ createPieceGroups image points levels =
         ( pieceIdToPoint x image.xpieces ) == 1
     onePieceGroup i pos zlevel =
       ( i
-      , { position = Point.sub pos (pieceIdToOffset image i)
+      , { position = Point.sub pos <| Point.mul image.scale (pieceIdToOffset image i)
         , isSelected = False
         , id = i
         , zlevel = zlevel
@@ -345,6 +352,7 @@ subscriptions model =
     , Browser.Events.onKeyDown (Json.Decode.map (keyDecoder True) (Json.Decode.field "key" Json.Decode.string))
     , Browser.Events.onKeyUp (Json.Decode.map (keyDecoder False) (Json.Decode.field "key" Json.Decode.string))
     , newDim UpdateDim
+    , newSerialize UpdateSerialize
     ]
 
 -- UPDATE
@@ -358,6 +366,8 @@ type Key
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
+    FooBar ->
+      Debug.log "FooBar!" (model, Cmd.none)
     TextureLoaded Nothing ->
       ( {model | image =
           let
@@ -370,11 +380,35 @@ update msg model =
       ( {model | image =
           let
             oldImage = model.image
+            pieceWidth = (toFloat model.image.width) / (toFloat model.image.xpieces)
+            pieceHeight = (toFloat model.image.height) / (toFloat model.image.ypieces)
+            sprite t id =
+              let
+                offset = pieceIdToOffset model.image id
+
+              in
+              Texture.sprite
+                { x = offset.x / model.image.scale
+                , y = offset.y / model.image.scale
+                , width = pieceWidth
+                , height = pieceHeight
+                }
+                t
+            sprites =
+              A.fromList
+                <| List.map (sprite texture)
+                <| List.range 0 (model.image.xpieces * model.image.ypieces - 1)
           in
-            {oldImage | texture = Success texture}
+            {oldImage | texture = Success sprites}
         }
       , Cmd.none
       )
+    UpdateSerialize str ->
+      let
+        oldImage = model.image
+        newImage = {oldImage | path = (Debug.log ("new image path: " ++ str) str)}
+      in
+      ( {model | image = newImage}, Cmd.none )
     UpdateDim (x, y) ->
       let
         oldImage = model.image
@@ -753,8 +787,17 @@ view model =
       , Html.Attributes.style "top" "100px"
       , Html.Attributes.style "left" "0px"
       ]
-      ((viewCanvas model) :: (viewSelectionBox model))
+      ((viewCanvas model) :: (preloadImage model.image) :: (viewSelectionBox model))
     ]
+
+preloadImage image =
+  Html.img
+  [ Html.Events.on "load" (Json.Decode.succeed FooBar)
+  , Html.Attributes.id "my_image"
+  , Html.Attributes.style "display" "none"
+  , Html.Attributes.src image.path
+  ]
+  []
 
 
 turnOffTheBloodyImageDragging =
@@ -967,9 +1010,11 @@ viewCanvas model =
     , textures = [ Texture.loadFromImageUrl model.image.path TextureLoaded ]
     }
     []
-    ([ clearCanvas (toFloat model.width) (toFloat model.height)
---    , drawPieces model.image model.pieceGroups
-    ] ++ (drawPieces model.image model.pieceGroups))
+    (
+      [ clearCanvas (toFloat model.width) (toFloat model.height) ]
+      ++ (drawPieces model.image model.pieceGroups)
+      ++ [drawMasks model.image model.pieceGroups]
+    )
 
 clearCanvas width height =
   Canvas.shapes
@@ -980,34 +1025,62 @@ clearCanvas width height =
 drawPieces : JigsawImage -> D.Dict Int PieceGroup -> List Canvas.Renderable
 drawPieces image pieceGroups =
   let
-    foobar txt pg =
-      Canvas.texture [] (pg.position.x, pg.position.y) txt
-    pieceGroupToRenderable pg =
-      List.map (pieceToRenderable image pg.position) pg.members
+    scale =
+      [ Settings.transform [ Settings.scale image.scale image.scale ] ]
+
+    renderPiece sprites pos pid =
+      let
+        offset = pieceIdToOffset image pid
+        position =
+          ( (pos.x + offset.x) / image.scale
+          , (pos.y + offset.y) / image.scale
+          )
+      in
+      case A.get pid sprites of
+        Just sprite -> Canvas.texture scale position sprite
+        Nothing -> Canvas.text [] (100, 100) "Oops"
+
+    renderPieceGroup : A.Array Texture -> PieceGroup -> List Canvas.Renderable
+    renderPieceGroup sprites pg =
+      List.map (renderPiece sprites pg.position) pg.members
+
   in
   case image.texture of
     Loading ->
       [ Canvas.text [] (100, 100) "Loading texture" ]
     Failure ->
       [ Canvas.text [] (100, 100) "Failed to load texture" ]
-    Success texture ->
-      List.map (foobar texture) (D.values pieceGroups)
+    Success sprites ->
+      List.concatMap (renderPieceGroup sprites) (D.values pieceGroups)
+--      List.map (foobar texture) (D.values pieceGroups)
 --      Canvas.shapes
 --        [ Canvas.Settings.fill (Color.rgba 1 0 0 1) ]
 --        ( List.concatMap pieceGroupToRenderable <| D.values pieceGroups)
 
-pieceToRenderable : JigsawImage -> Point -> Int -> Canvas.Shape
-pieceToRenderable image pos pid =
+drawMasks image pieceGroups =
+  Canvas.shapes
+    [ Canvas.Settings.fill (Color.rgba 1 0 0 1)
+    , Settings.compositeOperationMode Settings.DestinationIn
+    ]
+    ( List.concatMap (drawPieceGroupMasks image) <| D.values pieceGroups)
+
+drawPieceGroupMasks image pg =
+  List.map (drawPieceMask image pg.position) pg.members
+
+drawPieceMask : JigsawImage -> Point -> Int -> Canvas.Shape
+drawPieceMask image pos pid =
   let
     imageWidth = image.scale * toFloat image.width
     imageHeight = image.scale * toFloat image.height
     pieceWidth =  imageWidth / toFloat image.xpieces
-    pieceHeight = imageHeight / toFloat image.ypieces
+    pieceHeight =  imageHeight / toFloat image.ypieces
     offset = pieceIdToOffset image pid
   in
-    Canvas.rect (pos.x + offset.x, pos.y + offset.y) pieceWidth pieceHeight
+    Canvas.circle (pos.x + offset.x + pieceWidth / 2, pos.y + offset.y + pieceHeight / 2) (pieceWidth / 2)
 
 
 
 port newDim : ((Int, Int) -> msg) -> Sub msg
 port getDim : String -> Cmd msg
+port newSerialize : (String -> msg) -> Sub msg
+port svgToDataUrl : String -> Cmd msg

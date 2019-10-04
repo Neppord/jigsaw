@@ -1,4 +1,4 @@
-module Point exposing (Point, sub, add, mulPointWise, dist, taxiDist, toIntString, randomPoint, randomPoints, xToPixel, yToPixel)
+module Point exposing (Point, sub, add, mul, mulPointWise, dist, taxiDist, toIntString, randomPoint, randomPoints, xToPixel, yToPixel)
 
 import Random
 
@@ -34,6 +34,10 @@ add a b =
 mulPointWise : Point -> Point -> Point
 mulPointWise a b =
   Point (a.x * b.x) (a.y * b.y)
+
+mul : Float -> Point -> Point
+mul a p =
+  Point (a * p.x) (a * p.y)
 
 dist : Point -> Point -> Float
 dist a b =

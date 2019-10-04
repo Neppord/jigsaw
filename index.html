@@ -24,6 +24,27 @@
                 app.ports.newDim.send([img.width, img.height])
             }
         })
+
+        // This will take a string representation of an svg object,
+        // render it on the canvas, parse it to a PNG URL and send it
+        // back to Elm as a base64 encoded string.
+        app.ports.svgToDataUrl.subscribe(function(svg) {
+            console.log("Serializing!".concat(svg))
+
+            var canvas = document.createElement( "canvas" );
+            //canvas.width = svgSize.width;
+            //canvas.height = svgSize.height;
+            var ctx = canvas.getContext( "2d" );
+
+            var img = document.createElement( "img" );
+            img.setAttribute( "src", "data:image/svg+xml;base64," + btoa( svg ) );
+
+            img.onload = function() {
+                ctx.drawImage( img, 0, 0 );
+                app.ports.newSerialize.send( canvas.toDataURL("image/png") );
+            };
+
+        })
     </script>
 </body>
 </html>
