@@ -162,7 +162,7 @@ init () =
     model =
       resetModel image (Random.initialSeed 0)
   in
-  ( model, svgToDataUrl "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><circle cx='100' cy='100' r='50' stroke='black' stroke-width='5' fill='red' /></svg>" )
+  ( model, Cmd.none )
 
 resetModel : JigsawImage -> Random.Seed -> Model
 resetModel image seed =
@@ -363,11 +363,18 @@ type Key
   | Shift
   | Other
 
+type alias JSMessage =
+  { url: String
+  , nx : Int
+  , ny : Int
+  }
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
     FooBar ->
-      Debug.log "FooBar!" (model, Cmd.none)
+      ( model
+      , svgToDataUrl {url = "./../resources/kitten.png", nx = model.image.xpieces, ny = model.image.ypieces})
     TextureLoaded Nothing ->
       ( {model | image =
           let
@@ -404,11 +411,12 @@ update msg model =
       , Cmd.none
       )
     UpdateSerialize str ->
-      let
-        oldImage = model.image
-        newImage = {oldImage | path = (Debug.log ("new image path: " ++ str) str)}
-      in
-      ( {model | image = newImage}, Cmd.none )
+      ( model, Debug.log "UpdateSerialize" Cmd.none )
+--      let
+--        oldImage = model.image
+--        newImage = {oldImage | path = (Debug.log ("new image path: " ++ str) str)}
+--      in
+--      ( {model | image = newImage}, Cmd.none )
     UpdateDim (x, y) ->
       let
         oldImage = model.image
@@ -787,7 +795,12 @@ view model =
       , Html.Attributes.style "top" "100px"
       , Html.Attributes.style "left" "0px"
       ]
-      ((viewCanvas model) :: (preloadImage model.image) :: (viewSelectionBox model))
+      (
+--        (viewCanvas model) ::
+        (preloadImage model.image) ::
+        (viewDiv model) ++
+        (viewSelectionBox model)
+      )
     ]
 
 preloadImage image =
@@ -930,7 +943,7 @@ pieceGroupPath image edgePoints pieceGroup =
 
     offset = Point (imageWidth * (0.5 - l)) (imageHeight * (0.5 - t))
 
-    curve = Edge.pieceGroupCurve pieceGroup.members image.xpieces image.ypieces edgePoints
+    curve = (Edge.pieceGroupCurve pieceGroup.members image.xpieces image.ypieces edgePoints)
     move = "translate(" ++ Point.toIntString offset ++ ") "
     scale = "scale("
       ++ String.fromFloat (imageWidth / 200.0) ++ " "
@@ -1052,10 +1065,7 @@ drawPieces image pieceGroups =
       [ Canvas.text [] (100, 100) "Failed to load texture" ]
     Success sprites ->
       List.concatMap (renderPieceGroup sprites) (D.values pieceGroups)
---      List.map (foobar texture) (D.values pieceGroups)
---      Canvas.shapes
---        [ Canvas.Settings.fill (Color.rgba 1 0 0 1) ]
---        ( List.concatMap pieceGroupToRenderable <| D.values pieceGroups)
+
 
 drawMasks image pieceGroups =
   Canvas.shapes
@@ -1083,4 +1093,4 @@ drawPieceMask image pos pid =
 port newDim : ((Int, Int) -> msg) -> Sub msg
 port getDim : String -> Cmd msg
 port newSerialize : (String -> msg) -> Sub msg
-port svgToDataUrl : String -> Cmd msg
+port svgToDataUrl : JSMessage -> Cmd msg
