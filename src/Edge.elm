@@ -193,6 +193,22 @@ getEdgePointsId nx ny pid orientation =
       if (modBy nx pid) == (nx - 1) then -1 else pid - (pid // nx)
 
 
+pieceCurveFromPieceId : Point -> Int -> Int -> Array.Array EdgePoints -> Int -> String
+pieceCurveFromPieceId scale nx ny edgePoints pid =
+  let
+    edge : String -> Edge
+    edge orientation =
+      Array.get (getEdgePointsId nx ny pid orientation) edgePoints
+        |> Maybe.withDefault [Point 0 0, Point 200 0]
+        |> List.map (Point.mulPointWise scale)
+        |> makeEdge orientation
+
+    curveString =
+      List.map (edge >> edgeToString) ["N", "E", "S", "W"]
+        |> String.concat
+  in
+    "M 0 0 " ++ curveString
+
 {-
 TODO: Refactor this function to make it readable. In the meanwhile, here's some (hopefully) clarifying words:
 Input is a list of piece ids (pids) corresponding to the pieces in a piece group (also the pre-generated array of

@@ -25,7 +25,7 @@ import Color
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
-import Edge exposing (EdgePoints, makeEdgePoints)
+import Edge exposing (EdgePoints, makeEdgePoints, pieceCurveFromPieceId)
 
 -- MAIN
 main =
@@ -49,7 +49,7 @@ type Msg
   | GotImage File
   | EncodedImage String
   | UpdateDim (Int, Int)
-  | UpdateSerialize String
+  | UpdateSerialize (List String)
   | TextureLoaded (Maybe Texture)
   | FooBar
 
@@ -119,6 +119,12 @@ type Selected
   | NullSelection
 
 
+type alias JSMessage =
+  { contours : List String
+  , nx : Int
+  , ny : Int
+  }
+
 boxTopLeft : Box -> Point
 boxTopLeft box =
   Point
@@ -151,12 +157,12 @@ init : () -> ( Model, Cmd Msg )
 init () =
   let
     image =
-      { path = "resources/hongkong.jpg"
-      , width = 6000
-      , height = 4000
+      { path = "resources/kitten.png"
+      , width = 533
+      , height = 538
       , xpieces = 6
       , ypieces = 4
-      , scale = 0.2
+      , scale = 1
       , texture = Loading
       }
     model =
@@ -363,18 +369,26 @@ type Key
   | Shift
   | Other
 
-type alias JSMessage =
-  { url: String
-  , nx : Int
-  , ny : Int
-  }
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
     FooBar ->
+      let
+        scale =
+          Point
+            ((toFloat model.image.width) / (200.0 * toFloat model.image.xpieces))
+            ((toFloat model.image.height) / (200.0 * toFloat model.image.ypieces))
+        contour pid =
+          pieceCurveFromPieceId scale model.image.xpieces model.image.ypieces model.edgePoints pid
+
+        contours =
+          List.concatMap (\pg -> List.map contour pg.members) <| D.values model.pieceGroups
+
+      in
       ( model
-      , svgToDataUrl {url = "./../resources/kitten.png", nx = model.image.xpieces, ny = model.image.ypieces})
+      , svgToDataUrl {contours = contours, nx = model.image.xpieces, ny = model.image.ypieces})
     TextureLoaded Nothing ->
       ( {model | image =
           let
@@ -411,7 +425,10 @@ update msg model =
       , Cmd.none
       )
     UpdateSerialize str ->
-      ( model, Debug.log "UpdateSerialize" Cmd.none )
+      let
+        foo = Debug.log "UpdateSerialize: " str
+      in
+      ( model, Cmd.none )
 --      let
 --        oldImage = model.image
 --        newImage = {oldImage | path = (Debug.log ("new image path: " ++ str) str)}
@@ -1092,5 +1109,5 @@ drawPieceMask image pos pid =
 
 port newDim : ((Int, Int) -> msg) -> Sub msg
 port getDim : String -> Cmd msg
-port newSerialize : (String -> msg) -> Sub msg
+port newSerialize : (List String -> msg) -> Sub msg
 port svgToDataUrl : JSMessage -> Cmd msg

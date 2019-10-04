@@ -6,7 +6,7 @@
     <title>Jigsaw</title>
     <link rel="stylesheet" href="stylesheet.css" type="text/css">
     <!-- The src below must match the "elm make" output file -->
-    <script src="https://unpkg.com/elm-canvas@2.2.3/elm-canvas.js"></script>
+<!--    <script src="https://unpkg.com/elm-canvas@2.2.3/elm-canvas.js"></script>-->
     <script src="main.js"></script>
 </head>
 <body>
@@ -30,17 +30,40 @@
         // back to Elm as a base64 encoded string.
         app.ports.svgToDataUrl.subscribe(function(msg) {
 
-            console.log("svgToDataUrl! url: " + msg.url + "; nx: " + msg.nx + ", ny: " + msg.ny);
+
+
+            var payload = [];
 
             var canvas = document.createElement( "canvas" );
-            canvas.width = 500;
-            canvas.height = 500;
+            var img = document.getElementById('my_image');
+            var pieceWidth = img.naturalWidth / msg.nx;
+            var pieceHeight = img.naturalHeight / msg.ny;
+            canvas.width = pieceWidth * 2;
+            canvas.height = pieceHeight * 2;
             var ctx = canvas.getContext( "2d" );
 
-            var img = document.getElementById('my_image');
+            msg.contours.forEach(function(item, index, array) {
+                console.log(index, index%msg.nx, Math.floor(index/msg.nx));
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(
+                    img,
+                    pieceWidth * (index%msg.nx) - pieceWidth/2,
+                    pieceHeight * (Math.floor(index/msg.nx)) - pieceHeight/2,
+                    pieceWidth,
+                    pieceHeight,
+                    pieceWidth/2,
+                    pieceHeight/2,
+                    pieceWidth*2,
+                    pieceHeight*2);
+
+                payload.push(canvas.toDataURL("image/png"));
+                //payload.push("p"+index);
+            });
+
             ctx.drawImage(img, 0, 0);
-            var payload = canvas.toDataURL("image/png");
-            console.log("Payload: "+payload);
+            //var payload = canvas.toDataURL("image/png");
+            //console.log("Payload: "+payload);
             app.ports.newSerialize.send( payload );
             //var img = document.createElement( "img" );
             //img.setAttribute( "src", "data:image/svg+xml;base64," + btoa( svg ) );
