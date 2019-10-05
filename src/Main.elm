@@ -82,6 +82,7 @@ type alias JigsawImage =
   , ypieces : Int
   , scale : Float
   , texture : Load Sprites
+  , sprites : A.Array String
   }
 
 type alias PieceGroup =
@@ -157,13 +158,14 @@ init : () -> ( Model, Cmd Msg )
 init () =
   let
     image =
-      { path = "resources/kitten.png"
-      , width = 533
-      , height = 538
-      , xpieces = 6
-      , ypieces = 4
-      , scale = 1
+      { path = "resources/hongkong.jpg"
+      , width = 6000
+      , height = 4000
+      , xpieces = 40
+      , ypieces = 30
+      , scale = 0.2
       , texture = Loading
+      , sprites = A.empty
       }
     model =
       resetModel image (Random.initialSeed 0)
@@ -376,7 +378,7 @@ update msg model =
   case msg of
     FooBar ->
       let
-        scale =
+        scale = Debug.log "scale = " <|
           Point
             ((toFloat model.image.width) / (200.0 * toFloat model.image.xpieces))
             ((toFloat model.image.height) / (200.0 * toFloat model.image.ypieces))
@@ -424,16 +426,13 @@ update msg model =
         }
       , Cmd.none
       )
-    UpdateSerialize str ->
+    UpdateSerialize sprites ->
       let
-        foo = Debug.log "UpdateSerialize: " str
+        oldImage = model.image
+        newImage = {oldImage | sprites = A.fromList sprites}
       in
-      ( model, Cmd.none )
---      let
---        oldImage = model.image
---        newImage = {oldImage | path = (Debug.log ("new image path: " ++ str) str)}
---      in
---      ( {model | image = newImage}, Cmd.none )
+      ( {model | image = newImage}, Cmd.none )
+
     UpdateDim (x, y) ->
       let
         oldImage = model.image
@@ -883,27 +882,41 @@ pieceGroupSize members nx =
 
 viewDiv model =
   let
-    pieceGroupDiv : PieceGroup -> Html Msg
-    pieceGroupDiv pg =
+    -- TODO: Fix default sprite
+    imageWidth = model.image.scale * toFloat model.image.width
+    imageHeight = model.image.scale * toFloat model.image.height
+    pieceWidth =  imageWidth / toFloat model.image.xpieces
+    pieceHeight = imageHeight / toFloat model.image.ypieces
+    sprite pid =
+      A.get pid model.image.sprites
+        |> Maybe.withDefault model.image.path
+
+    viewPieceGroup pg =
       let
-        {t, l, r, b} = pieceGroupSize pg.members model.image.xpieces
-
-        imageWidth = model.image.scale * toFloat model.image.width
-        imageHeight = model.image.scale * toFloat model.image.height
-        pieceWidth =  imageWidth / toFloat model.image.xpieces
-        pieceHeight = imageHeight / toFloat model.image.ypieces
-
-        tl = Point.add pg.position <|
-          Point (pieceWidth * (l - 0.5)) (pieceHeight * (t - 0.5))
-        wh = Point ((r - l + 2) * pieceWidth) ((b - t + 2) * pieceHeight)
-        bg = Point (pieceWidth * (0.5 - l)) (pieceHeight * (0.5 - t))
-
         color = if pg.isSelected then "red" else "black"
         display = if S.member pg.visibilityGroup model.visibleGroups then "block" else "none"
+        zlevel = String.fromInt pg.zlevel
+      in
+      List.map (pieceDiv pg.position color display zlevel) pg.members
+
+    pieceDiv : Point -> String -> String -> String -> Int -> Html Msg
+    pieceDiv pos color display zlevel pid =
+      let
+        offset = pieceIdToOffset model.image pid
+
+
+        tl = Point.add offset (Point.sub pos <| Point (pieceWidth/2) (pieceHeight/2))
+        wh = Point (2 * pieceWidth) (2 * pieceHeight)
+        wh2 = Point.mul 0.5 wh
+--        color = if pg.isSelected then "red" else "black"
+--        display = if S.member pg.visibilityGroup model.visibleGroups then "block" else "none"
+
+        -- TODO: Fix default sprite
+--        sprite = A.get pg.id model.image.sprites |> Maybe.withDefault model.image.path
       in
       Html.div
-      [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
-      , Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
+      [ Html.Attributes.style "z-index" <| zlevel
+--      , Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
       , Html.Attributes.style "position" "absolute"
       ]
       [
@@ -913,18 +926,18 @@ viewDiv model =
         , Html.Attributes.style "height" <| Point.yToPixel wh
         , Html.Attributes.style "top" <| Point.yToPixel tl
         , Html.Attributes.style "left" <| Point.xToPixel tl
-        , Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
-        , Html.Attributes.style "clipPath" <| clipPathRef pg.id
+        , Html.Attributes.style "z-index" <| zlevel
         , Html.Attributes.style "display" display
         ]
         [
           Html.img
-          ([ Html.Attributes.src model.image.path
-          , Html.Attributes.width <| floor imageWidth
-          , Html.Attributes.height <| floor imageHeight
-          , Html.Attributes.style "position" "absolute"
-          , Html.Attributes.style "top" <| Point.yToPixel bg
-          , Html.Attributes.style "left" <| Point.xToPixel bg
+          ([
+             Html.Attributes.src <| sprite pid
+            , Html.Attributes.style "position" "absolute"
+            , Html.Attributes.style "top" "0px"
+            , Html.Attributes.style "left" "0px"
+            , Html.Attributes.style "width" <| Point.xToPixel wh
+            , Html.Attributes.style "height" <| Point.yToPixel wh
           ] ++ turnOffTheBloodyImageDragging)
           []
         ]
@@ -932,19 +945,19 @@ viewDiv model =
 
 
     viewPieces =
-      List.map pieceGroupDiv <| D.values model.pieceGroups
+      List.concatMap viewPieceGroup <| D.values model.pieceGroups
 
-    clipPathDefs =
-      Svg.defs
-        []
-        ( definePieceGroupClipPaths model.image model.edgePoints (D.values model.pieceGroups))
+--    clipPathDefs =
+--      Svg.defs
+--        []
+--        ( definePieceGroupClipPaths model.image model.edgePoints (D.values model.pieceGroups))
   in
     [ Html.div
       ( turnOffTheBloodyImageDragging )
       ( viewPieces )
-    , Svg.svg
-      []
-      [ clipPathDefs ]
+--    , Svg.svg
+--      []
+--      [ clipPathDefs ]
     ]
 
 

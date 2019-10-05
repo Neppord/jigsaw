@@ -106,8 +106,8 @@ makeEdge orientation points =
         p :: ps ->
           case orientation of
             "W" -> List.map (rotate p) <| reverse (p :: ps)
-            "S" -> List.map translate <| reverse (p :: ps)
-            "E" -> List.map ((rotate p) << translate) (p :: ps)
+            "S" -> List.map (translate) <| reverse (p :: ps)
+            "E" -> List.map ((rotate p) << (translate)) (p :: ps)
             _ -> p :: ps
         ps -> ps
 
@@ -200,14 +200,39 @@ pieceCurveFromPieceId scale nx ny edgePoints pid =
     edge orientation =
       Array.get (getEdgePointsId nx ny pid orientation) edgePoints
         |> Maybe.withDefault [Point 0 0, Point 200 0]
-        |> List.map (Point.mulPointWise scale)
         |> makeEdge orientation
+        |> scaleEdge scale
 
     curveString =
       List.map (edge >> edgeToString) ["N", "E", "S", "W"]
         |> String.concat
   in
     "M 0 0 " ++ curveString
+
+
+scaleEdge p edge =
+  let
+    scaleBezier b =
+      case b of
+        S p1 p2 ->
+          S (Point.mulPointWise p p1) (Point.mulPointWise p p2)
+        C p1 p2 p3 ->
+          C (Point.mulPointWise p p1) (Point.mulPointWise p p2) (Point.mulPointWise p p3)
+  in
+    case edge of
+      Flat {start, end} ->
+        Flat
+          { start = Point.mulPointWise p start
+          , end = Point.mulPointWise p end
+          }
+      Curved {start, b1, b2, b3, b4} ->
+        Curved
+          { start = Point.mulPointWise p start
+          , b1 = scaleBezier b1
+          , b2 = scaleBezier b2
+          , b3 = scaleBezier b3
+          , b4 = scaleBezier b4
+          }
 
 {-
 TODO: Refactor this function to make it readable. In the meanwhile, here's some (hopefully) clarifying words:

@@ -43,25 +43,32 @@
             var ctx = canvas.getContext( "2d" );
 
             msg.contours.forEach(function(item, index, array) {
-                console.log(index, index%msg.nx, Math.floor(index/msg.nx));
-
+                console.log(index, item);
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                ctx.save();
+                ctx.translate(pieceWidth/2, pieceHeight/2);
+                let clipPath = new Path2D(item);
+                ctx.clip(clipPath);
+
                 ctx.drawImage(
                     img,
-                    pieceWidth * (index%msg.nx) - pieceWidth/2,
-                    pieceHeight * (Math.floor(index/msg.nx)) - pieceHeight/2,
-                    pieceWidth,
-                    pieceHeight,
-                    pieceWidth/2,
-                    pieceHeight/2,
+                    pieceWidth * (index%msg.nx - 0.5),
+                    pieceHeight * (Math.floor(index/msg.nx) - 0.5),
+                    pieceWidth*2,
+                    pieceHeight*2,
+                    -pieceWidth/2,
+                    -pieceHeight/2,
                     pieceWidth*2,
                     pieceHeight*2);
 
+
                 payload.push(canvas.toDataURL("image/png"));
+                ctx.restore();
                 //payload.push("p"+index);
             });
 
-            ctx.drawImage(img, 0, 0);
+            //ctx.drawImage(img, 0, 0);
             //var payload = canvas.toDataURL("image/png");
             //console.log("Payload: "+payload);
             app.ports.newSerialize.send( payload );
