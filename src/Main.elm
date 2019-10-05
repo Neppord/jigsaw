@@ -10,18 +10,11 @@ import Html exposing (Html)
 import Html.Attributes
 import Html.Events
 import Json.Decode
-import Svg exposing (Svg)
-import Svg.Attributes
 import Random
 import Random.List
 import File exposing (File)
 import File.Select
 import Task
-import Canvas
-import Canvas.Settings
-import Canvas.Settings.Advanced as Settings
-import Canvas.Texture as Texture exposing (Texture)
-import Color
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
@@ -50,7 +43,6 @@ type Msg
   | EncodedImage String
   | UpdateDim (Int, Int)
   | UpdateSerialize (List String)
-  | TextureLoaded (Maybe Texture)
   | FooBar
 
 type alias Keyboard =
@@ -81,7 +73,6 @@ type alias JigsawImage =
   , xpieces : Int
   , ypieces : Int
   , scale : Float
-  , texture : Load Sprites
   , sprites : A.Array String
   }
 
@@ -95,13 +86,11 @@ type alias PieceGroup =
   , visibilityGroup : Int
   }
 
+-- TODO: Use this to add a loading screen!
 type Load a
   = Loading
   | Success a
   | Failure
-
-type alias Sprites =
-  A.Array Texture
 
 type SelectionBox
   = Normal Box
@@ -164,7 +153,6 @@ init () =
       , xpieces = 40
       , ypieces = 30
       , scale = 0.2
-      , texture = Loading
       , sprites = A.empty
       }
     model =
@@ -391,41 +379,7 @@ update msg model =
       in
       ( model
       , svgToDataUrl {contours = contours, nx = model.image.xpieces, ny = model.image.ypieces})
-    TextureLoaded Nothing ->
-      ( {model | image =
-          let
-            oldImage = model.image
-          in
-            {oldImage | texture = Failure}
-        }
-      , Cmd.none)
-    TextureLoaded (Just texture) ->
-      ( {model | image =
-          let
-            oldImage = model.image
-            pieceWidth = (toFloat model.image.width) / (toFloat model.image.xpieces)
-            pieceHeight = (toFloat model.image.height) / (toFloat model.image.ypieces)
-            sprite t id =
-              let
-                offset = pieceIdToOffset model.image id
 
-              in
-              Texture.sprite
-                { x = offset.x / model.image.scale
-                , y = offset.y / model.image.scale
-                , width = pieceWidth
-                , height = pieceHeight
-                }
-                t
-            sprites =
-              A.fromList
-                <| List.map (sprite texture)
-                <| List.range 0 (model.image.xpieces * model.image.ypieces - 1)
-          in
-            {oldImage | texture = Success sprites}
-        }
-      , Cmd.none
-      )
     UpdateSerialize sprites ->
       let
         oldImage = model.image
@@ -812,7 +766,6 @@ view model =
       , Html.Attributes.style "left" "0px"
       ]
       (
---        (viewCanvas model) ::
         (preloadImage model.image) ::
         (viewDiv model) ++
         (viewSelectionBox model)
@@ -867,19 +820,6 @@ viewSelectionBox model =
       NullBox ->
         []
 
-pieceGroupSize members nx =
-  let
-    xpos = modBy nx
-    ypos id = id // nx
-
-    left = List.map xpos members |> List.minimum |> Maybe.withDefault 0 |> toFloat
-    right = List.map xpos members |> List.maximum |> Maybe.withDefault 0 |> toFloat
-    top = List.map ypos members |> List.minimum |> Maybe.withDefault 0 |> toFloat
-    bottom = List.map ypos members |> List.maximum |> Maybe.withDefault 0 |> toFloat
-  in
-    {t=top, l=left, r=right, b=bottom}
-
-
 viewDiv model =
   let
     -- TODO: Fix default sprite
@@ -903,16 +843,9 @@ viewDiv model =
     pieceDiv pos color display zlevel pid =
       let
         offset = pieceIdToOffset model.image pid
-
-
         tl = Point.add offset (Point.sub pos <| Point (pieceWidth/2) (pieceHeight/2))
         wh = Point (2 * pieceWidth) (2 * pieceHeight)
-        wh2 = Point.mul 0.5 wh
---        color = if pg.isSelected then "red" else "black"
---        display = if S.member pg.visibilityGroup model.visibleGroups then "block" else "none"
 
-        -- TODO: Fix default sprite
---        sprite = A.get pg.id model.image.sprites |> Maybe.withDefault model.image.path
       in
       Html.div
       [ Html.Attributes.style "z-index" <| zlevel
@@ -947,60 +880,12 @@ viewDiv model =
     viewPieces =
       List.concatMap viewPieceGroup <| D.values model.pieceGroups
 
---    clipPathDefs =
---      Svg.defs
---        []
---        ( definePieceGroupClipPaths model.image model.edgePoints (D.values model.pieceGroups))
   in
     [ Html.div
       ( turnOffTheBloodyImageDragging )
       ( viewPieces )
---    , Svg.svg
---      []
---      [ clipPathDefs ]
     ]
 
-
-definePieceGroupClipPaths image edgePoints pieceGroups =
-  List.map (pieceGroupPath image edgePoints) pieceGroups
-
-pieceGroupPath : JigsawImage -> A.Array EdgePoints -> PieceGroup -> Svg Msg
-pieceGroupPath image edgePoints pieceGroup =
-  let
-    {t, l, r, b} = pieceGroupSize pieceGroup.members image.xpieces
-    imageWidth = image.scale * (toFloat image.width) / (toFloat image.xpieces)
-    imageHeight = image.scale * (toFloat image.height) / (toFloat image.ypieces)
-
-    offset = Point (imageWidth * (0.5 - l)) (imageHeight * (0.5 - t))
-
-    curve = (Edge.pieceGroupCurve pieceGroup.members image.xpieces image.ypieces edgePoints)
-    move = "translate(" ++ Point.toIntString offset ++ ") "
-    scale = "scale("
-      ++ String.fromFloat (imageWidth / 200.0) ++ " "
-      ++ String.fromFloat (imageHeight / 200.0) ++ ")"
-  in
-    Svg.clipPath
-    [ Svg.Attributes.id <| pieceClipId pieceGroup.id ]
-    [ Svg.path
-      [ Svg.Attributes.id <| pieceOutlineId pieceGroup.id
-      , Svg.Attributes.transform <| move ++ scale
-      , Svg.Attributes.d curve
-      , Svg.Attributes.fillOpacity "0.0"
-      ]
-      []
-    ]
-
-pieceOutlineId : Int -> String
-pieceOutlineId id =
-  "piece-" ++ String.fromInt id ++ "-outline"
-
-pieceClipId : Int -> String
-pieceClipId id =
-  "piece-" ++ String.fromInt id ++ "-clip"
-
-clipPathRef : Int -> String
-clipPathRef id =
-  "url(#" ++ pieceClipId id ++ ")"
 
 -- MENU
 
@@ -1043,82 +928,8 @@ viewMenu model =
     ]
   ]
 
--- CANVAS
 
-viewCanvas : Model -> Html Msg
-viewCanvas model =
-  Canvas.toHtmlWith
-    { width = model.width
-    , height = model.height
-    , textures = [ Texture.loadFromImageUrl model.image.path TextureLoaded ]
-    }
-    []
-    (
-      [ clearCanvas (toFloat model.width) (toFloat model.height) ]
-      ++ (drawPieces model.image model.pieceGroups)
-      ++ [drawMasks model.image model.pieceGroups]
-    )
-
-clearCanvas width height =
-  Canvas.shapes
-    [ Canvas.Settings.fill Color.white ]
-    [ Canvas.rect (0, 0) width height ]
-
-
-drawPieces : JigsawImage -> D.Dict Int PieceGroup -> List Canvas.Renderable
-drawPieces image pieceGroups =
-  let
-    scale =
-      [ Settings.transform [ Settings.scale image.scale image.scale ] ]
-
-    renderPiece sprites pos pid =
-      let
-        offset = pieceIdToOffset image pid
-        position =
-          ( (pos.x + offset.x) / image.scale
-          , (pos.y + offset.y) / image.scale
-          )
-      in
-      case A.get pid sprites of
-        Just sprite -> Canvas.texture scale position sprite
-        Nothing -> Canvas.text [] (100, 100) "Oops"
-
-    renderPieceGroup : A.Array Texture -> PieceGroup -> List Canvas.Renderable
-    renderPieceGroup sprites pg =
-      List.map (renderPiece sprites pg.position) pg.members
-
-  in
-  case image.texture of
-    Loading ->
-      [ Canvas.text [] (100, 100) "Loading texture" ]
-    Failure ->
-      [ Canvas.text [] (100, 100) "Failed to load texture" ]
-    Success sprites ->
-      List.concatMap (renderPieceGroup sprites) (D.values pieceGroups)
-
-
-drawMasks image pieceGroups =
-  Canvas.shapes
-    [ Canvas.Settings.fill (Color.rgba 1 0 0 1)
-    , Settings.compositeOperationMode Settings.DestinationIn
-    ]
-    ( List.concatMap (drawPieceGroupMasks image) <| D.values pieceGroups)
-
-drawPieceGroupMasks image pg =
-  List.map (drawPieceMask image pg.position) pg.members
-
-drawPieceMask : JigsawImage -> Point -> Int -> Canvas.Shape
-drawPieceMask image pos pid =
-  let
-    imageWidth = image.scale * toFloat image.width
-    imageHeight = image.scale * toFloat image.height
-    pieceWidth =  imageWidth / toFloat image.xpieces
-    pieceHeight =  imageHeight / toFloat image.ypieces
-    offset = pieceIdToOffset image pid
-  in
-    Canvas.circle (pos.x + offset.x + pieceWidth / 2, pos.y + offset.y + pieceHeight / 2) (pieceWidth / 2)
-
-
+-- PORTS
 
 port newDim : ((Int, Int) -> msg) -> Sub msg
 port getDim : String -> Cmd msg
