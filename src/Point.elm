@@ -17,11 +17,11 @@ toString p =
 
 xToPixel : Point -> String
 xToPixel p =
-  (String.fromInt <| floor p.x) ++ "px"
+  (String.fromFloat p.x) ++ "px"
 
 yToPixel : Point -> String
 yToPixel p =
-  (String.fromInt <| floor p.y) ++ "px"
+  (String.fromFloat p.y) ++ "px"
 
 sub : Point -> Point -> Point
 sub a b =

@@ -831,54 +831,61 @@ viewDiv model =
       A.get pid model.image.sprites
         |> Maybe.withDefault model.image.path
 
+
+    viewPieceGroup : PieceGroup -> List ({pid : Int, html : Html Msg})
     viewPieceGroup pg =
       let
         color = if pg.isSelected then "red" else "black"
         display = if S.member pg.visibilityGroup model.visibleGroups then "block" else "none"
         zlevel = String.fromInt pg.zlevel
       in
-      List.map (pieceDiv pg.position color display zlevel) pg.members
+      List.map (pieceDiv pg.position color display zlevel) <| List.sort pg.members
 
-    pieceDiv : Point -> String -> String -> String -> Int -> Html Msg
+    pieceDiv : Point -> String -> String -> String -> Int -> {pid : Int, html : Html Msg}
     pieceDiv pos color display zlevel pid =
       let
         offset = pieceIdToOffset model.image pid
         tl = Point.add offset (Point.sub pos <| Point (pieceWidth/2) (pieceHeight/2))
         wh = Point (2 * pieceWidth) (2 * pieceHeight)
 
-      in
-      Html.div
-      [ Html.Attributes.style "z-index" <| zlevel
---      , Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
-      , Html.Attributes.style "position" "absolute"
-      ]
-      [
-      Html.div
-        [ Html.Attributes.style "position" "absolute"
-        , Html.Attributes.style "width" <| Point.xToPixel wh
-        , Html.Attributes.style "height" <| Point.yToPixel wh
-        , Html.Attributes.style "top" <| Point.yToPixel tl
-        , Html.Attributes.style "left" <| Point.xToPixel tl
-        , Html.Attributes.style "z-index" <| zlevel
-        , Html.Attributes.style "display" display
-        ]
-        [
-          Html.img
-          ([
-             Html.Attributes.src <| sprite pid
-            , Html.Attributes.style "position" "absolute"
-            , Html.Attributes.style "top" "0px"
-            , Html.Attributes.style "left" "0px"
+        html =
+          Html.div
+          [ Html.Attributes.style "z-index" <| zlevel
+    --      , Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
+          , Html.Attributes.style "position" "absolute"
+          ]
+          [
+          Html.div
+            [ Html.Attributes.style "position" "absolute"
             , Html.Attributes.style "width" <| Point.xToPixel wh
             , Html.Attributes.style "height" <| Point.yToPixel wh
-          ] ++ turnOffTheBloodyImageDragging)
-          []
-        ]
-      ]
+            , Html.Attributes.style "top" <| Point.yToPixel tl
+            , Html.Attributes.style "left" <| Point.xToPixel tl
+            , Html.Attributes.style "z-index" <| zlevel
+            , Html.Attributes.style "display" display
+            ]
+            [
+              Html.canvas
+              [ Html.Attributes.id <| "canvas-pid-" ++ String.fromInt pid
+              , Html.Attributes.style "position" "absolute"
+              , Html.Attributes.style "top" "0px"
+              , Html.Attributes.style "left" "0px"
+              , Html.Attributes.style "width" <| Point.xToPixel wh
+              , Html.Attributes.style "height" <| Point.yToPixel wh
+              ]
+              []
+            ]
+          ]
+      in
+        {pid = pid, html = html}
 
-
+    viewPieces : List (Html Msg)
     viewPieces =
-      List.concatMap viewPieceGroup <| D.values model.pieceGroups
+      D.values model.pieceGroups
+        |> List.concatMap viewPieceGroup
+        |> List.sortBy .pid
+        |> List.map (\{pid, html} -> html)
+--      List.concatMap viewPieceGroup <| D.values model.pieceGroups
 
   in
     [ Html.div
@@ -935,3 +942,4 @@ port newDim : ((Int, Int) -> msg) -> Sub msg
 port getDim : String -> Cmd msg
 port newSerialize : (List String -> msg) -> Sub msg
 port svgToDataUrl : JSMessage -> Cmd msg
+

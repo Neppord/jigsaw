@@ -31,15 +31,20 @@
         app.ports.svgToDataUrl.subscribe(function(msg) {
             var payload = [];
 
-            var canvas = document.createElement( "canvas" );
-            var img = document.getElementById('my_image');
-            var pieceWidth = img.naturalWidth / msg.nx;
-            var pieceHeight = img.naturalHeight / msg.ny;
-            canvas.width = pieceWidth * 2;
-            canvas.height = pieceHeight * 2;
-            var ctx = canvas.getContext( "2d" );
+
 
             msg.contours.forEach(function(item, index, array) {
+                //var canvas = document.createElement( "canvas" );
+                //canvas.setAttribute("id", "canvas-pid-"+index);
+                var canvas = document.getElementById('canvas-pid-'+index);
+                console.log('canvas-pid-'+index);
+                var img = document.getElementById('my_image');
+                var pieceWidth = img.naturalWidth / msg.nx;
+                var pieceHeight = img.naturalHeight / msg.ny;
+                canvas.width = pieceWidth * 2;
+                canvas.height = pieceHeight * 2;
+                var ctx = canvas.getContext( "2d" );
+
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                 ctx.save();
@@ -58,10 +63,11 @@
                     pieceWidth*2,
                     pieceHeight*2);
 
-                payload.push(canvas.toDataURL("image/png"));
-                ctx.restore();
+                //payload.push(canvas.toDataURL("image/png"));
+                //ctx.restore();
+                console.log("canvas ", index);
             });
-            app.ports.newSerialize.send( payload );
+            //app.ports.newSerialize.send( payload );
         })
     </script>
 </body>

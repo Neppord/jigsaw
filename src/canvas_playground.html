@@ -9,13 +9,6 @@
 
             var ctx = canvas.getContext('2d');
 
-            //ctx.fillRect(25, 25, 100, 100);
-            //ctx.clearRect(45, 45, 60, 60);
-            //ctx.strokeRect(50, 50, 50, 50);
-
-            //let p = new Path2D("M 10 80 Q 52.5 10, 95 80 T 180 80");
-            //ctx.fill(p);
-
             innerBevel =
                 "<filter id='innerbevel' x0='-50%' y0='-50%' width='200%' height='200%'>" +
                     "<feGaussianBlur in='SourceAlpha' stdDeviation='2' result='blur'/>" +
@@ -31,32 +24,20 @@
                     "<feComposite in2='withGlow' operator='over'/>" +
                 "</filter>";
 
-            svgData =
-                "<svg xmlns='http://www.w3.org/2000/svg'>" +
-                "<defs>" +
-                    //"<filter id='MyFilter' filterUnits='userSpaceOnUse' x='0' y='0' width='300' height='300'>" +
-                        //"<feGaussianBlur in='SourceAlpha' stdDeviation='4' result='blur'/>" +
-                    //    "<feOffset in='blur' dx='4' dy='4' result='offsetBlur'/>" +
-                    //"</filter>" +
-                    innerBevel +
-                "</defs>" +
-                "<g filter='url(#innerbevel)'>" +
-                    "<path d='M 0 0L 0 0, 200 0C 182 51, 178 103, 196 75 S 242 69, 243 104 S 227 135, 201 123 S 177 154, 200 200C 145 219, 109 217, 123 196 S 123 146, 97 155 S 67 176, 81 198 S 45 217, 0 200L 0 200, 0 0' " +
-                        "stroke-width='5' fill='teal' />" +
-                "</g>" +
-                "</svg>";
 
             var img = document.getElementById('jigsaw');
             var curve = "M 0 0L 0 0, 200 0C 182 51, 178 103, 196 75 S 242 69, 243 104 S 227 135, 201 123 S 177 154, 200 200C 145 219, 109 217, 123 196 S 123 146, 97 155 S 67 176, 81 198 S 45 217, 0 200L 0 200, 0 0";
             let outline = new Path2D(curve);
 
-            ctx.save();
-            ctx.lineWidth = 5;
             ctx.translate(50, 50);
+            ctx.save()
+
+            ctx.lineWidth = 1;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0)';
             ctx.stroke(outline);
-            ctx.clip(outline);
-            ctx.drawImage(img, 0,0);
-            ctx.restore();
+            //ctx.clip(outline);
+            //ctx.drawImage(img, 0,0);
+            //ctx.restore();
 
             //ctx.fill(outline);
 
@@ -70,9 +51,6 @@
                 ctx.drawImage(img, 0, 0);
             }
 */
-            //console.log("width: "+img.naturalWidth/7+", height: "+img.naturalHeight);
-            //console.log(canvas.toDataURL("image/jpg"));
-
         }
     </script>
 </head>
