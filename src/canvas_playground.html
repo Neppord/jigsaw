@@ -2,60 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
     <script type="text/javascript">
         function draw() {
             var canvas = document.getElementById('tutorial');
-
             var ctx = canvas.getContext('2d');
-
-            innerBevel =
-                "<filter id='innerbevel' x0='-50%' y0='-50%' width='200%' height='200%'>" +
-                    "<feGaussianBlur in='SourceAlpha' stdDeviation='2' result='blur'/>" +
-                    "<feOffset dy='-1' dx='-1'/>" +
-                    "<feComposite in2='SourceAlpha' operator='arithmetic' k2='-1' k3='1' result='hlDiff'/>" +
-                    "<feFlood flood-color='white' flood-opacity='.7'/>" +
-                    "<feComposite in2='hlDiff' operator='in'/>" +
-                    "<feComposite in2='SourceGraphic' operator='over' result='withGlow'/>" +
-                    "<feOffset in='blur' dy='3' dx='3'/>" +
-                    "<feComposite in2='SourceAlpha' operator='arithmetic' k2='-1' k3='1' result='shadowDiff'/>" +
-                    "<feFlood flood-color='black' flood-opacity='1'/>" +
-                    "<feComposite in2='shadowDiff' operator='in'/>" +
-                    "<feComposite in2='withGlow' operator='over'/>" +
-                "</filter>";
-
-
             var img = document.getElementById('jigsaw');
             var curve = "M 0 0L 0 0, 200 0C 182 51, 178 103, 196 75 S 242 69, 243 104 S 227 135, 201 123 S 177 154, 200 200C 145 219, 109 217, 123 196 S 123 146, 97 155 S 67 176, 81 198 S 45 217, 0 200L 0 200, 0 0";
             let outline = new Path2D(curve);
-
             ctx.translate(50, 50);
-            ctx.save()
 
-            ctx.lineWidth = 1;
+            ctx.save();
+            ctx.clip(outline);
+            ctx.translate(-5,-5);
+
+            ctx.filter = 'blur(3px)';
             ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+            ctx.strokeStyle = 'rgba(0, 0, 0, 150)';
+            ctx.shadowColor = 'rgba(255, 255, 255, 255)';
+            ctx.shadowOffsetX = 5;
+            ctx.shadowOffsetY = 5;
+            ctx.lineWidth = 12;
             ctx.stroke(outline);
-            //ctx.clip(outline);
-            //ctx.drawImage(img, 0,0);
-            //ctx.restore();
 
-            //ctx.fill(outline);
+            ctx.restore();
 
-/*
-            var svgImg = document.createElement( "img" );
-            svgImg.setAttribute("src", "data:image/svg+xml;base64," + btoa(svgData));
-
-            svgImg.onload = function() {
-                ctx.drawImage(svgImg, 0, 0);
-                ctx.globalCompositeOperation = "destination-in";
-                ctx.drawImage(img, 0, 0);
-            }
-*/
+            ctx.clip(outline);
+            ctx.globalCompositeOperation = "destination-over";
+            ctx.drawImage(img, 0, 0);
         }
     </script>
+    <title>Title</title>
 </head>
-<body onload="draw();">
-<canvas id="tutorial" width="10000" height="10000"></canvas>
+<body onload="draw();" bgcolor="#00CC00">
+<div>
+<canvas id="tutorial" width="500" height="500"></canvas>
 <img id="jigsaw" src="./../resources/hongkong.jpg" style="display:none">
+</div>
 </body>
 </html>
