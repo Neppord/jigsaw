@@ -25,7 +25,6 @@
             ctx.stroke(outline);
 
             ctx.restore();
-
             ctx.clip(outline);
             ctx.globalCompositeOperation = "destination-over";
             ctx.drawImage(img, 0, 0);

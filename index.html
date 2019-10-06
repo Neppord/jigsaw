@@ -29,15 +29,12 @@
         // render it on the canvas, parse it to a PNG URL and send it
         // back to Elm as a base64 encoded string.
         app.ports.svgToDataUrl.subscribe(function(msg) {
-            var payload = [];
+            //var payload = [];
 
 
 
             msg.contours.forEach(function(item, index, array) {
-                //var canvas = document.createElement( "canvas" );
-                //canvas.setAttribute("id", "canvas-pid-"+index);
                 var canvas = document.getElementById('canvas-pid-'+index);
-                console.log('canvas-pid-'+index);
                 var img = document.getElementById('my_image');
                 var pieceWidth = img.naturalWidth / msg.nx;
                 var pieceHeight = img.naturalHeight / msg.ny;
@@ -46,12 +43,25 @@
                 var ctx = canvas.getContext( "2d" );
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                ctx.save();
                 ctx.translate(pieceWidth/2, pieceHeight/2);
-                let clipPath = new Path2D(item);
-                ctx.clip(clipPath);
+                let outline = new Path2D(item);
+                ctx.save();
 
+                ctx.clip(outline);
+                ctx.translate(-5,-5);
+
+                ctx.filter = 'blur(3px)';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+                ctx.strokeStyle = 'rgba(0, 0, 0, 150)';
+                ctx.shadowColor = 'rgba(255, 255, 255, 255)';
+                ctx.shadowOffsetX = 5;
+                ctx.shadowOffsetY = 5;
+                ctx.lineWidth = 12;
+                ctx.stroke(outline);
+
+                ctx.restore();
+                ctx.clip(outline);
+                ctx.globalCompositeOperation = "destination-over";
                 ctx.drawImage(
                     img,
                     pieceWidth * (index%msg.nx - 0.5),
@@ -63,11 +73,9 @@
                     pieceWidth*2,
                     pieceHeight*2);
 
-                //payload.push(canvas.toDataURL("image/png"));
-                //ctx.restore();
-                console.log("canvas ", index);
             });
             //app.ports.newSerialize.send( payload );
+            app.ports.canvasDrawn.send(true);
         })
     </script>
 </body>

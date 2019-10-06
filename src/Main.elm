@@ -40,10 +40,7 @@ type Msg
   | KeyChanged Bool Key
   | PickImage
   | GotImage File
-  | EncodedImage String
-  | UpdateDim (Int, Int)
-  | UpdateSerialize (List String)
-  | FooBar
+  | FinishedLoading ThingThatCanLoad
 
 type alias Keyboard =
   { shift : Bool
@@ -64,6 +61,7 @@ type alias Model =
   , edgePoints : A.Array EdgePoints
   , visibleGroups : S.Set Int
   , keyboard : Keyboard
+  , loading : LoadingDetails
   }
 
 type alias JigsawImage =
@@ -73,7 +71,6 @@ type alias JigsawImage =
   , xpieces : Int
   , ypieces : Int
   , scale : Float
-  , sprites : A.Array String
   }
 
 type alias PieceGroup =
@@ -87,10 +84,23 @@ type alias PieceGroup =
   }
 
 -- TODO: Use this to add a loading screen!
-type Load a
-  = Loading
-  | Success a
-  | Failure
+--type Load
+--  = Loading LoadingDetails
+--  | Success
+--  | Failure
+
+type ThingThatCanLoad
+  = ImageUrl String
+  | ImageDimensions (Int, Int)
+  | ImageDiv
+  | CanvasDraw Bool
+
+type alias LoadingDetails =
+  { url : Bool
+  , imageDiv : Bool
+  , dims : Bool
+  , drawCanvas : Bool
+  }
 
 type SelectionBox
   = Normal Box
@@ -114,6 +124,10 @@ type alias JSMessage =
   , nx : Int
   , ny : Int
   }
+
+isFinishedLoading : LoadingDetails -> Bool
+isFinishedLoading {url, imageDiv, dims, drawCanvas} =
+  url && imageDiv && dims && drawCanvas
 
 boxTopLeft : Box -> Point
 boxTopLeft box =
@@ -150,10 +164,9 @@ init () =
       { path = "resources/hongkong.jpg"
       , width = 6000
       , height = 4000
-      , xpieces = 40
-      , ypieces = 30
+      , xpieces = 30
+      , ypieces = 20
       , scale = 0.2
-      , sprites = A.empty
       }
     model =
       resetModel image (Random.initialSeed 0)
@@ -184,6 +197,7 @@ resetModel image seed =
     , edgePoints = edgePoints
     , visibleGroups = S.fromList [-1]
     , keyboard = { shift = False, ctrl = False }
+    , loading = {url = True, imageDiv = False, dims = True, drawCanvas = False}
     }
 
 
@@ -347,8 +361,8 @@ subscriptions model =
     , trackMouseUp
     , Browser.Events.onKeyDown (Json.Decode.map (keyDecoder True) (Json.Decode.field "key" Json.Decode.string))
     , Browser.Events.onKeyUp (Json.Decode.map (keyDecoder False) (Json.Decode.field "key" Json.Decode.string))
-    , newDim UpdateDim
-    , newSerialize UpdateSerialize
+    , newDim (FinishedLoading << ImageDimensions)
+    , canvasDrawn (FinishedLoading << CanvasDraw)
     ]
 
 -- UPDATE
@@ -360,53 +374,75 @@ type Key
   | Other
 
 
+createJsMessage : Int -> Int -> Int -> Int -> A.Array EdgePoints -> D.Dict Int PieceGroup -> JSMessage
+createJsMessage nx ny width height edgePoints pieceGroups =
+  let
+    scale = Debug.log "scale = " <|
+      Point
+        ((toFloat width) / (200.0 * toFloat nx))
+        ((toFloat height) / (200.0 * toFloat ny))
+    contour pid =
+      pieceCurveFromPieceId scale nx ny edgePoints pid
+
+    contours =
+      List.concatMap (\pg -> List.map contour pg.members) <| D.values pieceGroups
+
+  in
+  {contours = contours, nx = nx, ny = ny}
+
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
-    FooBar ->
-      let
-        scale = Debug.log "scale = " <|
-          Point
-            ((toFloat model.image.width) / (200.0 * toFloat model.image.xpieces))
-            ((toFloat model.image.height) / (200.0 * toFloat model.image.ypieces))
-        contour pid =
-          pieceCurveFromPieceId scale model.image.xpieces model.image.ypieces model.edgePoints pid
-
-        contours =
-          List.concatMap (\pg -> List.map contour pg.members) <| D.values model.pieceGroups
-
-      in
-      ( model
-      , svgToDataUrl {contours = contours, nx = model.image.xpieces, ny = model.image.ypieces})
-
-    UpdateSerialize sprites ->
+    FinishedLoading thing ->
       let
         oldImage = model.image
-        newImage = {oldImage | sprites = A.fromList sprites}
+        oldLoadState = model.loading
+        isReadyToDraw loadState =
+          loadState.dims && loadState.imageDiv
+        cmd m =
+          if isReadyToDraw m.loading then
+            svgToDataUrl <|
+              createJsMessage
+                m.image.xpieces
+                m.image.ypieces
+                m.image.width
+                m.image.height
+                m.edgePoints
+                m.pieceGroups
+          else
+            Cmd.none
       in
-      ( {model | image = newImage}, Cmd.none )
+      case Debug.log "FinishedLoading" thing of
+        ImageUrl url ->
+          ( {model | image = {oldImage | path = url}, loading = {oldLoadState | url = True}}
+          , getDim url
+          )
+        ImageDimensions (x, y) ->
+          let
+            newModel = {model | image = {oldImage | width = x, height = y}, loading = {oldLoadState | dims = True}}
+          in
+          ( newModel, cmd newModel )
+        ImageDiv ->
+          let
+            newModel = {model | loading = {oldLoadState | imageDiv = True}}
+          in
+          ( newModel, cmd newModel )
+        CanvasDraw success ->
+          if success then
+            ( {model | loading = {url = True, imageDiv = True, dims = True, drawCanvas = True}}
+            , Cmd.none )
+          else
+            ( model, Cmd.none )
 
-    UpdateDim (x, y) ->
-      let
-        oldImage = model.image
-        newImage = {oldImage | width = x, height = y}
-        newModel = resetModel newImage model.seed
-      in
-      ( newModel
-      , Cmd.none)
     PickImage ->
-      ( model, File.Select.file ["image/*"] GotImage )
+      ( model
+      , File.Select.file ["image/*"] GotImage )
     GotImage file ->
-      ( model, Task.perform EncodedImage (File.toUrl file))
+      ( {model | loading = {url = False, imageDiv = False, dims = False, drawCanvas = False}}
+      , Task.perform (FinishedLoading << ImageUrl) (File.toUrl file))
 
-    EncodedImage url ->
-      let
-        oldImage = model.image
-        newImage = {oldImage | path = url}
-      in
-      ( {model | image = newImage}
-      , getDim url )
     KeyChanged isDown key ->
       let
 
@@ -766,15 +802,35 @@ view model =
       , Html.Attributes.style "left" "0px"
       ]
       (
+        (loadingScreen model.loading) ::
         (preloadImage model.image) ::
         (viewDiv model) ++
         (viewSelectionBox model)
       )
     ]
 
+
+loadingScreen : LoadingDetails -> Html Msg
+loadingScreen {url, imageDiv, dims, drawCanvas} =
+  let
+    display =
+      if url && imageDiv && dims && drawCanvas then
+        "none"
+      else
+        "block"
+
+    fff =
+        List.filterMap
+          (\(n, b) -> if b then Just n else Nothing)
+          [("url", url), ("imageDiv", imageDiv), ("dims", dims), ("drawCanvas", drawCanvas)]
+  in
+    Html.h1
+    [ Html.Attributes.style "display" display ]
+    [ Html.text <| "Loading, please stand by... " ++ (String.concat fff) ]
+
 preloadImage image =
   Html.img
-  [ Html.Events.on "load" (Json.Decode.succeed FooBar)
+  [ Html.Events.on "load" <| Json.Decode.succeed <| FinishedLoading ImageDiv
   , Html.Attributes.id "my_image"
   , Html.Attributes.style "display" "none"
   , Html.Attributes.src image.path
@@ -820,34 +876,33 @@ viewSelectionBox model =
       NullBox ->
         []
 
+viewDiv : Model -> List (Html Msg)
 viewDiv model =
   let
-    -- TODO: Fix default sprite
+    visibility =
+      if isFinishedLoading model.loading then
+        Html.Attributes.style "display" "block"
+      else
+        Html.Attributes.style "display" "none"
     imageWidth = model.image.scale * toFloat model.image.width
     imageHeight = model.image.scale * toFloat model.image.height
     pieceWidth =  imageWidth / toFloat model.image.xpieces
     pieceHeight = imageHeight / toFloat model.image.ypieces
-    sprite pid =
-      A.get pid model.image.sprites
-        |> Maybe.withDefault model.image.path
-
 
     viewPieceGroup : PieceGroup -> List ({pid : Int, html : Html Msg})
     viewPieceGroup pg =
       let
-        color = if pg.isSelected then "red" else "black"
         display = if S.member pg.visibilityGroup model.visibleGroups then "block" else "none"
         zlevel = String.fromInt pg.zlevel
       in
-      List.map (pieceDiv pg.position color display zlevel) <| List.sort pg.members
+      List.map (pieceDiv pg.position display zlevel) <| List.sort pg.members
 
-    pieceDiv : Point -> String -> String -> String -> Int -> {pid : Int, html : Html Msg}
-    pieceDiv pos color display zlevel pid =
+    pieceDiv : Point -> String -> String -> Int -> {pid : Int, html : Html Msg}
+    pieceDiv pos display zlevel pid =
       let
         offset = pieceIdToOffset model.image pid
         tl = Point.add offset (Point.sub pos <| Point (pieceWidth/2) (pieceHeight/2))
         wh = Point (2 * pieceWidth) (2 * pieceHeight)
-
         html =
           Html.div
           [ Html.Attributes.style "z-index" <| zlevel
@@ -879,6 +934,8 @@ viewDiv model =
       in
         {pid = pid, html = html}
 
+    -- TODO: There must be a faster way to do this, right?
+    -- Maybe just iterate over the pids, with a reference table for the corresponding PieceGroup?
     viewPieces : List (Html Msg)
     viewPieces =
       D.values model.pieceGroups
@@ -889,7 +946,8 @@ viewDiv model =
 
   in
     [ Html.div
-      ( turnOffTheBloodyImageDragging )
+      ( visibility ::
+        turnOffTheBloodyImageDragging )
       ( viewPieces )
     ]
 
@@ -940,6 +998,5 @@ viewMenu model =
 
 port newDim : ((Int, Int) -> msg) -> Sub msg
 port getDim : String -> Cmd msg
-port newSerialize : (List String -> msg) -> Sub msg
 port svgToDataUrl : JSMessage -> Cmd msg
-
+port canvasDrawn : (Bool -> msg) -> Sub msg
