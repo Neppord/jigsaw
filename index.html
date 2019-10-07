@@ -16,14 +16,6 @@
         var app = Elm.Main.init({
             node: document.getElementById('elm')
         });
-        app.ports.getDim.subscribe(function(url) {
-            console.log("loading!")
-            let img = new Image()
-            img.src = url
-            img.onload = function() {
-                app.ports.newDim.send([img.width, img.height])
-            }
-        })
 
         // Input is a list of contours (as svg-strings describing the paths),
         // one for each jigsaw piece. Input also contains nx and ny, which
@@ -34,7 +26,7 @@
         // for each piece. The function then renders each piece on its
         // canvas. The outlines are scaled to fit the natural size of
         // the jigsaw image.
-        app.ports.svgToDataUrl.subscribe(function(msg) {
+        app.ports.drawPiecesInCanvas.subscribe(function(msg) {
             var img = document.getElementById('my_image');
             var pieceWidth = img.naturalWidth / msg.nx;
             var pieceHeight = img.naturalHeight / msg.ny;
@@ -82,7 +74,7 @@
                 ctx.fill(outline);
             });
 
-            app.ports.canvasDrawn.send(true);
+            app.ports.canvasDrawn.send([img.naturalWidth, img.naturalHeight]);
         })
     </script>
 </body>

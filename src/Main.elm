@@ -61,7 +61,7 @@ type alias Model =
   , edgePoints : A.Array EdgePoints
   , visibleGroups : S.Set Int
   , keyboard : Keyboard
-  , loading : LoadingDetails
+  , loading : LoadStatus
   }
 
 type alias JigsawImage =
@@ -83,24 +83,26 @@ type alias PieceGroup =
   , visibilityGroup : Int
   }
 
--- TODO: Use this to add a loading screen!
---type Load
---  = Loading LoadingDetails
---  | Success
---  | Failure
-
 type ThingThatCanLoad
   = ImageUrl String
-  | ImageDimensions (Int, Int)
   | ImageDiv
-  | CanvasDraw Bool
+  | CanvasDraw (Int, Int)
 
-type alias LoadingDetails =
-  { url : Bool
-  , imageDiv : Bool
-  , dims : Bool
-  , drawCanvas : Bool
-  }
+type LoadStatus
+  = ParsingImageUrl
+  | LoadingImage
+  | DrawingCanvas
+  | ShufflingPieces
+  | LoadingComplete
+
+nextLoadStatus : LoadStatus -> LoadStatus
+nextLoadStatus status =
+  case status of
+    ParsingImageUrl -> LoadingImage
+    LoadingImage -> DrawingCanvas
+    DrawingCanvas -> ShufflingPieces
+    ShufflingPieces -> LoadingComplete
+    LoadingComplete -> ParsingImageUrl
 
 type SelectionBox
   = Normal Box
@@ -124,10 +126,6 @@ type alias JSMessage =
   , nx : Int
   , ny : Int
   }
-
-isFinishedLoading : LoadingDetails -> Bool
-isFinishedLoading {url, imageDiv, dims, drawCanvas} =
-  url && imageDiv && dims && drawCanvas
 
 boxTopLeft : Box -> Point
 boxTopLeft box =
@@ -197,7 +195,7 @@ resetModel image seed =
     , edgePoints = edgePoints
     , visibleGroups = S.fromList [-1]
     , keyboard = { shift = False, ctrl = False }
-    , loading = {url = True, imageDiv = False, dims = True, drawCanvas = False}
+    , loading = LoadingImage
     }
 
 
@@ -361,7 +359,7 @@ subscriptions model =
     , trackMouseUp
     , Browser.Events.onKeyDown (Json.Decode.map (keyDecoder True) (Json.Decode.field "key" Json.Decode.string))
     , Browser.Events.onKeyUp (Json.Decode.map (keyDecoder False) (Json.Decode.field "key" Json.Decode.string))
-    , newDim (FinishedLoading << ImageDimensions)
+--    , newDim (FinishedLoading << ImageDimensions)
     , canvasDrawn (FinishedLoading << CanvasDraw)
     ]
 
@@ -394,52 +392,35 @@ update msg model =
     FinishedLoading thing ->
       let
         oldImage = model.image
-        oldLoadState = model.loading
-        isReadyToDraw loadState =
-          loadState.dims && loadState.imageDiv
-        cmd m =
-          if isReadyToDraw m.loading then
-            svgToDataUrl <|
-              createJsMessage
-                m.image.xpieces
-                m.image.ypieces
-                m.edgePoints
-                m.pieceGroups
-          else
-            Cmd.none
+        newLoading = nextLoadStatus model.loading
       in
-      case Debug.log "FinishedLoading" thing of
+      case thing of
         ImageUrl url ->
-          ( {model | image = {oldImage | path = url}, loading = {oldLoadState | url = True}}
-          , getDim url
+          ( {model | image = {oldImage | path = url}, loading = Debug.log "ImageUrl" newLoading}
+          , Cmd.none
           )
-        ImageDimensions (x, y) ->
-          let
-            newModel = {model | image = {oldImage | width = x, height = y}, loading = {oldLoadState | dims = True}}
-          in
-          ( newModel, cmd newModel )
         ImageDiv ->
-          let
-            newModel = {model | loading = {oldLoadState | imageDiv = True}}
-          in
-          ( newModel, cmd newModel )
-        CanvasDraw success ->
-          if success then
-            ( {model | loading = {url = True, imageDiv = True, dims = True, drawCanvas = True}}
-            , Cmd.none )
-          else
-            ( model, Cmd.none )
+          ( {model | loading = Debug.log "ImageDiv" newLoading }
+          , drawPiecesInCanvas <|
+              createJsMessage
+                model.image.xpieces
+                model.image.ypieces
+                model.edgePoints
+                model.pieceGroups
+          )
+        CanvasDraw (x, y) ->
+          ( {model | image = {oldImage | width = x, height = y}, loading = Debug.log "CanvasDraw" newLoading}
+          , Cmd.none )
 
     PickImage ->
       ( model
       , File.Select.file ["image/*"] GotImage )
     GotImage file ->
-      ( {model | loading = {url = False, imageDiv = False, dims = False, drawCanvas = False}}
+      ( {model | loading = ParsingImageUrl}
       , Task.perform (FinishedLoading << ImageUrl) (File.toUrl file))
 
     KeyChanged isDown key ->
       let
-
         assignVisibilityGroup visibilityGroup _ pg  =
           if pg.isSelected && pg.visibilityGroup /= visibilityGroup then
             {pg | visibilityGroup = visibilityGroup, isSelected = False}
@@ -803,24 +784,25 @@ view model =
       )
     ]
 
-
-loadingScreen : LoadingDetails -> Html Msg
-loadingScreen {url, imageDiv, dims, drawCanvas} =
+loadingScreen : LoadStatus -> Html Msg
+loadingScreen loading =
   let
     display =
-      if url && imageDiv && dims && drawCanvas then
-        "none"
-      else
-        "block"
+      case loading of
+        LoadingComplete -> "none"
+        _ -> "block"
 
-    fff =
-        List.filterMap
-          (\(n, b) -> if b then Just n else Nothing)
-          [("url", url), ("imageDiv", imageDiv), ("dims", dims), ("drawCanvas", drawCanvas)]
+    loadText =
+      case loading of
+        ParsingImageUrl -> "Parsing Image URL"
+        LoadingImage -> "Loading Image"
+        DrawingCanvas -> "Drawing canvas"
+        ShufflingPieces -> "Shuffling pieces"
+        LoadingComplete -> "Finished loading!"
   in
     Html.h1
     [ Html.Attributes.style "display" display ]
-    [ Html.text <| "Loading, please stand by... " ++ (String.concat fff) ]
+    [ Html.text <| loadText ]
 
 preloadImage image =
   Html.img
@@ -874,10 +856,9 @@ viewDiv : Model -> List (Html Msg)
 viewDiv model =
   let
     visibility =
-      if isFinishedLoading model.loading then
-        Html.Attributes.style "display" "block"
-      else
-        Html.Attributes.style "display" "none"
+      case model.loading of
+        LoadingComplete -> Html.Attributes.style "display" "block"
+        _ -> Html.Attributes.style "display" "none"
     imageWidth = model.image.scale * toFloat model.image.width
     imageHeight = model.image.scale * toFloat model.image.height
     pieceWidth =  imageWidth / toFloat model.image.xpieces
@@ -990,7 +971,7 @@ viewMenu model =
 
 -- PORTS
 
-port newDim : ((Int, Int) -> msg) -> Sub msg
-port getDim : String -> Cmd msg
-port svgToDataUrl : JSMessage -> Cmd msg
-port canvasDrawn : (Bool -> msg) -> Sub msg
+--port newDim : ((Int, Int) -> msg) -> Sub msg
+--port getDim : String -> Cmd msg
+port drawPiecesInCanvas : JSMessage -> Cmd msg
+port canvasDrawn : ((Int, Int) -> msg) -> Sub msg
