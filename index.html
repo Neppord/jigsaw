@@ -26,8 +26,11 @@
         // for each piece. The function then renders each piece on its
         // canvas. The outlines are scaled to fit the natural size of
         // the jigsaw image.
+        //
+        // Finally the natural width and height of the jigsaw image is
+        // returned to Elm.
         app.ports.drawPiecesInCanvas.subscribe(function(msg) {
-            var img = document.getElementById('my_image');
+            var img = document.getElementById('jigsawImage');
             var pieceWidth = img.naturalWidth / msg.nx;
             var pieceHeight = img.naturalHeight / msg.ny;
             var scaleX = pieceWidth / 200;
@@ -44,9 +47,9 @@
                 ctx.translate(pieceWidth/2, pieceHeight/2);
                 ctx.save();
 
+                // Start drawing "bevel" effect
                 ctx.translate(-5,-5);
                 ctx.scale(scaleX, scaleY);
-
                 ctx.filter = 'blur(3px)';
                 ctx.fillStyle = 'rgba(0, 0, 0, 0)';
                 ctx.strokeStyle = 'rgba(0, 0, 0, 150)';
@@ -56,6 +59,7 @@
                 ctx.lineWidth = 12;
                 ctx.stroke(outline);
 
+                // Draw the jigsaw image (or part of it) behind the bevel effect
                 ctx.restore();
                 ctx.globalCompositeOperation = "destination-over";
                 ctx.drawImage(
@@ -69,11 +73,15 @@
                     pieceWidth*2,
                     pieceHeight*2);
 
+                // Clip the image by drawing the (scaled) jigsaw shape behind
+                // the scene, such that everything where there is no overlap is removed
+                // (This is the "destination-in" setting)
                 ctx.scale(scaleX, scaleY);
                 ctx.globalCompositeOperation = "destination-in";
                 ctx.fill(outline);
             });
 
+            // Return the image shape to Elm
             app.ports.canvasDrawn.send([img.naturalWidth, img.naturalHeight]);
         })
     </script>

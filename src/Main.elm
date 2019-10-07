@@ -58,7 +58,6 @@ type alias Model =
   , snapDistance : Float
   , selectionBox : SelectionBox
   , seed : Random.Seed
-  , edgePoints : A.Array EdgePoints
   , visibleGroups : S.Set Int
   , keyboard : Keyboard
   , loading : LoadStatus
@@ -92,17 +91,15 @@ type LoadStatus
   = ParsingImageUrl
   | LoadingImage
   | DrawingCanvas
-  | ShufflingPieces
-  | LoadingComplete
+  | Finished
 
 nextLoadStatus : LoadStatus -> LoadStatus
 nextLoadStatus status =
   case status of
     ParsingImageUrl -> LoadingImage
     LoadingImage -> DrawingCanvas
-    DrawingCanvas -> ShufflingPieces
-    ShufflingPieces -> LoadingComplete
-    LoadingComplete -> ParsingImageUrl
+    DrawingCanvas -> Finished
+    Finished -> ParsingImageUrl
 
 type SelectionBox
   = Normal Box
@@ -176,11 +173,9 @@ resetModel image seed =
   let
     (w, h) = (1800, 1100)
     (nx, ny) = (image.xpieces, image.ypieces)
-    numberOfEdges = 2 * nx * ny - nx - ny
 
-    (positions, seed1) = shufflePiecePositions w h image seed
-    (zlevels, seed2) = shuffleZLevels (nx * ny) seed1
-    (edgePoints, seed3) = makeEdgePoints numberOfEdges seed2
+    (positions, seed1) = generateRandomPiecePositions w h image seed
+    (zlevels, seed2) = generateRandomZLevels (nx * ny) seed1
   in
     { cursor = Nothing
     , pieceGroups = createPieceGroups image positions zlevels
@@ -191,16 +186,15 @@ resetModel image seed =
     , height = h
     , snapDistance = 30.0
     , selectionBox = NullBox
-    , seed = seed3
-    , edgePoints = edgePoints
+    , seed = seed2
     , visibleGroups = S.fromList [-1]
     , keyboard = { shift = False, ctrl = False }
     , loading = LoadingImage
     }
 
 
-shufflePiecePositions : Int -> Int -> JigsawImage -> Random.Seed -> (List Point, Random.Seed)
-shufflePiecePositions w h image seed =
+generateRandomPiecePositions : Int -> Int -> JigsawImage -> Random.Seed -> (List Point, Random.Seed)
+generateRandomPiecePositions w h image seed =
   let
     n = image.xpieces * image.ypieces
     xmin = 0
@@ -210,12 +204,12 @@ shufflePiecePositions w h image seed =
   in
     Random.step (Point.randomPoints n xmin xmax ymin ymax) seed
 
-shuffleZLevels : Int -> Random.Seed -> (List Int, Random.Seed)
-shuffleZLevels n seed =
+generateRandomZLevels : Int -> Random.Seed -> (List Int, Random.Seed)
+generateRandomZLevels n seed =
   Random.step (Random.List.shuffle <| List.range 0 (n - 1)) seed
 
 createPieceGroups : JigsawImage -> List Point -> List Int -> D.Dict Int PieceGroup
-createPieceGroups image points levels =
+createPieceGroups image positions levels =
   let
     nx = image.xpieces
     ny = image.ypieces
@@ -223,12 +217,6 @@ createPieceGroups image points levels =
 
     range =
       List.range 0 (n - 1)
-    positions =
-      if List.length points < n then
-        List.map (pieceIdToOffset image) range
-      else
-        points
---        List.map (Point.mul image.scale) points
     zlevels =
       if List.length levels < n then
         range
@@ -243,9 +231,9 @@ createPieceGroups image points levels =
       Point.taxiDist
         ( pieceIdToPoint i image.xpieces )
         ( pieceIdToPoint x image.xpieces ) == 1
-    onePieceGroup i pos zlevel =
+    onePieceGroup i position zlevel =
       ( i
-      , { position = Point.sub pos <| Point.mul image.scale (pieceIdToOffset image i)
+      , { position = Point.sub position <| pieceIdToOffset image i
         , isSelected = False
         , id = i
         , zlevel = zlevel
@@ -274,7 +262,6 @@ pieceIdToOffset image id =
       (pieceHeight * (toFloat <| id // image.xpieces))
 
 
-
 isPieceInsideBox : JigsawImage -> Point -> Point -> Point -> Int -> Bool
 isPieceInsideBox image pos boxTL boxBR id =
   let
@@ -291,6 +278,23 @@ isPieceInsideBox image pos boxTL boxBR id =
 isPieceGroupInsideBox : JigsawImage -> Point -> Point -> PieceGroup -> Bool
 isPieceGroupInsideBox image boxTL boxBR pieceGroup =
   List.any (isPieceInsideBox image pieceGroup.position boxTL boxBR) pieceGroup.members
+
+isPointInsidePiece : JigsawImage -> Point -> Point -> Int -> Bool
+isPointInsidePiece image point pos id =
+  let
+    pieceWidth = image.scale * (toFloat image.width) / (toFloat image.xpieces)
+    pieceHeight = image.scale * (toFloat image.height) / (toFloat image.ypieces)
+    pieceTL = Point.add pos <| pieceIdToOffset image id
+    pieceBR = Point.add pieceTL <| Point pieceWidth pieceHeight
+  in
+    ( pieceTL.x <= point.x ) &&
+    ( pieceTL.y + 100 <= point.y ) &&
+    ( pieceBR.x >= point.x ) &&
+    ( pieceBR.y + 100 >= point.y )
+
+isPointInsidePieceGroup visibleGroups image point pieceGroup =
+  (S.member pieceGroup.visibilityGroup visibleGroups) &&
+  (List.any (isPointInsidePiece image point pieceGroup.position) pieceGroup.members)
 
 
 -- SUBSCRIPTIONS
@@ -310,24 +314,6 @@ keyDecoder isDown key =
     "Control" -> KeyChanged isDown Control
     "Shift" -> KeyChanged isDown Shift
     _ -> KeyChanged isDown Other
-
-isPointInsidePiece : JigsawImage -> Point -> Point -> Int -> Bool
-isPointInsidePiece image point pos id =
-  let
-    pieceWidth = image.scale * (toFloat image.width) / (toFloat image.xpieces)
-    pieceHeight = image.scale * (toFloat image.height) / (toFloat image.ypieces)
-    pieceTL = Point.add pos <| pieceIdToOffset image id
-    pieceBR = Point.add pieceTL <| Point pieceWidth pieceHeight
-  in
-    ( pieceTL.x <= point.x ) &&
-    ( pieceTL.y + 100 <= point.y ) &&
-    ( pieceBR.x >= point.x ) &&
-    ( pieceBR.y + 100 >= point.y )
-
-isPointInsidePieceGroup visibleGroups image point pieceGroup =
-  (S.member pieceGroup.visibilityGroup visibleGroups) &&
-  (List.any (isPointInsidePiece image point pieceGroup.position) pieceGroup.members)
-
 
 
 subscriptions : Model -> Sub Msg
@@ -359,7 +345,6 @@ subscriptions model =
     , trackMouseUp
     , Browser.Events.onKeyDown (Json.Decode.map (keyDecoder True) (Json.Decode.field "key" Json.Decode.string))
     , Browser.Events.onKeyUp (Json.Decode.map (keyDecoder False) (Json.Decode.field "key" Json.Decode.string))
---    , newDim (FinishedLoading << ImageDimensions)
     , canvasDrawn (FinishedLoading << CanvasDraw)
     ]
 
@@ -372,8 +357,8 @@ type Key
   | Other
 
 
-createJsMessage : Int -> Int -> A.Array EdgePoints -> D.Dict Int PieceGroup -> JSMessage
-createJsMessage nx ny edgePoints pieceGroups =
+createJsMessage : Int -> Int -> D.Dict Int PieceGroup -> A.Array EdgePoints -> JSMessage
+createJsMessage nx ny pieceGroups edgePoints =
   let
     contour pid =
       pieceCurveFromPieceId nx ny edgePoints pid
@@ -383,8 +368,6 @@ createJsMessage nx ny edgePoints pieceGroups =
 
   in
   {contours = contours, nx = nx, ny = ny}
-
-
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -396,20 +379,24 @@ update msg model =
       in
       case thing of
         ImageUrl url ->
-          ( {model | image = {oldImage | path = url}, loading = Debug.log "ImageUrl" newLoading}
+          ( {model | image = {oldImage | path = url}, loading = newLoading}
           , Cmd.none
           )
         ImageDiv ->
-          ( {model | loading = Debug.log "ImageDiv" newLoading }
-          , drawPiecesInCanvas <|
-              createJsMessage
-                model.image.xpieces
-                model.image.ypieces
-                model.edgePoints
-                model.pieceGroups
+          let
+            nx = model.image.xpieces
+            ny = model.image.ypieces
+            numberOfEdges = 2 * nx * ny - nx - ny
+            (edgePoints, newSeed) = makeEdgePoints numberOfEdges model.seed
+          in
+          ( {model | loading = newLoading, seed = newSeed}
+          , drawPiecesInCanvas <| createJsMessage nx ny model.pieceGroups edgePoints
           )
         CanvasDraw (x, y) ->
-          ( {model | image = {oldImage | width = x, height = y}, loading = Debug.log "CanvasDraw" newLoading}
+          let
+            newModel = resetModel {oldImage | width = x, height = y} model.seed
+          in
+          ( {newModel | loading = newLoading}
           , Cmd.none )
 
     PickImage ->
@@ -462,7 +449,7 @@ update msg model =
       let
         newModel = resetModel model.image model.seed
       in
-        ( newModel, Cmd.none )
+        ( { newModel | loading = Finished }, Cmd.none )
 
     MouseDown coordinate keyboard ->
       let
@@ -789,7 +776,7 @@ loadingScreen loading =
   let
     display =
       case loading of
-        LoadingComplete -> "none"
+        Finished -> "none"
         _ -> "block"
 
     loadText =
@@ -797,8 +784,7 @@ loadingScreen loading =
         ParsingImageUrl -> "Parsing Image URL"
         LoadingImage -> "Loading Image"
         DrawingCanvas -> "Drawing canvas"
-        ShufflingPieces -> "Shuffling pieces"
-        LoadingComplete -> "Finished loading!"
+        Finished -> "Finished loading!"
   in
     Html.h1
     [ Html.Attributes.style "display" display ]
@@ -807,7 +793,7 @@ loadingScreen loading =
 preloadImage image =
   Html.img
   [ Html.Events.on "load" <| Json.Decode.succeed <| FinishedLoading ImageDiv
-  , Html.Attributes.id "my_image"
+  , Html.Attributes.id "jigsawImage"
   , Html.Attributes.style "display" "none"
   , Html.Attributes.src image.path
   ]
@@ -857,7 +843,7 @@ viewDiv model =
   let
     visibility =
       case model.loading of
-        LoadingComplete -> Html.Attributes.style "display" "block"
+        Finished -> Html.Attributes.style "display" "block"
         _ -> Html.Attributes.style "display" "none"
     imageWidth = model.image.scale * toFloat model.image.width
     imageHeight = model.image.scale * toFloat model.image.height
