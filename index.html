@@ -25,30 +25,35 @@
             }
         })
 
-        // This will take a string representation of an svg object,
-        // render it on the canvas, parse it to a PNG URL and send it
-        // back to Elm as a base64 encoded string.
+        // Input is a list of contours (as svg-strings describing the paths),
+        // one for each jigsaw piece. Input also contains nx and ny, which
+        // are integers describing the number of pieces in the jigsaw.
+        //
+        // The function is called after the jigsaw image has been loaded into
+        // an invisible <img> tag, and after one canvas has been allocated
+        // for each piece. The function then renders each piece on its
+        // canvas. The outlines are scaled to fit the natural size of
+        // the jigsaw image.
         app.ports.svgToDataUrl.subscribe(function(msg) {
-            //var payload = [];
-
-
+            var img = document.getElementById('my_image');
+            var pieceWidth = img.naturalWidth / msg.nx;
+            var pieceHeight = img.naturalHeight / msg.ny;
+            var scaleX = pieceWidth / 200;
+            var scaleY = pieceHeight / 200;
 
             msg.contours.forEach(function(item, index, array) {
                 var canvas = document.getElementById('canvas-pid-'+index);
-                var img = document.getElementById('my_image');
-                var pieceWidth = img.naturalWidth / msg.nx;
-                var pieceHeight = img.naturalHeight / msg.ny;
                 canvas.width = pieceWidth * 2;
                 canvas.height = pieceHeight * 2;
-                var ctx = canvas.getContext( "2d" );
+                let outline = new Path2D(item);
 
+                var ctx = canvas.getContext( "2d" );
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.translate(pieceWidth/2, pieceHeight/2);
-                let outline = new Path2D(item);
                 ctx.save();
 
-                ctx.clip(outline);
                 ctx.translate(-5,-5);
+                ctx.scale(scaleX, scaleY);
 
                 ctx.filter = 'blur(3px)';
                 ctx.fillStyle = 'rgba(0, 0, 0, 0)';
@@ -60,7 +65,6 @@
                 ctx.stroke(outline);
 
                 ctx.restore();
-                ctx.clip(outline);
                 ctx.globalCompositeOperation = "destination-over";
                 ctx.drawImage(
                     img,
@@ -73,8 +77,11 @@
                     pieceWidth*2,
                     pieceHeight*2);
 
+                ctx.scale(scaleX, scaleY);
+                ctx.globalCompositeOperation = "destination-in";
+                ctx.fill(outline);
             });
-            //app.ports.newSerialize.send( payload );
+
             app.ports.canvasDrawn.send(true);
         })
     </script>

@@ -374,15 +374,11 @@ type Key
   | Other
 
 
-createJsMessage : Int -> Int -> Int -> Int -> A.Array EdgePoints -> D.Dict Int PieceGroup -> JSMessage
-createJsMessage nx ny width height edgePoints pieceGroups =
+createJsMessage : Int -> Int -> A.Array EdgePoints -> D.Dict Int PieceGroup -> JSMessage
+createJsMessage nx ny edgePoints pieceGroups =
   let
-    scale = Debug.log "scale = " <|
-      Point
-        ((toFloat width) / (200.0 * toFloat nx))
-        ((toFloat height) / (200.0 * toFloat ny))
     contour pid =
-      pieceCurveFromPieceId scale nx ny edgePoints pid
+      pieceCurveFromPieceId nx ny edgePoints pid
 
     contours =
       List.concatMap (\pg -> List.map contour pg.members) <| D.values pieceGroups
@@ -407,8 +403,6 @@ update msg model =
               createJsMessage
                 m.image.xpieces
                 m.image.ypieces
-                m.image.width
-                m.image.height
                 m.edgePoints
                 m.pieceGroups
           else

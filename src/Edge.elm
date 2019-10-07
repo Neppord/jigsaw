@@ -50,18 +50,25 @@ type Edge
 
 type alias EdgePoints = List Point
 
-type Bezier
-  = C Point Point Point
-  | S Point Point
+type alias Bezier =
+  { p1 : Point
+  , p2 : Point
+  , p3 : Point
+  }
+--type Bezier
+--  = C Point Point Point
+--  | S Point Point
 
+--flip p q =
+--  Point (2*q.x - p.x) (2*q.y - p.y)
 
 defaultCurvedEdge =
   Curved
     { start = Point 0 0
-    , b1 = C (Point 50 20) (Point 100 25) (Point 80 0)
-    , b2 = S (Point 70 -40) (Point 100 -40)
-    , b3 = S (Point 140 -25) (Point 120 0)
-    , b4 = S (Point 150 20) (Point 200 0)
+    , b1 = Bezier (Point 50 20) (Point 100 25) (Point 80 0)
+    , b2 = Bezier (Point 60 50) (Point 70 -40) (Point 100 -40)
+    , b3 = Bezier (Point 40 -40) (Point 140 -25) (Point 120 0)
+    , b4 = Bezier (Point 160 -50) (Point 150 20) (Point 200 0)
     }
 
 defaultPoints =
@@ -116,10 +123,10 @@ makeEdge orientation points =
     [p0, p1, p2, p3, p4, p5, p6, p7, p8, p9] ->
       Curved
         { start = p0
-        , b1 = C p1 p2 p3
-        , b2 = S p4 p5
-        , b3 = S p6 p7
-        , b4 = S p8 p9
+        , b1 = Bezier p1 p2 p3
+        , b2 = Bezier (flip p2 p3) p4 p5
+        , b3 = Bezier (flip p4 p5) p6 p7
+        , b4 = Bezier (flip p6 p7) p8 p9
         }
     [p1, p2] ->
       Flat { start = p1, end = p2 }
@@ -128,18 +135,14 @@ makeEdge orientation points =
 
 
 bezierToString : Bezier -> String
-bezierToString b =
+bezierToString {p1, p2, p3} =
   let
     combine pts =
       String.concat
         <| List.intersperse ", "
         <| List.map Point.toIntString pts
   in
-  case b of
-    C p1 p2 p3 ->
-      "C " ++ (combine [p1, p2, p3])
-    S p1 p2 ->
-      "S " ++ (combine [p1, p2])
+    "C " ++ (combine [p1, p2, p3])
 
 edgeToString : Edge -> String
 edgeToString e =
@@ -155,12 +158,8 @@ edgeToString e =
 edgeEndPoint : Edge -> Point
 edgeEndPoint edge =
   case edge of
-    Curved {b4} ->
-      case b4 of
-        S _ p2 -> p2
-        C _ _ p3 -> p3
-    Flat {end} ->
-      end
+    Curved {b4} -> b4.p3
+    Flat {end} -> end
 
 {-| All the EdgePoints are stored in an array where they are indexed in a specific way. All vertical edges are
     enumerated first, going from top left to bottom right. Then the horizontal edges follow. Only internal edges are
@@ -193,15 +192,14 @@ getEdgePointsId nx ny pid orientation =
       if (modBy nx pid) == (nx - 1) then -1 else pid - (pid // nx)
 
 
-pieceCurveFromPieceId : Point -> Int -> Int -> Array.Array EdgePoints -> Int -> String
-pieceCurveFromPieceId scale nx ny edgePoints pid =
+pieceCurveFromPieceId : Int -> Int -> Array.Array EdgePoints -> Int -> String
+pieceCurveFromPieceId nx ny edgePoints pid =
   let
     edge : String -> Edge
     edge orientation =
       Array.get (getEdgePointsId nx ny pid orientation) edgePoints
         |> Maybe.withDefault [Point 0 0, Point 200 0]
         |> makeEdge orientation
-        |> scaleEdge scale
 
     curveString =
       List.map (edge >> edgeToString) ["N", "E", "S", "W"]
@@ -209,30 +207,6 @@ pieceCurveFromPieceId scale nx ny edgePoints pid =
   in
     "M 0 0 " ++ curveString
 
-
-scaleEdge p edge =
-  let
-    scaleBezier b =
-      case b of
-        S p1 p2 ->
-          S (Point.mulPointWise p p1) (Point.mulPointWise p p2)
-        C p1 p2 p3 ->
-          C (Point.mulPointWise p p1) (Point.mulPointWise p p2) (Point.mulPointWise p p3)
-  in
-    case edge of
-      Flat {start, end} ->
-        Flat
-          { start = Point.mulPointWise p start
-          , end = Point.mulPointWise p end
-          }
-      Curved {start, b1, b2, b3, b4} ->
-        Curved
-          { start = Point.mulPointWise p start
-          , b1 = scaleBezier b1
-          , b2 = scaleBezier b2
-          , b3 = scaleBezier b3
-          , b4 = scaleBezier b4
-          }
 
 {-
 TODO: Refactor this function to make it readable. In the meanwhile, here's some (hopefully) clarifying words:
