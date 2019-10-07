@@ -7,11 +7,23 @@ import Dict as D
 import Point exposing (Point)
 import Util
 
-type alias Model =
-  { curves : String
-  , seed : Random.Seed
-  , nx : Int
-  , ny : Int
+type Edge
+  = Curved { start : Point, b1 : Bezier, b2 : Bezier, b3 : Bezier, b4 : Bezier}
+  | Flat { start : Point, end : Point }
+
+type Orientation = North | West | South | East
+
+{-  The EdgeEar denotes the direction of the 'ear' of the edge of a piece. If it is of type In, the ear
+    is pointing into the piece, while if it is of type Out, it points out, away from the center of the piece.
+-}
+type EdgeEar = In | Out
+
+type alias EdgePoints = List Point
+
+type alias Bezier =
+  { p1 : Point
+  , p2 : Point
+  , p3 : Point
   }
 
 makeEdgePoints : Int -> Random.Seed -> (Array.Array EdgePoints, Random.Seed)
@@ -21,16 +33,14 @@ makeEdgePoints n seed =
     (offsets, seed1) =
       Random.step (Random.list n <| Point.randomPoints 8 -5 5 -5 5) seed
 
-    (chiralities, seed2) =
-      Random.step (Random.list n <| Random.int 0 1) seed1
+    (ears, seed2) =
+      Random.step (Random.list n <| Random.uniform In [Out]) seed1
 
-    -- Chirality 0 means the 'ear' is pointing up, 1 means it points down
-    setChirality : EdgePoints -> Int -> List Point
-    setChirality ep ch =
-      if ch == 0 then
-        ep
-      else
-        List.map (\p -> Point p.x -p.y) ep
+    setEars : EdgePoints -> EdgeEar -> List Point
+    setEars eps ear =
+      case ear of
+        Out -> eps
+        In -> List.map (\p -> Point p.x -p.y) eps
 
     -- Again, because the first and last points are always the same
     -- (0 0 and 200 0, respectively), we 'pad' the generated points with 0 0 on both ends
@@ -38,29 +48,14 @@ makeEdgePoints n seed =
       List.map2 Point.add defaultPoints ([Point 0 0] ++ ep ++ [Point 0 0])
 
     edgePoints =
-      List.map2 (setChirality << translatePoints) offsets chiralities
+      List.map2 (setEars << translatePoints) offsets ears
         |> Array.fromList
   in
     (edgePoints, seed2)
 
 
-type Edge
-  = Curved { start : Point, b1 : Bezier, b2 : Bezier, b3 : Bezier, b4 : Bezier}
-  | Flat { start : Point, end : Point }
 
-type alias EdgePoints = List Point
 
-type alias Bezier =
-  { p1 : Point
-  , p2 : Point
-  , p3 : Point
-  }
---type Bezier
---  = C Point Point Point
---  | S Point Point
-
---flip p q =
---  Point (2*q.x - p.x) (2*q.y - p.y)
 
 defaultCurvedEdge =
   Curved
@@ -85,7 +80,7 @@ defaultPoints =
   ]
 
 
-makeEdge : String -> List Point -> Edge
+makeEdge : Orientation -> List Point -> Edge
 makeEdge orientation points =
   let
     -- Rotates q pi/2 clockwise around p
@@ -112,10 +107,10 @@ makeEdge orientation points =
       case pts of
         p :: ps ->
           case orientation of
-            "W" -> List.map (rotate p) <| reverse (p :: ps)
-            "S" -> List.map (translate) <| reverse (p :: ps)
-            "E" -> List.map ((rotate p) << (translate)) (p :: ps)
-            _ -> p :: ps
+            North -> p :: ps
+            West -> List.map (rotate p) <| reverse (p :: ps)
+            South -> List.map (translate) <| reverse (p :: ps)
+            East -> List.map ((rotate p) << (translate)) (p :: ps)
         ps -> ps
 
   in
@@ -172,37 +167,37 @@ edgeEndPoint edge =
     The eastern edge of the top left corner is the vertical corner with index 0. This is the same as the western edge
     of the second piece:
 
-    getEdgePointsId nx ny 0 "E" == 0
-    getEdgePointsId nx ny 1 "W" == 0
+    getEdgePointsId nx ny 0 East == 0
+    getEdgePointsId nx ny 1 West == 0
 -}
-getEdgePointsId : Int -> Int -> Int -> String -> Int
+getEdgePointsId : Int -> Int -> Int -> Orientation -> Int
 getEdgePointsId nx ny pid orientation =
   let
     nv = (nx - 1) * ny
     n = nx * ny
   in
   case orientation of
-    "N" ->
+    North ->
       if pid < nx then -1 else pid - nx + nv
-    "W" ->
+    West ->
       if (modBy nx pid) == 0 then -1 else pid - (pid // nx) - 1
-    "S" ->
+    South ->
       if pid >= n - nx then -1 else pid + nv
-    _ ->
+    East ->
       if (modBy nx pid) == (nx - 1) then -1 else pid - (pid // nx)
 
 
 pieceCurveFromPieceId : Int -> Int -> Array.Array EdgePoints -> Int -> String
 pieceCurveFromPieceId nx ny edgePoints pid =
   let
-    edge : String -> Edge
+    edge : Orientation -> Edge
     edge orientation =
       Array.get (getEdgePointsId nx ny pid orientation) edgePoints
         |> Maybe.withDefault [Point 0 0, Point 200 0]
         |> makeEdge orientation
 
     curveString =
-      List.map (edge >> edgeToString) ["N", "E", "S", "W"]
+      List.map (edge >> edgeToString) [North, East, South, West]
         |> String.concat
   in
     "M 0 0 " ++ curveString
@@ -289,7 +284,7 @@ pieceGroupCurve pids nx ny edgePoints =
             (epid, edge)
 
         pidToEdge pid =
-          List.map (epidEdge pid) ["N", "E", "S", "W"]
+          List.map (epidEdge pid) [North, East, South, West]
       in
         List.concat <| List.map pidToEdge pids
 
