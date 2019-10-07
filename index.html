@@ -6,7 +6,6 @@
     <title>Jigsaw</title>
     <link rel="stylesheet" href="stylesheet.css" type="text/css">
     <!-- The src below must match the "elm make" output file -->
-<!--    <script src="https://unpkg.com/elm-canvas@2.2.3/elm-canvas.js"></script>-->
     <script src="main.js"></script>
 </head>
 <body>
@@ -30,60 +29,67 @@
         // Finally the natural width and height of the jigsaw image is
         // returned to Elm.
         app.ports.drawPiecesInCanvas.subscribe(function(msg) {
-            var img = document.getElementById('jigsawImage');
-            var pieceWidth = img.naturalWidth / msg.nx;
-            var pieceHeight = img.naturalHeight / msg.ny;
-            var scaleX = pieceWidth / 200;
-            var scaleY = pieceHeight / 200;
-
             msg.contours.forEach(function(item, index, array) {
-                var canvas = document.getElementById('canvas-pid-'+index);
-                canvas.width = pieceWidth * 2;
-                canvas.height = pieceHeight * 2;
-                let outline = new Path2D(item);
-
-                var ctx = canvas.getContext( "2d" );
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.translate(pieceWidth/2, pieceHeight/2);
-                ctx.save();
-
-                // Start drawing "bevel" effect
-                ctx.translate(-5,-5);
-                ctx.scale(scaleX, scaleY);
-                ctx.filter = 'blur(3px)';
-                ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-                ctx.strokeStyle = 'rgba(0, 0, 0, 150)';
-                ctx.shadowColor = 'rgba(255, 255, 255, 255)';
-                ctx.shadowOffsetX = 5;
-                ctx.shadowOffsetY = 5;
-                ctx.lineWidth = 12;
-                ctx.stroke(outline);
-
-                // Draw the jigsaw image (or part of it) behind the bevel effect
-                ctx.restore();
-                ctx.globalCompositeOperation = "destination-over";
-                ctx.drawImage(
-                    img,
-                    pieceWidth * (index%msg.nx - 0.5),
-                    pieceHeight * (Math.floor(index/msg.nx) - 0.5),
-                    pieceWidth*2,
-                    pieceHeight*2,
-                    -pieceWidth/2,
-                    -pieceHeight/2,
-                    pieceWidth*2,
-                    pieceHeight*2);
-
-                // Clip the image by drawing the (scaled) jigsaw shape behind
-                // the scene, such that everything where there is no overlap is removed
-                // (This is the "destination-in" setting)
-                ctx.scale(scaleX, scaleY);
-                ctx.globalCompositeOperation = "destination-in";
-                ctx.fill(outline);
+                drawPiece(item, index, msg.nx, msg.ny);
             });
 
             // Return the image shape to Elm
+            var img = document.getElementById('jigsawImage');
             app.ports.canvasDrawn.send([img.naturalWidth, img.naturalHeight]);
-        })
+        });
+
+        function drawPiece(contour, pid, nx, ny) {
+            var img = document.getElementById('jigsawImage');
+            var pieceWidth = img.naturalWidth / nx;
+            var pieceHeight = img.naturalHeight / ny;
+            var scaleX = pieceWidth / 200;
+            var scaleY = pieceHeight / 200;
+
+            var canvas = document.getElementById('canvas-pid-'+pid);
+            canvas.width = pieceWidth * 2;
+            canvas.height = pieceHeight * 2;
+            let outline = new Path2D(contour);
+
+            var ctx = canvas.getContext( "2d" );
+            ctx.save();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.translate(pieceWidth/2, pieceHeight/2);
+            ctx.save();
+
+            // Start drawing "bevel" effect
+            ctx.translate(-5,-5);
+            ctx.scale(scaleX, scaleY);
+            ctx.filter = 'blur(3px)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+            ctx.strokeStyle = 'rgba(0, 0, 0, 150)';
+            ctx.shadowColor = 'rgba(255, 255, 255, 255)';
+            ctx.shadowOffsetX = 5;
+            ctx.shadowOffsetY = 5;
+            ctx.lineWidth = 12;
+            ctx.stroke(outline);
+
+            // Draw the jigsaw image (or part of it) behind the bevel effect
+            ctx.restore();
+            ctx.globalCompositeOperation = "destination-over";
+            ctx.drawImage(
+                img,
+                pieceWidth * (pid%nx - 0.5),
+                pieceHeight * (Math.floor(pid/nx) - 0.5),
+                pieceWidth*2,
+                pieceHeight*2,
+                -pieceWidth/2,
+                -pieceHeight/2,
+                pieceWidth*2,
+                pieceHeight*2);
+
+            // Clip the image by drawing the (scaled) jigsaw shape behind
+            // the scene, such that everything where there is no overlap is removed
+            // (This is the "destination-in" setting)
+            ctx.scale(scaleX, scaleY);
+            ctx.globalCompositeOperation = "destination-in";
+            ctx.fill(outline);
+            ctx.restore();
+        }
     </script>
 </body>
 </html>

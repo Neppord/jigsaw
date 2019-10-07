@@ -12,6 +12,8 @@ import Html.Events
 import Json.Decode
 import Random
 import Random.List
+import Random.Set
+import Random.Extra
 import File exposing (File)
 import File.Select
 import Task
@@ -41,6 +43,7 @@ type Msg
   | PickImage
   | GotImage File
   | FinishedLoading ThingThatCanLoad
+  | Cheat Int
 
 type alias Keyboard =
   { shift : Bool
@@ -159,8 +162,8 @@ init () =
       { path = "resources/hongkong.jpg"
       , width = 6000
       , height = 4000
-      , xpieces = 30
-      , ypieces = 20
+      , xpieces = 60
+      , ypieces = 40
       , scale = 0.2
       }
     model =
@@ -246,7 +249,6 @@ createPieceGroups image positions levels =
   in
     D.fromList <| List.map3 onePieceGroup range positions zlevels
 
---
 pieceIdToPoint : Int -> Int -> Point
 pieceIdToPoint id xpieces =
   Point (toFloat (modBy xpieces id)) (toFloat (id // xpieces))
@@ -372,6 +374,10 @@ createJsMessage nx ny pieceGroups edgePoints =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
+    Cheat number ->
+      ( cheatManyTimes number model
+      , Cmd.none
+      )
     FinishedLoading thing ->
       let
         oldImage = model.image
@@ -675,9 +681,9 @@ startSelectionBox model coordinate keyboard =
 snapToNeighbour : Model -> PieceGroup -> D.Dict Int PieceGroup
 snapToNeighbour model selected =
   let
-    neighbourDistance : PieceGroup -> PieceGroup -> (Float, PieceGroup)
-    neighbourDistance selectedPiece neighbour =
-      ( Point.dist selectedPiece.position neighbour.position
+    neighbourDistance : PieceGroup -> (Float, PieceGroup)
+    neighbourDistance neighbour =
+      ( Point.dist selected.position neighbour.position
       , neighbour)
 
     neighbourFromId : Int -> PieceGroup
@@ -687,7 +693,7 @@ snapToNeighbour model selected =
 
     distanceToSelected : List (Float, PieceGroup)
     distanceToSelected =
-      List.map ((neighbourDistance selected) << neighbourFromId) (S.toList selected.neighbours)
+      List.map (neighbourDistance << neighbourFromId) (S.toList selected.neighbours)
 
     smallEnough : (Float, a) -> Bool
     smallEnough (distance, _) =
@@ -747,6 +753,43 @@ currentSelection pieceGroups =
     [] -> NullSelection
     id :: [] -> Single id
     _ -> Multiple
+
+cheat : Model -> Model
+cheat model =
+  let
+    (randomPieceGroup, seed1) =
+      case Random.step (Random.Extra.sample <| D.values model.pieceGroups) model.seed of
+        (Nothing, newSeed) -> (defaultPieceGroup, newSeed)
+        (Just pg, newSeed) -> (pg, newSeed)
+
+    (randomNeighbourId, seed2) =
+      case (Random.step (Random.Set.sample randomPieceGroup.neighbours) seed1) of
+        (Nothing, newSeed) -> (0, newSeed)
+        (Just id, newSeed) -> (id, newSeed)
+
+    neighbour =
+      D.get randomNeighbourId model.pieceGroups
+        |> Maybe.withDefault defaultPieceGroup
+
+    movePieceGroup pg =
+      {pg | position = neighbour.position}
+
+    newPieceGroups =
+      snapToNeighbour model (movePieceGroup <| randomPieceGroup)
+  in
+  if D.size model.pieceGroups > 1 then
+    { model | seed = seed2, pieceGroups = newPieceGroups }
+  else
+    model
+
+cheatManyTimes : Int -> Model -> Model
+cheatManyTimes n model =
+  let
+    cheatOnce _ oldModel =
+      cheat oldModel
+  in
+    List.foldl cheatOnce model <| List.repeat n 0
+
 
 -- VIEW
 
@@ -903,7 +946,6 @@ viewDiv model =
         |> List.concatMap viewPieceGroup
         |> List.sortBy .pid
         |> List.map (\{pid, html} -> html)
---      List.concatMap viewPieceGroup <| D.values model.pieceGroups
 
   in
     [ Html.div
@@ -948,6 +990,15 @@ viewMenu model =
         [ Html.Events.onClick PickImage ]
         [ Html.text "Choose image" ]
       , Html.a
+        [ Html.Events.onClick <| Cheat 1 ]
+        [ Html.text "Cheat 1" ]
+      , Html.a
+        [ Html.Events.onClick <| Cheat 10 ]
+        [ Html.text "Cheat 10" ]
+      , Html.a
+        [ Html.Events.onClick <| Cheat 100 ]
+        [ Html.text "Cheat 100" ]
+      , Html.a
         []
         [ Html.text "[TODO] Options" ]
       ]
@@ -956,8 +1007,5 @@ viewMenu model =
 
 
 -- PORTS
-
---port newDim : ((Int, Int) -> msg) -> Sub msg
---port getDim : String -> Cmd msg
 port drawPiecesInCanvas : JSMessage -> Cmd msg
 port canvasDrawn : ((Int, Int) -> msg) -> Sub msg
