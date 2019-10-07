@@ -759,23 +759,20 @@ cheat model =
   let
     (randomPieceGroup, seed1) =
       case Random.step (Random.Extra.sample <| D.values model.pieceGroups) model.seed of
-        (Nothing, newSeed) -> (defaultPieceGroup, newSeed)
-        (Just pg, newSeed) -> (pg, newSeed)
+        (Nothing, seed) -> (defaultPieceGroup, seed)
+        (Just pieceGroup, seed) -> (pieceGroup, seed)
 
     (randomNeighbourId, seed2) =
       case (Random.step (Random.Set.sample randomPieceGroup.neighbours) seed1) of
-        (Nothing, newSeed) -> (0, newSeed)
-        (Just id, newSeed) -> (id, newSeed)
+        (Nothing, seed) -> (0, seed)
+        (Just id, seed) -> (id, seed)
 
-    neighbour =
+    randomNeighbour =
       D.get randomNeighbourId model.pieceGroups
         |> Maybe.withDefault defaultPieceGroup
 
-    movePieceGroup pg =
-      {pg | position = neighbour.position}
-
     newPieceGroups =
-      snapToNeighbour model (movePieceGroup <| randomPieceGroup)
+      snapToNeighbour model { randomPieceGroup | position = randomNeighbour.position}
   in
   if D.size model.pieceGroups > 1 then
     { model | seed = seed2, pieceGroups = newPieceGroups }
@@ -784,12 +781,10 @@ cheat model =
 
 cheatManyTimes : Int -> Model -> Model
 cheatManyTimes n model =
-  let
-    cheatOnce _ oldModel =
-      cheat oldModel
-  in
-    List.foldl cheatOnce model <| List.repeat n 0
-
+  if n > 0 then
+    cheatManyTimes (n - 1) (cheat model)
+  else
+    model
 
 -- VIEW
 
