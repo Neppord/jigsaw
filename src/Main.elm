@@ -64,6 +64,7 @@ type alias Model =
   , visibleGroups : S.Set Int
   , keyboard : Keyboard
   , loading : LoadStatus
+  , edgePoints : A.Array EdgePoints
   }
 
 type alias JigsawImage =
@@ -120,11 +121,25 @@ type Selected
   | Single Int
   | NullSelection
 
-
 type alias JSMessage =
-  { contours : List String
+  { contours : List ContourMessage
   , nx : Int
   , ny : Int
+  }
+
+type alias ImTooTired =
+  { contour : ContourMessage
+  , nx : Int
+  , ny : Int
+  }
+
+type alias ContourMessage =
+  { canvasId : String
+  , contour: String
+  , t: Float
+  , l: Float
+  , r: Float
+  , b: Float
   }
 
 boxTopLeft : Box -> Point
@@ -159,12 +174,12 @@ init : () -> ( Model, Cmd Msg )
 init () =
   let
     image =
-      { path = "resources/hongkong.jpg"
-      , width = 6000
-      , height = 4000
-      , xpieces = 60
-      , ypieces = 40
-      , scale = 0.2
+      { path = "resources/kitten.png"
+      , width = 538
+      , height = 533
+      , xpieces = 4
+      , ypieces = 4
+      , scale = 1
       }
     model =
       resetModel image (Random.initialSeed 0)
@@ -176,9 +191,10 @@ resetModel image seed =
   let
     (w, h) = (1800, 1100)
     (nx, ny) = (image.xpieces, image.ypieces)
-
+    numberOfEdges = 2 * nx * ny - nx - ny
     (positions, seed1) = generateRandomPiecePositions w h image seed
     (zlevels, seed2) = generateRandomZLevels (nx * ny) seed1
+    (edgePoints, seed3) = makeEdgePoints numberOfEdges seed2
   in
     { cursor = Nothing
     , pieceGroups = createPieceGroups image positions zlevels
@@ -189,10 +205,11 @@ resetModel image seed =
     , height = h
     , snapDistance = 30.0
     , selectionBox = NullBox
-    , seed = seed2
+    , seed = seed3
     , visibleGroups = S.fromList [-1]
     , keyboard = { shift = False, ctrl = False }
     , loading = LoadingImage
+    , edgePoints = edgePoints
     }
 
 
@@ -359,17 +376,52 @@ type Key
   | Other
 
 
+pieceGroupSize members nx =
+  let
+    xpos = modBy nx
+    ypos id = id // nx
+
+    left = List.map xpos members |> List.minimum |> Maybe.withDefault 0 |> toFloat
+    right = List.map xpos members |> List.maximum |> Maybe.withDefault 0 |> toFloat
+    top = List.map ypos members |> List.minimum |> Maybe.withDefault 0 |> toFloat
+    bottom = List.map ypos members |> List.maximum |> Maybe.withDefault 0 |> toFloat
+  in
+    {t=top, l=left, r=right, b=bottom}
+
 createJsMessage : Int -> Int -> D.Dict Int PieceGroup -> A.Array EdgePoints -> JSMessage
 createJsMessage nx ny pieceGroups edgePoints =
   let
-    contour pid =
-      pieceCurveFromPieceId nx ny edgePoints pid
+    contourMsg pg =
+      let
+        {t, l, r, b} = pieceGroupSize pg.members nx
+      in
+        { canvasId = getCanvasId pg.id
+        , contour = Edge.pieceGroupCurve pg.members nx ny edgePoints
+        , t = t
+        , l = l
+        , r = r
+        , b = b
+        }
 
     contours =
-      List.concatMap (\pg -> List.map contour pg.members) <| D.values pieceGroups
-
+      List.map contourMsg <| D.values pieceGroups
   in
-  {contours = contours, nx = nx, ny = ny}
+    {contours = contours, nx = nx, ny = ny}
+
+createBullshitMessage : Int -> Int -> PieceGroup -> A.Array EdgePoints -> ImTooTired
+createBullshitMessage nx ny pg edgePoints =
+  let
+    {t, l, r, b} = pieceGroupSize pg.members nx
+    contourMsg =
+      { canvasId = getCanvasId pg.id
+      , contour = Edge.pieceGroupCurve pg.members nx ny edgePoints
+      , t = t
+      , l = l
+      , r = r
+      , b = b
+      }
+  in
+    {contour = contourMsg, nx = nx, ny = ny}
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -392,11 +444,9 @@ update msg model =
           let
             nx = model.image.xpieces
             ny = model.image.ypieces
-            numberOfEdges = 2 * nx * ny - nx - ny
-            (edgePoints, newSeed) = makeEdgePoints numberOfEdges model.seed
           in
-          ( {model | loading = newLoading, seed = newSeed}
-          , drawPiecesInCanvas <| createJsMessage nx ny model.pieceGroups edgePoints
+          ( {model | loading = newLoading}
+          , drawPiecesInCanvas <| createJsMessage nx ny model.pieceGroups model.edgePoints
           )
         CanvasDraw (x, y) ->
           let
@@ -477,38 +527,37 @@ update msg model =
         , Cmd.none )
 
     MouseUp ->
-      let
-        newModel =
-          case model.selectionBox of
-          Normal box ->
-            { model
-            | selectionBox = NullBox
-            , cursor = Nothing
-            , selected = currentSelection model.pieceGroups
-            }
-          Inverted box ->
-            { model
-            | selectionBox = NullBox
-            , cursor = Nothing
-            , selected = currentSelection model.pieceGroups
-            }
-          NullBox ->
-            case model.selected of
-              Multiple ->
-                { model | cursor = Nothing }
-              NullSelection ->
-                { model | cursor = Nothing }
-              Single id ->
-                { model
-                  | cursor = Nothing
-                  , selected = NullSelection
-                  , pieceGroups =
-                      D.get id model.pieceGroups
-                      |> Maybe.withDefault defaultPieceGroup
-                      |> snapToNeighbour model
-                }
-      in
-        ( newModel, Cmd.none )
+      case model.selectionBox of
+      Normal box ->
+        ({ model
+        | selectionBox = NullBox
+        , cursor = Nothing
+        , selected = currentSelection model.pieceGroups
+        }, Cmd.none)
+      Inverted box ->
+        ({ model
+        | selectionBox = NullBox
+        , cursor = Nothing
+        , selected = currentSelection model.pieceGroups
+        }, Cmd.none)
+      NullBox ->
+        case model.selected of
+          Multiple ->
+            ({ model | cursor = Nothing }, Cmd.none)
+          NullSelection ->
+            ({ model | cursor = Nothing }, Cmd.none)
+          Single id ->
+            let
+              (newPieceGroups, cmd) =
+                D.get id model.pieceGroups
+                  |> Maybe.withDefault defaultPieceGroup
+                  |> snapToNeighbour model
+            in
+            ({ model
+              | cursor = Nothing
+              , selected = NullSelection
+              , pieceGroups = newPieceGroups
+            }, cmd)
 
     MouseMove newPos ->
       case model.cursor of
@@ -678,7 +727,7 @@ startSelectionBox model coordinate keyboard =
     }
 
 
-snapToNeighbour : Model -> PieceGroup -> D.Dict Int PieceGroup
+snapToNeighbour : Model -> PieceGroup -> (D.Dict Int PieceGroup, Cmd Msg)
 snapToNeighbour model selected =
   let
     neighbourDistance : PieceGroup -> (Float, PieceGroup)
@@ -734,14 +783,21 @@ snapToNeighbour model selected =
         replaceSelectedIdWithNeighbourId _ pg =
             {pg | neighbours = fixNeighbours pg.neighbours selected.id neighbour.id}
 
-      in
-        merge selected neighbour
+        newPieceGroups =
+          merge selected neighbour
           |> Util.flip (D.insert neighbour.id) model.pieceGroups
           |> D.remove selected.id
           |> D.map replaceSelectedIdWithNeighbourId
 
+        updatedNeighbour =
+          D.get neighbour.id newPieceGroups |> Maybe.withDefault defaultPieceGroup
+
+      in
+        ( newPieceGroups
+        , drawPieceGroup <| createBullshitMessage model.image.xpieces model.image.ypieces updatedNeighbour model.edgePoints)
+
     Nothing ->
-      model.pieceGroups
+      (model.pieceGroups, Cmd.none)
 
 
 allSelectedPieceGroups pieceGroups =
@@ -771,7 +827,8 @@ cheat model =
       D.get randomNeighbourId model.pieceGroups
         |> Maybe.withDefault defaultPieceGroup
 
-    newPieceGroups =
+    -- TODO: Fix this!
+    (newPieceGroups, _) =
       snapToNeighbour model { randomPieceGroup | position = randomNeighbour.position}
   in
   if D.size model.pieceGroups > 1 then
@@ -876,6 +933,10 @@ viewSelectionBox model =
       NullBox ->
         []
 
+getCanvasId : Int -> String
+getCanvasId pieceGroupId =
+  "canvas-id-" ++ String.fromInt pieceGroupId
+
 viewDiv : Model -> List (Html Msg)
 viewDiv model =
   let
@@ -895,6 +956,72 @@ viewDiv model =
         zlevel = String.fromInt pg.zlevel
       in
       List.map (pieceDiv pg.position display zlevel) <| List.sort pg.members
+
+    viewPieceGroups =
+      List.map pieceGroupDiv
+        <| List.sortBy .id
+        <| D.values model.pieceGroups
+
+    stupidWorkAround =
+      let
+        hiddenCanvas id =
+          Html.canvas
+          [ Html.Attributes.style "display" "none"
+          , Html.Attributes.id <| getCanvasId id
+          ]
+          []
+        allPids =
+          List.range 0 (model.image.xpieces * model.image.ypieces - 1)
+
+        themap pid =
+          case D.get pid model.pieceGroups of
+            Nothing -> hiddenCanvas pid
+            Just pg -> pieceGroupDiv pg
+
+      in
+        List.map themap allPids
+
+    pieceGroupDiv : PieceGroup -> Html Msg
+    pieceGroupDiv pg =
+      let
+        {t, l, r, b} = pieceGroupSize pg.members model.image.xpieces
+
+        top =  pg.position.y + (t - 0.5) * pieceHeight
+        left = pg.position.x + (l - 0.5) * pieceWidth
+        tl = Point left top
+        wh = Point ((r - l + 2) * pieceWidth) ((b - t + 2) * pieceHeight)
+
+        display = if S.member pg.visibilityGroup model.visibleGroups then "block" else "none"
+      in
+      Html.div
+      [
+        Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
+      , Html.Attributes.style "position" "absolute"
+      ]
+      [
+        Html.div
+        [
+          Html.Attributes.style "position" "absolute"
+        , Html.Attributes.style "width" <| Point.xToPixel wh
+        , Html.Attributes.style "height" <| Point.yToPixel wh
+        , Html.Attributes.style "top" <| Point.yToPixel tl
+        , Html.Attributes.style "left" <| Point.xToPixel tl
+        , Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
+        , Html.Attributes.style "display" display
+        ]
+        [
+          Html.canvas
+          [ Html.Attributes.id <| getCanvasId pg.id
+          , Html.Attributes.style "position" "absolute"
+          , Html.Attributes.style "top" "0px"
+          , Html.Attributes.style "left" "0px"
+          , Html.Attributes.style "width" <| Point.xToPixel wh
+          , Html.Attributes.style "height" <| Point.yToPixel wh
+          ]
+          []
+        ]
+      ]
+
 
     pieceDiv : Point -> String -> String -> Int -> {pid : Int, html : Html Msg}
     pieceDiv pos display zlevel pid =
@@ -920,7 +1047,7 @@ viewDiv model =
             ]
             [
               Html.canvas
-              [ Html.Attributes.id <| "canvas-pid-" ++ String.fromInt pid
+              [ Html.Attributes.id <| getCanvasId pid
               , Html.Attributes.style "position" "absolute"
               , Html.Attributes.style "top" "0px"
               , Html.Attributes.style "left" "0px"
@@ -946,7 +1073,7 @@ viewDiv model =
     [ Html.div
       ( visibility ::
         turnOffTheBloodyImageDragging )
-      ( viewPieces )
+      ( stupidWorkAround )
     ]
 
 
@@ -1004,3 +1131,4 @@ viewMenu model =
 -- PORTS
 port drawPiecesInCanvas : JSMessage -> Cmd msg
 port canvasDrawn : ((Int, Int) -> msg) -> Sub msg
+port drawPieceGroup : ImTooTired -> Cmd msg

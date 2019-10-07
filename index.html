@@ -30,7 +30,7 @@
         // returned to Elm.
         app.ports.drawPiecesInCanvas.subscribe(function(msg) {
             msg.contours.forEach(function(item, index, array) {
-                drawPiece(item, index, msg.nx, msg.ny);
+                drawPiece(item, msg.nx, msg.ny);
             });
 
             // Return the image shape to Elm
@@ -38,26 +38,31 @@
             app.ports.canvasDrawn.send([img.naturalWidth, img.naturalHeight]);
         });
 
-        function drawPiece(contour, pid, nx, ny) {
+        app.ports.drawPieceGroup.subscribe(function(msg) {
+            drawPiece(msg.contour, msg.nx, msg.ny);
+            console.log('drawPieceGroup');
+        });
+
+        function drawPiece({canvasId, contour, t, l, r, b}, nx, ny) {
+            console.log(canvasId, t, l, r, b);
             var img = document.getElementById('jigsawImage');
             var pieceWidth = img.naturalWidth / nx;
             var pieceHeight = img.naturalHeight / ny;
             var scaleX = pieceWidth / 200;
             var scaleY = pieceHeight / 200;
 
-            var canvas = document.getElementById('canvas-pid-'+pid);
-            canvas.width = pieceWidth * 2;
-            canvas.height = pieceHeight * 2;
+            var canvas = document.getElementById(canvasId);
+            canvas.width = pieceWidth * (r - l + 2);
+            canvas.height = pieceHeight * (b - t + 2);
             let outline = new Path2D(contour);
 
             var ctx = canvas.getContext( "2d" );
             ctx.save();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.translate(pieceWidth/2, pieceHeight/2);
-            ctx.save();
+            ctx.translate(pieceWidth * (0.5 - l), pieceHeight * (0.5 - t));
 
             // Start drawing "bevel" effect
-            ctx.translate(-5,-5);
+            ctx.translate(-5, -5);
             ctx.scale(scaleX, scaleY);
             ctx.filter = 'blur(3px)';
             ctx.fillStyle = 'rgba(0, 0, 0, 0)';
@@ -73,18 +78,20 @@
             ctx.globalCompositeOperation = "destination-over";
             ctx.drawImage(
                 img,
-                pieceWidth * (pid%nx - 0.5),
-                pieceHeight * (Math.floor(pid/nx) - 0.5),
-                pieceWidth*2,
-                pieceHeight*2,
-                -pieceWidth/2,
-                -pieceHeight/2,
-                pieceWidth*2,
-                pieceHeight*2);
+                pieceWidth * (l - 0.5),
+                pieceHeight * (t - 0.5),
+                pieceWidth * (r - l + 2),
+                pieceHeight * (b - t + 2),
+                0,
+                0,
+                pieceWidth * (r - l + 2),
+                pieceHeight * (b - t + 2)
+            );
 
             // Clip the image by drawing the (scaled) jigsaw shape behind
             // the scene, such that everything where there is no overlap is removed
             // (This is the "destination-in" setting)
+            ctx.translate(pieceWidth * (0.5 - l), pieceHeight * (0.5 - t));
             ctx.scale(scaleX, scaleY);
             ctx.globalCompositeOperation = "destination-in";
             ctx.fill(outline);
