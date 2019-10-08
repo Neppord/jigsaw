@@ -20,7 +20,7 @@ import Task
 
 import Point exposing (Point)
 import Util exposing (takeFirst)
-import Edge exposing (EdgePoints, makeEdgePoints, pieceCurveFromPieceId)
+import Edge exposing (EdgePoints, makeEdgePoints)
 
 -- MAIN
 main =
@@ -97,14 +97,6 @@ type LoadStatus
   | DrawingCanvas
   | Finished
 
-nextLoadStatus : LoadStatus -> LoadStatus
-nextLoadStatus status =
-  case status of
-    ParsingImageUrl -> LoadingImage
-    LoadingImage -> DrawingCanvas
-    DrawingCanvas -> Finished
-    Finished -> ParsingImageUrl
-
 type SelectionBox
   = Normal Box
   | Inverted Box
@@ -121,13 +113,13 @@ type Selected
   | Single Int
   | NullSelection
 
-type alias JSMessage =
+type alias MultipleContoursMessage =
   { contours : List ContourMessage
   , nx : Int
   , ny : Int
   }
 
-type alias ImTooTired =
+type alias SingleContourMessage =
   { contour : ContourMessage
   , nx : Int
   , ny : Int
@@ -174,23 +166,19 @@ init : () -> ( Model, Cmd Msg )
 init () =
   let
     image =
-      { path = "resources/kitten.png"
-      , width = 538
-      , height = 533
-      , xpieces = 4
-      , ypieces = 4
-      , scale = 1
+      { path = "resources/hongkong.jpg"
+      , width = 6000
+      , height = 4000
+      , xpieces = 60
+      , ypieces = 40
+      , scale = 0.2
       }
   in
   ( createModel image, Cmd.none )
 
 createModel : JigsawImage -> Model
 createModel image =
-  let
-    (zlevels, seed) = generateRandomZLevels (image.xpieces * image.ypieces) <| Random.initialSeed 0
-  in
   { cursor = Nothing
---  , pieceGroups = createPieceGroups image zlevels
   , pieceGroups = D.empty
   , selected = NullSelection
   , maxZLevel = image.xpieces * image.ypieces
@@ -206,7 +194,10 @@ createModel image =
   , edgePoints = A.empty
   }
 
-resetModel : Model -> Model
+{-  This resets everything except piece positions. For that, use
+    randomizePieceGroupPositions.
+-}
+resetModel : Model -> (Model, Cmd Msg)
 resetModel model =
   let
     nx = model.image.xpieces
@@ -216,19 +207,32 @@ resetModel model =
 
     (zlevels, seed1) = generateRandomZLevels numberOfPieces model.seed
     (edgePoints, seed2) = makeEdgePoints numberOfEdges seed1
+
+    newModel =
+      { model
+        | cursor = Nothing
+        , pieceGroups = createPieceGroups model.image zlevels
+        , selected = NullSelection
+        , maxZLevel = model.image.xpieces * model.image.ypieces
+        , selectionBox = NullBox
+        , seed = seed2
+        , visibleGroups = S.fromList [-1]
+        , keyboard = { shift = False, ctrl = False}
+        , loading = DrawingCanvas
+        , edgePoints = edgePoints
+      }
+
+    command =
+      drawPiecesInCanvas
+        <| multipleContoursMessage
+            newModel.image.xpieces
+            newModel.image.ypieces
+            newModel.edgePoints
+            newModel.pieceGroups
   in
-    { model
-      | cursor = Nothing
-      , pieceGroups = createPieceGroups model.image zlevels
-      , selected = NullSelection
-      , maxZLevel = model.image.xpieces * model.image.ypieces
-      , selectionBox = NullBox
-      , seed = seed2
-      , visibleGroups = S.fromList [-1]
-      , keyboard = { shift = False, ctrl = False}
-      , loading = LoadingImage
-      , edgePoints = edgePoints
-    }
+    ( newModel
+    , command
+    )
 
 
 generateRandomPiecePositions : Int -> Int -> JigsawImage -> Random.Seed -> (List Point, Random.Seed)
@@ -283,8 +287,8 @@ createPieceGroups image levels =
   in
     D.fromList <| List.map2 onePieceGroup range zlevels
 
-setPieceGroupPositions : Model -> Model
-setPieceGroupPositions model =
+randomizePieceGroupPositions : Model -> Model
+randomizePieceGroupPositions model =
   let
     (positions, newSeed) = generateRandomPiecePositions model.width model.height model.image model.seed
 
@@ -422,80 +426,52 @@ pieceGroupSize members nx =
   in
     {t=top, l=left, r=right, b=bottom}
 
-createJsMessage : Int -> Int -> D.Dict Int PieceGroup -> A.Array EdgePoints -> JSMessage
-createJsMessage nx ny pieceGroups edgePoints =
+multipleContoursMessage : Int -> Int -> A.Array EdgePoints -> D.Dict Int PieceGroup -> MultipleContoursMessage
+multipleContoursMessage nx ny edgePoints pieceGroups =
   let
-    contourMsg pg =
-      let
-        {t, l, r, b} = pieceGroupSize pg.members nx
-      in
-        { canvasId = getCanvasId pg.id
-        , contour = Edge.pieceGroupCurve pg.members nx ny edgePoints
-        , t = t
-        , l = l
-        , r = r
-        , b = b
-        }
-
     contours =
-      List.map contourMsg <| D.values pieceGroups
+      List.map (contourMessage nx ny edgePoints) <| D.values pieceGroups
   in
     {contours = contours, nx = nx, ny = ny}
 
-createBullshitMessage : Int -> Int -> PieceGroup -> A.Array EdgePoints -> ImTooTired
-createBullshitMessage nx ny pg edgePoints =
+singleContourMessage : Int -> Int -> A.Array EdgePoints -> PieceGroup -> SingleContourMessage
+singleContourMessage nx ny edgePoints pg =
+  {contour = contourMessage nx ny edgePoints pg, nx = nx, ny = ny}
+
+contourMessage nx ny edgePoints pg =
   let
     {t, l, r, b} = pieceGroupSize pg.members nx
-    contourMsg =
-      { canvasId = getCanvasId pg.id
-      , contour = Edge.pieceGroupCurve pg.members nx ny edgePoints
-      , t = t
-      , l = l
-      , r = r
-      , b = b
-      }
   in
-    {contour = contourMsg, nx = nx, ny = ny}
+    { canvasId = getCanvasId pg.id
+    , contour = Edge.pieceGroupCurve pg.members nx ny edgePoints
+    , t = t
+    , l = l
+    , r = r
+    , b = b
+    }
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
     Cheat number ->
-      ( cheatManyTimes number model
-      , Cmd.none
-      )
+      cheatManyTimes number model
+
     FinishedLoading thing ->
       let
         oldImage = model.image
-        newLoading = nextLoadStatus model.loading
       in
-      case Debug.log "" thing of
+      case thing of
         ImageUrl url ->
           ( {model | image = {oldImage | path = url}, loading = LoadingImage}
           , Cmd.none
           )
         ImageDiv ->
-          let
-            newModel = resetModel model
-            command =
-              drawPiecesInCanvas
-                <| Debug.log "drawPieces" <| createJsMessage
-                    newModel.image.xpieces
-                    newModel.image.ypieces
-                    newModel.pieceGroups
-                    newModel.edgePoints
-          in
-          ( {newModel | loading = DrawingCanvas}
-          , command
-          )
+          resetModel model
         CanvasDraw (x, y) ->
           let
-            -- TODO: This is the cause of the funny bug
-            -- It will create new random edgepoints, but not actually use them until some pieces are merged!
---            newModel = resetModel {model | image = {oldImage | width = x, height = y}}
             updatedModel = {model | image = {oldImage | width = x, height = y}, loading = Finished}
           in
-          ( Debug.log "CanvasDraw" <| setPieceGroupPositions updatedModel
+          ( randomizePieceGroupPositions updatedModel
           , Cmd.none )
 
     PickImage ->
@@ -545,19 +521,7 @@ update msg model =
         Other -> ( model, Cmd.none )
 
     Scramble ->
-      let
-        newModel = resetModel model
-        command =
-          drawPiecesInCanvas
-            <| createJsMessage
-                newModel.image.xpieces
-                newModel.image.ypieces
-                newModel.pieceGroups
-                newModel.edgePoints
-      in
-      ( {newModel | loading = DrawingCanvas}
-      , command
-      )
+      resetModel model
 
     MouseDown coordinate keyboard ->
       let
@@ -600,10 +564,15 @@ update msg model =
             ({ model | cursor = Nothing }, Cmd.none)
           Single id ->
             let
-              (newPieceGroups, cmd) =
+              (newPieceGroups, message) =
                 D.get id model.pieceGroups
                   |> Maybe.withDefault defaultPieceGroup
                   |> snapToNeighbour model
+
+              cmd =
+                case message of
+                  Just newContour -> drawPieceGroup newContour
+                  Nothing -> Cmd.none
             in
             ({ model
               | cursor = Nothing
@@ -779,7 +748,7 @@ startSelectionBox model coordinate keyboard =
     }
 
 
-snapToNeighbour : Model -> PieceGroup -> (D.Dict Int PieceGroup, Cmd Msg)
+snapToNeighbour : Model -> PieceGroup -> (D.Dict Int PieceGroup, Maybe SingleContourMessage)
 snapToNeighbour model selected =
   let
     neighbourDistance : PieceGroup -> (Float, PieceGroup)
@@ -837,19 +806,25 @@ snapToNeighbour model selected =
 
         newPieceGroups =
           merge selected neighbour
-          |> Util.flip (D.insert neighbour.id) model.pieceGroups
-          |> D.remove selected.id
-          |> D.map replaceSelectedIdWithNeighbourId
+            |> Util.flip (D.insert neighbour.id) model.pieceGroups
+            |> D.remove selected.id
+            |> D.map replaceSelectedIdWithNeighbourId
 
         updatedNeighbour =
           D.get neighbour.id newPieceGroups |> Maybe.withDefault defaultPieceGroup
 
       in
         ( newPieceGroups
-        , drawPieceGroup <| createBullshitMessage model.image.xpieces model.image.ypieces updatedNeighbour model.edgePoints)
+        , Just <|
+          singleContourMessage
+            model.image.xpieces
+            model.image.ypieces
+            model.edgePoints
+            updatedNeighbour
+        )
 
     Nothing ->
-      (model.pieceGroups, Cmd.none)
+      (model.pieceGroups, Nothing)
 
 
 allSelectedPieceGroups pieceGroups =
@@ -862,7 +837,7 @@ currentSelection pieceGroups =
     id :: [] -> Single id
     _ -> Multiple
 
-cheat : Model -> Model
+cheat : Model -> (Model, Maybe SingleContourMessage)
 cheat model =
   let
     (randomPieceGroup, seed1) =
@@ -879,21 +854,44 @@ cheat model =
       D.get randomNeighbourId model.pieceGroups
         |> Maybe.withDefault defaultPieceGroup
 
-    -- TODO: Fix this!
-    (newPieceGroups, _) =
+    (newPieceGroups, newContours) =
       snapToNeighbour model { randomPieceGroup | position = randomNeighbour.position}
   in
   if D.size model.pieceGroups > 1 then
-    { model | seed = seed2, pieceGroups = newPieceGroups }
+    ( { model | seed = seed2, pieceGroups = newPieceGroups }
+    , newContours)
   else
-    model
+    (model, Nothing)
 
-cheatManyTimes : Int -> Model -> Model
+cheatManyTimes : Int -> Model -> (Model, Cmd Msg)
 cheatManyTimes n model =
+  let
+    (newModel, msgs) = cheatManyTimesHelper n [] model
+    cmd = drawPiecesInCanvas msg
+
+    msg =
+      { nx = model.image.xpieces
+      , ny = model.image.ypieces
+      , contours = List.foldl mergeMsg [] msgs
+      }
+
+    mergeMsg maybeMessage messages =
+      case maybeMessage of
+        Nothing -> messages
+        Just message -> message.contour :: messages
+  in
+  (newModel, cmd)
+
+
+cheatManyTimesHelper : Int -> List (Maybe SingleContourMessage) -> Model -> (Model, List (Maybe SingleContourMessage))
+cheatManyTimesHelper n msgs model =
   if n > 0 then
-    cheatManyTimes (n - 1) (cheat model)
+    let
+      (newModel, msg) = cheat model
+    in
+      cheatManyTimesHelper (n - 1) (msg :: msgs) newModel
   else
-    model
+    (model, msgs)
 
 -- VIEW
 
@@ -1001,20 +999,17 @@ viewDiv model =
     pieceWidth =  imageWidth / toFloat model.image.xpieces
     pieceHeight = imageHeight / toFloat model.image.ypieces
 
-    viewPieceGroup : PieceGroup -> List ({pid : Int, html : Html Msg})
-    viewPieceGroup pg =
-      let
-        display = if S.member pg.visibilityGroup model.visibleGroups then "block" else "none"
-        zlevel = String.fromInt pg.zlevel
-      in
-      List.map (pieceDiv pg.position display zlevel) <| List.sort pg.members
-
+    {-  This is a (not so pretty) workaround to try to trick Elm into making a static collection of
+        divs containing a static number of canvas elements. The canvas elements are referred to in
+        a JS port, and if Elm remakes any of the canvas elements, even if the IDs are the same,
+        it will result in the JS code to refer to the wrong canvas elements and all kinds of weird
+        behavior results. Thus, if a piecegroup gets merged and is removed from the dict, it is
+        essential that we still tell Elm to keep a similar looking canvas object. We will not display
+        it, obviously, but it will still be there, to avoid the bugs. I don't know if there is a
+        better way around this. Maybe if Elm had better support for Canvas, there would be something
+        I could do...
+    -}
     viewPieceGroups =
-      List.map pieceGroupDiv
---        <| List.sortBy .id
-        <| D.values model.pieceGroups
-
-    stupidWorkAround =
       let
         pidToArgs pid =
           case D.get pid model.pieceGroups of
@@ -1035,63 +1030,14 @@ viewDiv model =
               , id = pid
               , display = if S.member pg.visibilityGroup model.visibleGroups then "block" else "none"
               }
---        hiddenCanvas id =
---          Html.canvas
---          [ Html.Attributes.style "display" "none"
---          , Html.Attributes.id <| getCanvasId id
---          ]
---          []
+
         allPids =
           List.range 0 (model.image.xpieces * model.image.ypieces - 1)
 
-        themap pid =
-          pieceGroupDiv2 <| pidToArgs pid
--- pieceGroupDiv2 wh tl zlevel id display
       in
-        List.map themap allPids
+        List.map (pieceGroupDiv << pidToArgs) allPids
 
-    pieceGroupDiv : PieceGroup -> Html Msg
-    pieceGroupDiv pg =
-      let
-        {t, l, r, b} = pieceGroupSize pg.members model.image.xpieces
-
-        top =  pg.position.y + (t - 0.5) * pieceHeight
-        left = pg.position.x + (l - 0.5) * pieceWidth
-        tl = Point left top
-        wh = Point ((r - l + 2) * pieceWidth) ((b - t + 2) * pieceHeight)
-
-        display = if S.member pg.visibilityGroup model.visibleGroups then "block" else "none"
-      in
-      Html.div
-      [
-        Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
-      , Html.Attributes.style "position" "absolute"
-      ]
-      [
-        Html.div
-        [
-          Html.Attributes.style "position" "absolute"
-        , Html.Attributes.style "width" <| Point.xToPixel wh
-        , Html.Attributes.style "height" <| Point.yToPixel wh
-        , Html.Attributes.style "top" <| Point.yToPixel tl
-        , Html.Attributes.style "left" <| Point.xToPixel tl
-        , Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
-        , Html.Attributes.style "display" display
-        ]
-        [
-          Html.canvas
-          [ Html.Attributes.id <| getCanvasId pg.id
-          , Html.Attributes.style "position" "absolute"
-          , Html.Attributes.style "top" "0px"
-          , Html.Attributes.style "left" "0px"
-          , Html.Attributes.style "width" <| Point.xToPixel wh
-          , Html.Attributes.style "height" <| Point.yToPixel wh
-          ]
-          []
-        ]
-      ]
-
-    pieceGroupDiv2 {wh, tl, zlevel, id, display} =
+    pieceGroupDiv {wh, tl, zlevel, id, display} =
       Html.div
       [
         Html.Attributes.style "z-index" zlevel
@@ -1121,58 +1067,11 @@ viewDiv model =
         ]
       ]
 
-
-    pieceDiv : Point -> String -> String -> Int -> {pid : Int, html : Html Msg}
-    pieceDiv pos display zlevel pid =
-      let
-        offset = pieceIdToOffset model.image pid
-        tl = Point.add offset (Point.sub pos <| Point (pieceWidth/2) (pieceHeight/2))
-        wh = Point (2 * pieceWidth) (2 * pieceHeight)
-        html =
-          Html.div
-          [ Html.Attributes.style "z-index" <| zlevel
-    --      , Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
-          , Html.Attributes.style "position" "absolute"
-          ]
-          [
-          Html.div
-            [ Html.Attributes.style "position" "absolute"
-            , Html.Attributes.style "width" <| Point.xToPixel wh
-            , Html.Attributes.style "height" <| Point.yToPixel wh
-            , Html.Attributes.style "top" <| Point.yToPixel tl
-            , Html.Attributes.style "left" <| Point.xToPixel tl
-            , Html.Attributes.style "z-index" <| zlevel
-            , Html.Attributes.style "display" display
-            ]
-            [
-              Html.canvas
-              [ Html.Attributes.id <| getCanvasId pid
-              , Html.Attributes.style "position" "absolute"
-              , Html.Attributes.style "top" "0px"
-              , Html.Attributes.style "left" "0px"
-              , Html.Attributes.style "width" <| Point.xToPixel wh
-              , Html.Attributes.style "height" <| Point.yToPixel wh
-              ]
-              []
-            ]
-          ]
-      in
-        {pid = pid, html = html}
-
-    -- TODO: There must be a faster way to do this, right?
-    -- Maybe just iterate over the pids, with a reference table for the corresponding PieceGroup?
-    viewPieces : List (Html Msg)
-    viewPieces =
-      D.values model.pieceGroups
-        |> List.concatMap viewPieceGroup
-        |> List.sortBy .pid
-        |> List.map (\{pid, html} -> html)
-
   in
     [ Html.div
       ( visibility ::
         turnOffTheBloodyImageDragging )
-      ( stupidWorkAround )
+      ( viewPieceGroups )
     ]
 
 
@@ -1228,6 +1127,6 @@ viewMenu model =
 
 
 -- PORTS
-port drawPiecesInCanvas : JSMessage -> Cmd msg
+port drawPiecesInCanvas : MultipleContoursMessage -> Cmd msg
 port canvasDrawn : ((Int, Int) -> msg) -> Sub msg
-port drawPieceGroup : ImTooTired -> Cmd msg
+port drawPieceGroup : SingleContourMessage -> Cmd msg
