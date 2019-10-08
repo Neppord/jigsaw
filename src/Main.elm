@@ -181,35 +181,53 @@ init () =
       , ypieces = 4
       , scale = 1
       }
-    model =
-      resetModel image (Random.initialSeed 0)
   in
-  ( model, Cmd.none )
+  ( createModel image, Cmd.none )
 
-resetModel : JigsawImage -> Random.Seed -> Model
-resetModel image seed =
+createModel : JigsawImage -> Model
+createModel image =
   let
-    (w, h) = (1800, 1100)
-    (nx, ny) = (image.xpieces, image.ypieces)
-    numberOfEdges = 2 * nx * ny - nx - ny
-    (positions, seed1) = generateRandomPiecePositions w h image seed
-    (zlevels, seed2) = generateRandomZLevels (nx * ny) seed1
-    (edgePoints, seed3) = makeEdgePoints numberOfEdges seed2
+    (zlevels, seed) = generateRandomZLevels (image.xpieces * image.ypieces) <| Random.initialSeed 0
   in
-    { cursor = Nothing
-    , pieceGroups = createPieceGroups image positions zlevels
-    , selected = NullSelection
-    , maxZLevel = nx * ny
-    , image = image
-    , width = w
-    , height = h
-    , snapDistance = 30.0
-    , selectionBox = NullBox
-    , seed = seed3
-    , visibleGroups = S.fromList [-1]
-    , keyboard = { shift = False, ctrl = False }
-    , loading = LoadingImage
-    , edgePoints = edgePoints
+  { cursor = Nothing
+--  , pieceGroups = createPieceGroups image zlevels
+  , pieceGroups = D.empty
+  , selected = NullSelection
+  , maxZLevel = image.xpieces * image.ypieces
+  , image = image
+  , width = 1800
+  , height = 1100
+  , snapDistance = 30.0
+  , selectionBox = NullBox
+  , seed = Random.initialSeed 0
+  , visibleGroups = S.fromList [-1]
+  , keyboard = { shift = False, ctrl = False }
+  , loading = LoadingImage
+  , edgePoints = A.empty
+  }
+
+resetModel : Model -> Model
+resetModel model =
+  let
+    nx = model.image.xpieces
+    ny = model.image.ypieces
+    numberOfPieces = nx * ny
+    numberOfEdges = Debug.log "ImageDiv" (2 * nx * ny - nx - ny)
+
+    (zlevels, seed1) = generateRandomZLevels numberOfPieces model.seed
+    (edgePoints, seed2) = makeEdgePoints numberOfEdges seed1
+  in
+    { model
+      | cursor = Nothing
+      , pieceGroups = createPieceGroups model.image zlevels
+      , selected = NullSelection
+      , maxZLevel = model.image.xpieces * model.image.ypieces
+      , selectionBox = NullBox
+      , seed = seed2
+      , visibleGroups = S.fromList [-1]
+      , keyboard = { shift = False, ctrl = False}
+      , loading = LoadingImage
+      , edgePoints = edgePoints
     }
 
 
@@ -228,8 +246,8 @@ generateRandomZLevels : Int -> Random.Seed -> (List Int, Random.Seed)
 generateRandomZLevels n seed =
   Random.step (Random.List.shuffle <| List.range 0 (n - 1)) seed
 
-createPieceGroups : JigsawImage -> List Point -> List Int -> D.Dict Int PieceGroup
-createPieceGroups image positions levels =
+createPieceGroups : JigsawImage -> List Int -> D.Dict Int PieceGroup
+createPieceGroups image levels =
   let
     nx = image.xpieces
     ny = image.ypieces
@@ -251,9 +269,9 @@ createPieceGroups image positions levels =
       Point.taxiDist
         ( pieceIdToPoint i image.xpieces )
         ( pieceIdToPoint x image.xpieces ) == 1
-    onePieceGroup i position zlevel =
+    onePieceGroup i zlevel =
       ( i
-      , { position = Point.sub position <| pieceIdToOffset image i
+      , { position = Point 0 0
         , isSelected = False
         , id = i
         , zlevel = zlevel
@@ -262,9 +280,25 @@ createPieceGroups image positions levels =
         , visibilityGroup = -1
         }
       )
+  in
+    D.fromList <| List.map2 onePieceGroup range zlevels
+
+setPieceGroupPositions : Model -> Model
+setPieceGroupPositions model =
+  let
+    (positions, newSeed) = generateRandomPiecePositions model.width model.height model.image model.seed
+
+    setPosition pos (id, pg) =
+      (id, {pg | position = Point.sub pos <| pieceIdToOffset model.image id})
+
+    newPieceGroups =
+      D.toList model.pieceGroups
+        |> List.map2 setPosition positions
+        |> D.fromList
 
   in
-    D.fromList <| List.map3 onePieceGroup range positions zlevels
+    { model | pieceGroups = newPieceGroups, seed = newSeed }
+
 
 pieceIdToPoint : Int -> Int -> Point
 pieceIdToPoint id xpieces =
@@ -435,24 +469,33 @@ update msg model =
         oldImage = model.image
         newLoading = nextLoadStatus model.loading
       in
-      case thing of
+      case Debug.log "" thing of
         ImageUrl url ->
-          ( {model | image = {oldImage | path = url}, loading = newLoading}
+          ( {model | image = {oldImage | path = url}, loading = LoadingImage}
           , Cmd.none
           )
         ImageDiv ->
           let
-            nx = model.image.xpieces
-            ny = model.image.ypieces
+            newModel = resetModel model
+            command =
+              drawPiecesInCanvas
+                <| Debug.log "drawPieces" <| createJsMessage
+                    newModel.image.xpieces
+                    newModel.image.ypieces
+                    newModel.pieceGroups
+                    newModel.edgePoints
           in
-          ( {model | loading = newLoading}
-          , drawPiecesInCanvas <| createJsMessage nx ny model.pieceGroups model.edgePoints
+          ( {newModel | loading = DrawingCanvas}
+          , command
           )
         CanvasDraw (x, y) ->
           let
-            newModel = resetModel {oldImage | width = x, height = y} model.seed
+            -- TODO: This is the cause of the funny bug
+            -- It will create new random edgepoints, but not actually use them until some pieces are merged!
+--            newModel = resetModel {model | image = {oldImage | width = x, height = y}}
+            updatedModel = {model | image = {oldImage | width = x, height = y}, loading = Finished}
           in
-          ( {newModel | loading = newLoading}
+          ( Debug.log "CanvasDraw" <| setPieceGroupPositions updatedModel
           , Cmd.none )
 
     PickImage ->
@@ -503,9 +546,18 @@ update msg model =
 
     Scramble ->
       let
-        newModel = resetModel model.image model.seed
+        newModel = resetModel model
+        command =
+          drawPiecesInCanvas
+            <| createJsMessage
+                newModel.image.xpieces
+                newModel.image.ypieces
+                newModel.pieceGroups
+                newModel.edgePoints
       in
-        ( { newModel | loading = Finished }, Cmd.none )
+      ( {newModel | loading = DrawingCanvas}
+      , command
+      )
 
     MouseDown coordinate keyboard ->
       let
@@ -959,25 +1011,42 @@ viewDiv model =
 
     viewPieceGroups =
       List.map pieceGroupDiv
-        <| List.sortBy .id
+--        <| List.sortBy .id
         <| D.values model.pieceGroups
 
     stupidWorkAround =
       let
-        hiddenCanvas id =
-          Html.canvas
-          [ Html.Attributes.style "display" "none"
-          , Html.Attributes.id <| getCanvasId id
-          ]
-          []
+        pidToArgs pid =
+          case D.get pid model.pieceGroups of
+            Nothing ->
+              { wh = Point 0 0
+              , tl = Point 0 0
+              , zlevel = "0"
+              , id = pid
+              , display = "none"
+              }
+            Just pg ->
+              let
+                {t, l, r, b} = pieceGroupSize pg.members model.image.xpieces
+              in
+              { wh = Point ((r - l + 2) * pieceWidth) ((b - t + 2) * pieceHeight)
+              , tl = Point (pg.position.x + (l - 0.5) * pieceWidth) (pg.position.y + (t - 0.5) * pieceHeight)
+              , zlevel = String.fromInt pg.zlevel
+              , id = pid
+              , display = if S.member pg.visibilityGroup model.visibleGroups then "block" else "none"
+              }
+--        hiddenCanvas id =
+--          Html.canvas
+--          [ Html.Attributes.style "display" "none"
+--          , Html.Attributes.id <| getCanvasId id
+--          ]
+--          []
         allPids =
           List.range 0 (model.image.xpieces * model.image.ypieces - 1)
 
         themap pid =
-          case D.get pid model.pieceGroups of
-            Nothing -> hiddenCanvas pid
-            Just pg -> pieceGroupDiv pg
-
+          pieceGroupDiv2 <| pidToArgs pid
+-- pieceGroupDiv2 wh tl zlevel id display
       in
         List.map themap allPids
 
@@ -1012,6 +1081,36 @@ viewDiv model =
         [
           Html.canvas
           [ Html.Attributes.id <| getCanvasId pg.id
+          , Html.Attributes.style "position" "absolute"
+          , Html.Attributes.style "top" "0px"
+          , Html.Attributes.style "left" "0px"
+          , Html.Attributes.style "width" <| Point.xToPixel wh
+          , Html.Attributes.style "height" <| Point.yToPixel wh
+          ]
+          []
+        ]
+      ]
+
+    pieceGroupDiv2 {wh, tl, zlevel, id, display} =
+      Html.div
+      [
+        Html.Attributes.style "z-index" zlevel
+      , Html.Attributes.style "position" "absolute"
+      ]
+      [
+        Html.div
+        [
+          Html.Attributes.style "position" "absolute"
+        , Html.Attributes.style "width" <| Point.xToPixel wh
+        , Html.Attributes.style "height" <| Point.yToPixel wh
+        , Html.Attributes.style "top" <| Point.yToPixel tl
+        , Html.Attributes.style "left" <| Point.xToPixel tl
+        , Html.Attributes.style "z-index" zlevel
+        , Html.Attributes.style "display" display
+        ]
+        [
+          Html.canvas
+          [ Html.Attributes.id <| getCanvasId id
           , Html.Attributes.style "position" "absolute"
           , Html.Attributes.style "top" "0px"
           , Html.Attributes.style "left" "0px"

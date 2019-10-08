@@ -40,11 +40,9 @@
 
         app.ports.drawPieceGroup.subscribe(function(msg) {
             drawPiece(msg.contour, msg.nx, msg.ny);
-            console.log('drawPieceGroup');
         });
 
         function drawPiece({canvasId, contour, t, l, r, b}, nx, ny) {
-            console.log(canvasId, t, l, r, b);
             var img = document.getElementById('jigsawImage');
             var pieceWidth = img.naturalWidth / nx;
             var pieceHeight = img.naturalHeight / ny;
