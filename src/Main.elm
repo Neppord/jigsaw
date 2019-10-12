@@ -14,6 +14,7 @@ import Random
 import Random.List
 import Random.Set
 import Random.Extra
+import List.Extra
 import File exposing (File)
 import File.Select
 import Task
@@ -44,6 +45,7 @@ type Msg
   | GotImage File
   | FinishedLoading ThingThatCanLoad
   | Cheat Int
+  | SetOptionsVisibility Bool
 
 type alias Keyboard =
   { shift : Bool
@@ -65,6 +67,7 @@ type alias Model =
   , keyboard : Keyboard
   , loading : LoadStatus
   , edgePoints : A.Array EdgePoints
+  , viewOptions : Bool
   }
 
 type alias JigsawImage =
@@ -169,8 +172,8 @@ init () =
       { path = "resources/hongkong.jpg"
       , width = 6000
       , height = 4000
-      , xpieces = 60
-      , ypieces = 40
+      , xpieces = 6
+      , ypieces = 4
       , scale = 0.2
       }
   in
@@ -192,6 +195,7 @@ createModel image =
   , keyboard = { shift = False, ctrl = False }
   , loading = LoadingImage
   , edgePoints = A.empty
+  , viewOptions = False
   }
 
 {-  This resets everything except piece positions. For that, use
@@ -220,6 +224,7 @@ resetModel model =
         , keyboard = { shift = False, ctrl = False}
         , loading = DrawingCanvas
         , edgePoints = edgePoints
+        , viewOptions = False
       }
 
     command =
@@ -377,7 +382,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   let
     trackMouseMovement =
-      if model.cursor /= Nothing then
+      if model.cursor /= Nothing && not model.viewOptions then
         Browser.Events.onMouseMove
           <| Json.Decode.map2 (\x y -> MouseMove (Point (toFloat x) (toFloat y)))
             (Json.Decode.field "pageX" Json.Decode.int)
@@ -386,12 +391,15 @@ subscriptions model =
         Sub.none
 
     trackMouseDown =
-      Browser.Events.onMouseDown
-        <| Json.Decode.map4 (\x y shift ctrl -> MouseDown (Point (toFloat x) (toFloat y)) {shift=shift, ctrl=ctrl})
-          (Json.Decode.field "pageX" Json.Decode.int)
-          (Json.Decode.field "pageY" Json.Decode.int)
-          (Json.Decode.field "shiftKey" Json.Decode.bool)
-          (Json.Decode.field "ctrlKey" Json.Decode.bool)
+      if not model.viewOptions then
+        Browser.Events.onMouseDown
+          <| Json.Decode.map4 (\x y shift ctrl -> MouseDown (Point (toFloat x) (toFloat y)) {shift=shift, ctrl=ctrl})
+            (Json.Decode.field "pageX" Json.Decode.int)
+            (Json.Decode.field "pageY" Json.Decode.int)
+            (Json.Decode.field "shiftKey" Json.Decode.bool)
+            (Json.Decode.field "ctrlKey" Json.Decode.bool)
+      else
+        Sub.none
 
     trackMouseUp =
       Browser.Events.onMouseUp (Json.Decode.succeed MouseUp)
@@ -453,6 +461,8 @@ contourMessage nx ny edgePoints pg =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
+    SetOptionsVisibility state ->
+      ( {model | viewOptions = state}, Cmd.none )
     Cheat number ->
       cheatManyTimes number model
 
@@ -901,6 +911,7 @@ view model =
     ( turnOffTheBloodyImageDragging )
     [
       viewMenu model
+    , viewOptionsModal model
     , Html.div
       [ Html.Attributes.style "width" <| String.fromInt model.image.width ++ "px"
       , Html.Attributes.style "height" <| String.fromInt model.image.height ++ "px"
@@ -1119,11 +1130,71 @@ viewMenu model =
         [ Html.Events.onClick <| Cheat 100 ]
         [ Html.text "Cheat 100" ]
       , Html.a
-        []
+        [ Html.Events.onClick <| SetOptionsVisibility True ]
         [ Html.text "[TODO] Options" ]
       ]
     ]
   ]
+
+
+viewOptionsModal : Model -> Html Msg
+viewOptionsModal model =
+  let
+    foobar =
+      Debug.log "..." (pieceSettings 1024 768 30 0.1)
+  in
+  Html.div
+  [ Html.Attributes.class "options-modal"
+  , Html.Attributes.style "display" <| if model.viewOptions then "block" else "none"
+--  , Html.Attributes.style "flex-direction" "row"
+  ]
+  [
+    Html.div
+    [ Html.Attributes.class "options-content" ]
+    [
+      Html.span
+      [ Html.Attributes.class "options-close"
+      , Html.Events.onClick <| SetOptionsVisibility False
+      ]
+      [ Html.text "×" ]
+    , Html.h2
+      []
+      [ Html.text "Jigsaw options" ]
+    , Html.button
+      []
+      [ Html.text "Choose image" ]
+    , Html.button
+      []
+      [ Html.text "Choose dimensions " ]
+    , Html.button
+      []
+      [ Html.text "Start" ]
+    , Html.p
+      []
+      [ Html.text "hej!" ]
+    ]
+  ]
+
+type alias ImageSetting =
+  {
+    n : Int
+  , nx : Int
+  , ny : Int
+  }
+
+
+pieceSettings : Int -> Int -> Int -> Float -> A.Array ImageSetting
+pieceSettings w h n th =
+  let
+    r = toFloat w / toFloat h
+    dist (x, y) =
+      abs (r * toFloat y / toFloat x - 1)
+
+  in
+    List.Extra.lift2 (\x y -> (x, y)) (List.range 1 n) (List.range 1 n)
+      |> List.filter ((>) th << dist)
+      |> List.map (\(x, y) -> {n = x*y, nx = x, ny = y})
+      |> A.fromList
 
 
 -- PORTS
