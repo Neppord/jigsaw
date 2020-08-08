@@ -195,7 +195,7 @@ shuffleZLevels n seed =
 
 -- SUBSCRIPTIONS
 
-
+keyDecoder : Bool -> String -> Msg
 keyDecoder isDown key =
     case key of
         "0" ->
