@@ -6,8 +6,21 @@ import Edge exposing (EdgePoints)
 import Html exposing (Attribute, Html)
 import Html.Attributes
 import Html.Events
-import JigsawImage exposing (..)
-import Model exposing (..)
+import JigsawImage
+    exposing
+        ( JigsawImage
+        , PieceGroup
+        , pieceIdToOffset
+        )
+import Model
+    exposing
+        ( Model
+        , Msg(..)
+        , SelectionBox(..)
+        , Box
+        , boxBottomRight
+        , boxTopLeft
+        )
 import Point exposing (Point)
 import Set
 import Svg exposing (Svg)
@@ -47,7 +60,13 @@ turnOffTheBloodyImageDragging =
     , Html.Attributes.draggable "false"
     ]
 
-lazyDivSelectionBox = Svg.Lazy.lazy3 divSelectionBox
+
+lazyDivSelectionBox : Int -> Box -> String -> Svg.Svg msg
+lazyDivSelectionBox =
+    Svg.Lazy.lazy3 divSelectionBox
+
+
+divSelectionBox : Int -> Box -> String -> Svg.Svg msg
 divSelectionBox zIndex box color =
     let
         topLeft =
@@ -61,17 +80,18 @@ divSelectionBox zIndex box color =
     in
     Html.div
         ([ Html.Attributes.style "width" <| String.fromInt (bottomRight.x - topLeft.x) ++ "px"
-            , Html.Attributes.style "height" <| String.fromInt (bottomRight.y - top) ++ "px"
-            , Html.Attributes.style "background-color" color
-            , Html.Attributes.style "border-style" "dotted"
-            , Html.Attributes.style "top" <| String.fromInt (top - 100) ++ "px"
-            , Html.Attributes.style "left" <| String.fromInt topLeft.x ++ "px"
-            , Html.Attributes.style "z-index" <| String.fromInt zIndex
-            , Html.Attributes.style "position" "absolute"
-            ]
+         , Html.Attributes.style "height" <| String.fromInt (bottomRight.y - top) ++ "px"
+         , Html.Attributes.style "background-color" color
+         , Html.Attributes.style "border-style" "dotted"
+         , Html.Attributes.style "top" <| String.fromInt (top - 100) ++ "px"
+         , Html.Attributes.style "left" <| String.fromInt topLeft.x ++ "px"
+         , Html.Attributes.style "z-index" <| String.fromInt zIndex
+         , Html.Attributes.style "position" "absolute"
+         ]
             ++ turnOffTheBloodyImageDragging
         )
         []
+
 
 viewSelectionBox : Int -> SelectionBox -> List (Html msg)
 viewSelectionBox zIndex selectionBox =
@@ -85,10 +105,13 @@ viewSelectionBox zIndex selectionBox =
         NullBox ->
             []
 
-lazyPieceDiv: JigsawImage -> PieceGroup -> Int -> (Html msg)
-lazyPieceDiv = Svg.Lazy.lazy3 pieceDiv
 
-pieceDiv:  JigsawImage -> PieceGroup -> Int -> (Html msg)
+lazyPieceDiv : JigsawImage -> PieceGroup -> Int -> Html msg
+lazyPieceDiv =
+    Svg.Lazy.lazy3 pieceDiv
+
+
+pieceDiv : JigsawImage -> PieceGroup -> Int -> Html msg
 pieceDiv image pg pid =
     let
         offset =
@@ -120,40 +143,41 @@ pieceDiv image pg pid =
         ]
         [ Html.div
             ([ Html.Attributes.style "width" <| String.fromInt w ++ "px"
-                , Html.Attributes.style "height" <| String.fromInt h ++ "px"
-                , Html.Attributes.style "position" "absolute"
-                , Html.Attributes.style "top" top
-                , Html.Attributes.style "left" left
-                , Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
-                , Html.Attributes.style "clipPath" <| clipPathRef pid
-                , Html.Attributes.style "background-image" <| "url('" ++ image.path ++ "')"
-                , Html.Attributes.style "background-size" <|
+             , Html.Attributes.style "height" <| String.fromInt h ++ "px"
+             , Html.Attributes.style "position" "absolute"
+             , Html.Attributes.style "top" top
+             , Html.Attributes.style "left" left
+             , Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
+             , Html.Attributes.style "clipPath" <| clipPathRef pid
+             , Html.Attributes.style "background-image" <| "url('" ++ image.path ++ "')"
+             , Html.Attributes.style "background-size" <|
                 String.fromInt (floor <| image.scale * toFloat image.width)
                     ++ "px "
                     ++ String.fromInt (floor <| image.scale * toFloat image.height)
                     ++ "px"
-                , Html.Attributes.style "background-position" <|
+             , Html.Attributes.style "background-position" <|
                 String.fromInt (w // 4 - offset.x)
                     ++ "px "
                     ++ String.fromInt (h // 4 - offset.y)
                     ++ "px"
-                ]
+             ]
                 ++ turnOffTheBloodyImageDragging
             )
             []
         ]
 
+
 viewDiv : Model -> List (Html Msg)
 viewDiv model =
     let
-        pieceGroupDiv: PieceGroup -> List (Html msg)
+        pieceGroupDiv : PieceGroup -> List (Html msg)
         pieceGroupDiv pg =
             let
-                render = lazyPieceDiv model.image pg
+                render =
+                    lazyPieceDiv model.image pg
             in
             List.map render pg.members
-        
-        
+
         viewPieces =
             model.pieceGroups
                 |> Dict.values
