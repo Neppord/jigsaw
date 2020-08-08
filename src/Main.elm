@@ -131,9 +131,9 @@ init () =
       { path = "../resources/kitten.png"
       , width = 533
       , height = 538
-      , xpieces = 6
-      , ypieces = 6
-      , scale = 1.0
+      , xpieces = 40
+      , ypieces = 40
+      , scale = 2.0
       }
     model =
       resetModel image (Random.initialSeed 0)
