@@ -1,8 +1,5 @@
 module Util exposing (..)
 
-import Random
-
-
 {-| Take the first element from the list that satisfies the condition.
 If no such element exists, return Nothing.
 
