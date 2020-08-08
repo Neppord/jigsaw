@@ -47,41 +47,40 @@ turnOffTheBloodyImageDragging =
     , Html.Attributes.draggable "false"
     ]
 
+lazyDivSelectionBox = Svg.Lazy.lazy3 divSelectionBox
+divSelectionBox zIndex box color =
+    let
+        topLeft =
+            boxTopLeft box
+
+        bottomRight =
+            boxBottomRight box
+
+        top =
+            max 100 topLeft.y
+    in
+    Html.div
+        ([ Html.Attributes.style "width" <| String.fromInt (bottomRight.x - topLeft.x) ++ "px"
+            , Html.Attributes.style "height" <| String.fromInt (bottomRight.y - top) ++ "px"
+            , Html.Attributes.style "background-color" color
+            , Html.Attributes.style "border-style" "dotted"
+            , Html.Attributes.style "top" <| String.fromInt (top - 100) ++ "px"
+            , Html.Attributes.style "left" <| String.fromInt topLeft.x ++ "px"
+            , Html.Attributes.style "z-index" <| String.fromInt zIndex
+            , Html.Attributes.style "position" "absolute"
+            ]
+            ++ turnOffTheBloodyImageDragging
+        )
+        []
 
 viewSelectionBox : Int -> SelectionBox -> List (Html msg)
 viewSelectionBox zIndex selectionBox =
-    let
-        divSelectionBox box color =
-            let
-                topLeft =
-                    boxTopLeft box
-
-                bottomRight =
-                    boxBottomRight box
-
-                top =
-                    max 100 topLeft.y
-            in
-            Html.div
-                ([ Html.Attributes.style "width" <| String.fromInt (bottomRight.x - topLeft.x) ++ "px"
-                 , Html.Attributes.style "height" <| String.fromInt (bottomRight.y - top) ++ "px"
-                 , Html.Attributes.style "background-color" color
-                 , Html.Attributes.style "border-style" "dotted"
-                 , Html.Attributes.style "top" <| String.fromInt (top - 100) ++ "px"
-                 , Html.Attributes.style "left" <| String.fromInt topLeft.x ++ "px"
-                 , Html.Attributes.style "z-index" <| String.fromInt zIndex
-                 , Html.Attributes.style "position" "absolute"
-                 ]
-                    ++ turnOffTheBloodyImageDragging
-                )
-                []
-    in
     case selectionBox of
         Normal box ->
-            [ divSelectionBox box "rgba(0,0,255,0.2)" ]
+            [ lazyDivSelectionBox zIndex box "rgba(0,0,255,0.2)" ]
 
         Inverted box ->
-            [ divSelectionBox box "rgba(0,255,0,0.2)" ]
+            [ lazyDivSelectionBox zIndex box "rgba(0,255,0,0.2)" ]
 
         NullBox ->
             []
