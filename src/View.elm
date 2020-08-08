@@ -33,7 +33,7 @@ view model =
             , Html.Attributes.style "top" "100px"
             , Html.Attributes.style "left" "0px"
             ]
-            (viewDiv model ++ viewSelectionBox model)
+            (viewDiv model ++ viewSelectionBox (model.maxZLevel + 1) model.selectionBox)
         ]
 
 
@@ -48,8 +48,8 @@ turnOffTheBloodyImageDragging =
     ]
 
 
-viewSelectionBox : Model -> List (Html msg)
-viewSelectionBox model =
+viewSelectionBox : Int -> SelectionBox -> List (Html msg)
+viewSelectionBox zIndex selectionBox =
     let
         divSelectionBox box color =
             let
@@ -69,14 +69,14 @@ viewSelectionBox model =
                  , Html.Attributes.style "border-style" "dotted"
                  , Html.Attributes.style "top" <| String.fromInt (top - 100) ++ "px"
                  , Html.Attributes.style "left" <| String.fromInt topLeft.x ++ "px"
-                 , Html.Attributes.style "z-index" <| String.fromInt (model.maxZLevel + 1)
+                 , Html.Attributes.style "z-index" <| String.fromInt zIndex
                  , Html.Attributes.style "position" "absolute"
                  ]
                     ++ turnOffTheBloodyImageDragging
                 )
                 []
     in
-    case model.selectionBox of
+    case selectionBox of
         Normal box ->
             [ divSelectionBox box "rgba(0,0,255,0.2)" ]
 
