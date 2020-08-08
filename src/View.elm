@@ -12,6 +12,7 @@ import Point exposing (Point)
 import Set as S
 import Svg exposing (Svg)
 import Svg.Attributes
+import Svg.Lazy
 
 
 view : Model -> Html Msg
@@ -153,9 +154,7 @@ viewDiv model =
                         D.values model.pieceGroups
 
         clipPathDefs =
-            Svg.defs
-                []
-                (definePieceClipPaths model.image model.edgePoints)
+            lazyclipPathDefs model.image model.edgePoints
     in
     [ Html.div
         turnOffTheBloodyImageDragging
@@ -166,12 +165,17 @@ viewDiv model =
     ]
 
 
-definePieceClipPaths : JigsawImage -> A.Array EdgePoints -> List (Svg Msg)
+lazyclipPathDefs : JigsawImage -> A.Array EdgePoints -> Svg.Svg msg
+lazyclipPathDefs =
+    Svg.Lazy.lazy2 (\image points -> Svg.defs [] (definePieceClipPaths image points))
+
+
+definePieceClipPaths : JigsawImage -> A.Array EdgePoints -> List (Svg msg)
 definePieceClipPaths image edgePoints =
     List.map (piecePath image edgePoints) (List.range 0 (image.xpieces * image.ypieces - 1))
 
 
-piecePath : JigsawImage -> A.Array EdgePoints -> Int -> Svg Msg
+piecePath : JigsawImage -> A.Array EdgePoints -> Int -> Svg msg
 piecePath image edgePoints id =
     let
         w =
