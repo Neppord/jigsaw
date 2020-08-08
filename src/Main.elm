@@ -1,13 +1,9 @@
-module Main exposing (..)
+module Main exposing (main)
 
-import Array as A
 import Browser
 import Browser.Events
 import Dict as D
-import Edge exposing (EdgePoints, makeEdgePoints)
-import Html exposing (Html)
-import Html.Attributes
-import Html.Events
+import Edge exposing (makeEdgePoints)
 import JigsawImage
     exposing
         ( JigsawImage
@@ -15,21 +11,16 @@ import JigsawImage
         , createPieceGroups
         , isPieceGroupInsideBox
         , isPointInsidePieceGroup
-        , pieceIdToOffset
         , shufflePiecePositions
         )
 import Json.Decode
+import Model exposing (..)
 import Point exposing (Point)
 import Random
 import Random.List
 import Set as S
-import Svg exposing (Svg)
-import Svg.Attributes
 import Util exposing (takeFirst)
-
-
-
--- MAIN
+import View exposing (view)
 
 
 main =
@@ -43,91 +34,6 @@ main =
 
 
 -- MODEL
-
-
-type Msg
-    = MouseDown Point Keyboard
-    | MouseMove Point
-    | MouseUp
-    | Scramble
-    | KeyChanged Bool Key
-
-
-type alias Keyboard =
-    { shift : Bool
-    , ctrl : Bool
-    }
-
-
-type alias Model =
-    { cursor : Maybe Point
-    , pieceGroups : D.Dict Int PieceGroup
-    , selected : Selected
-    , maxZLevel : Int
-    , image : JigsawImage
-    , width : Int
-    , height : Int
-    , snapDistance : Float
-    , selectionBox : SelectionBox
-    , debug : String
-    , seed : Random.Seed
-    , edgePoints : A.Array EdgePoints
-    , visibleGroups : S.Set Int
-    , keyboard : Keyboard
-    }
-
-
-type SelectionBox
-    = Normal Box
-    | Inverted Box
-    | NullBox
-
-
-type alias Box =
-    { staticCorner : Point
-    , movingCorner : Point
-    , selectedIds : S.Set Int
-    }
-
-
-type Selected
-    = Multiple
-    | Single Int
-    | NullSelection
-
-
-boxTopLeft : Box -> Point
-boxTopLeft box =
-    Point
-        (min box.staticCorner.x box.movingCorner.x)
-        (min box.staticCorner.y box.movingCorner.y)
-
-
-boxBottomRight : Box -> Point
-boxBottomRight box =
-    Point
-        (max box.staticCorner.x box.movingCorner.x)
-        (max box.staticCorner.y box.movingCorner.y)
-
-
-
--- Until I figure out how to handle index out of bounds
--- exceptions more elegantly
-
-
-defaultPieceGroup : PieceGroup
-defaultPieceGroup =
-    { position = Point 0 0
-    , isSelected = False
-    , zlevel = -1
-    , id = -10
-    , neighbours = S.empty
-    , members = []
-    , visibilityGroup = -1
-    }
-
-
-
 -- INIT
 
 
@@ -194,6 +100,7 @@ shuffleZLevels n seed =
 
 
 -- SUBSCRIPTIONS
+
 
 keyDecoder : Bool -> String -> Msg
 keyDecoder isDown key =
@@ -273,13 +180,6 @@ subscriptions model =
 
 
 -- UPDATE
-
-
-type Key
-    = Number Int
-    | Control
-    | Shift
-    | Other
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -715,209 +615,3 @@ currentSelection pieceGroups =
 
         _ ->
             Multiple
-
-
-
--- VIEW
-
-
-view : Model -> Html Msg
-view model =
-    Html.div
-        turnOffTheBloodyImageDragging
-        [ Html.button
-            [ Html.Events.onClick Scramble ]
-            [ Html.text "scramble" ]
-
-        --    , Html.h1
-        --      []
-        --      [ Html.text model.debug ]
-        , Html.div
-            [ Html.Attributes.style "width" <| String.fromInt model.image.width ++ "px"
-            , Html.Attributes.style "height" <| String.fromInt model.image.height ++ "px"
-            , Html.Attributes.style "position" "absolute"
-            , Html.Attributes.style "top" "100px"
-            , Html.Attributes.style "left" "0px"
-            ]
-            (viewDiv model ++ viewSelectionBox model)
-        ]
-
-
-turnOffTheBloodyImageDragging =
-    [ Html.Attributes.style "-webkit-user-select" "none"
-    , Html.Attributes.style "-khtml-user-select" "none"
-    , Html.Attributes.style "-moz-user-select" "none"
-    , Html.Attributes.style "-o-user-select" "none"
-    , Html.Attributes.style "user-select" "none"
-    , Html.Attributes.draggable "false"
-    ]
-
-
-viewSelectionBox model =
-    let
-        divSelectionBox box color =
-            let
-                topLeft =
-                    boxTopLeft box
-
-                bottomRight =
-                    boxBottomRight box
-
-                top =
-                    max 100 topLeft.y
-            in
-            Html.div
-                ([ Html.Attributes.style "width" <| String.fromInt (bottomRight.x - topLeft.x) ++ "px"
-                 , Html.Attributes.style "height" <| String.fromInt (bottomRight.y - top) ++ "px"
-                 , Html.Attributes.style "background-color" color
-                 , Html.Attributes.style "border-style" "dotted"
-                 , Html.Attributes.style "top" <| String.fromInt (top - 100) ++ "px"
-                 , Html.Attributes.style "left" <| String.fromInt topLeft.x ++ "px"
-                 , Html.Attributes.style "z-index" <| String.fromInt (model.maxZLevel + 1)
-                 , Html.Attributes.style "position" "absolute"
-                 ]
-                    ++ turnOffTheBloodyImageDragging
-                )
-                []
-    in
-    case model.selectionBox of
-        Normal box ->
-            [ divSelectionBox box "rgba(0,0,255,0.2)" ]
-
-        Inverted box ->
-            [ divSelectionBox box "rgba(0,255,0,0.2)" ]
-
-        NullBox ->
-            []
-
-
-viewDiv model =
-    let
-        pieceGroupDiv pg =
-            List.map (pieceDiv pg) pg.members
-
-        pieceDiv pg pid =
-            let
-                offset =
-                    pieceIdToOffset model.image pid
-
-                w =
-                    floor <| model.image.scale * toFloat (2 * model.image.width // model.image.xpieces)
-
-                h =
-                    floor <| model.image.scale * toFloat (2 * model.image.height // model.image.ypieces)
-
-                top =
-                    String.fromInt (pg.position.y + offset.y - h // 4) ++ "px"
-
-                left =
-                    String.fromInt (pg.position.x + offset.x - w // 4) ++ "px"
-
-                color =
-                    if pg.isSelected then
-                        "red"
-
-                    else
-                        "black"
-            in
-            Html.div
-                [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
-                , Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
-                , Html.Attributes.style "position" "absolute"
-                ]
-                [ Html.div
-                    ([ Html.Attributes.style "width" <| String.fromInt w ++ "px"
-                     , Html.Attributes.style "height" <| String.fromInt h ++ "px"
-                     , Html.Attributes.style "position" "absolute"
-                     , Html.Attributes.style "top" top
-                     , Html.Attributes.style "left" left
-                     , Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
-                     , Html.Attributes.style "clipPath" <| clipPathRef pid
-                     , Html.Attributes.style "background-image" <| "url('" ++ model.image.path ++ "')"
-                     , Html.Attributes.style "background-size" <|
-                        String.fromInt (floor <| model.image.scale * toFloat model.image.width)
-                            ++ "px "
-                            ++ String.fromInt (floor <| model.image.scale * toFloat model.image.height)
-                            ++ "px"
-                     , Html.Attributes.style "background-position" <|
-                        String.fromInt (w // 4 - offset.x)
-                            ++ "px "
-                            ++ String.fromInt (h // 4 - offset.y)
-                            ++ "px"
-                     ]
-                        ++ turnOffTheBloodyImageDragging
-                    )
-                    []
-                ]
-
-        viewPieces =
-            List.concat <|
-                List.map pieceGroupDiv <|
-                    List.filter (\pg -> S.member pg.visibilityGroup model.visibleGroups) <|
-                        D.values model.pieceGroups
-
-        clipPathDefs =
-            Svg.defs
-                []
-                (definePieceClipPaths model.image model.edgePoints)
-    in
-    [ Html.div
-        turnOffTheBloodyImageDragging
-        viewPieces
-    , Svg.svg
-        []
-        [ clipPathDefs ]
-    ]
-
-
-definePieceClipPaths : JigsawImage -> A.Array EdgePoints -> List (Svg Msg)
-definePieceClipPaths image edgePoints =
-    List.map (piecePath image edgePoints) (List.range 0 (image.xpieces * image.ypieces - 1))
-
-
-piecePath : JigsawImage -> A.Array EdgePoints -> Int -> Svg Msg
-piecePath image edgePoints id =
-    let
-        w =
-            image.scale * toFloat (image.width // image.xpieces)
-
-        h =
-            image.scale * toFloat (image.height // image.ypieces)
-
-        offset =
-            Point (floor (w / 2)) (floor (h / 2))
-
-        curve =
-            Edge.pieceCurveFromPieceId image.xpieces image.ypieces id edgePoints
-
-        move =
-            "translate(" ++ Point.toString offset ++ ") "
-
-        scale =
-            "scale(" ++ String.fromFloat (w / 200.0) ++ " " ++ String.fromFloat (h / 200.0) ++ ")"
-    in
-    Svg.clipPath
-        [ Svg.Attributes.id <| pieceClipId id ]
-        [ Svg.path
-            [ Svg.Attributes.id <| pieceOutlineId id
-            , Svg.Attributes.transform <| move ++ scale
-            , Svg.Attributes.d curve
-            , Svg.Attributes.fillOpacity "0.0"
-            ]
-            []
-        ]
-
-
-pieceOutlineId : Int -> String
-pieceOutlineId id =
-    "piece-" ++ String.fromInt id ++ "-outline"
-
-
-pieceClipId : Int -> String
-pieceClipId id =
-    "piece-" ++ String.fromInt id ++ "-clip"
-
-
-clipPathRef : Int -> String
-clipPathRef id =
-    "url(#" ++ pieceClipId id ++ ")"

@@ -55,6 +55,7 @@ type Bezier
     | S Point Point
 
 
+defaultCurvedEdge : Edge
 defaultCurvedEdge =
     Curved
         { b1 = C (Point 50 20) (Point 100 25) (Point 80 0)
@@ -64,6 +65,7 @@ defaultCurvedEdge =
         }
 
 
+defaultPoints : List Point
 defaultPoints =
     [ Point 50 20
     , Point 100 25
