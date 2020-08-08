@@ -26,6 +26,7 @@ import Set
 import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Lazy
+import Html.Lazy
 
 
 view : Model -> Html Msg
@@ -108,7 +109,7 @@ viewSelectionBox zIndex selectionBox =
 
 lazyPieceDiv : JigsawImage -> PieceGroup -> Int -> Html msg
 lazyPieceDiv =
-    Svg.Lazy.lazy3 pieceDiv
+    Html.Lazy.lazy3 pieceDiv
 
 
 pieceDiv : JigsawImage -> PieceGroup -> Int -> Html msg
