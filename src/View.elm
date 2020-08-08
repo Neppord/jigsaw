@@ -27,6 +27,7 @@ import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Lazy
 import Html.Lazy
+import Html.Keyed
 
 
 view : Model -> Html Msg
@@ -171,11 +172,12 @@ pieceDiv image pg pid =
 viewDiv : Model -> List (Html Msg)
 viewDiv model =
     let
-        pieceGroupDiv : PieceGroup -> List (Html msg)
+        pieceGroupDiv : PieceGroup -> List (String, Html msg)
         pieceGroupDiv pg =
             let
-                render =
-                    lazyPieceDiv model.image pg
+                render pid =
+                    ("piece-" ++ String.fromInt pid
+                    , lazyPieceDiv model.image pg pid)
             in
             List.map render pg.members
 
@@ -190,7 +192,8 @@ viewDiv model =
         clipPathDefs =
             lazyclipPathDefs model.image model.edgePoints
     in
-    [ Html.div
+    [ Html.Keyed.node 
+        "div"
         turnOffTheBloodyImageDragging
         viewPieces
     , Svg.svg
