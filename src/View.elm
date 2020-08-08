@@ -1,7 +1,7 @@
 module View exposing (view)
 
 import Array as A
-import Dict as D
+import Dict
 import Edge exposing (EdgePoints)
 import Html exposing (Attribute, Html)
 import Html.Attributes
@@ -9,7 +9,7 @@ import Html.Events
 import JigsawImage exposing (..)
 import Model exposing (..)
 import Point exposing (Point)
-import Set as S
+import Set
 import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Lazy
@@ -148,10 +148,12 @@ viewDiv model =
                 ]
 
         viewPieces =
-            List.concat <|
-                List.map pieceGroupDiv <|
-                    List.filter (\pg -> S.member pg.visibilityGroup model.visibleGroups) <|
-                        D.values model.pieceGroups
+            model.pieceGroups
+                |> Dict.values
+                |> List.filter
+                    (\pieceGroup -> Set.member pieceGroup.visibilityGroup model.visibleGroups)
+                |> List.map pieceGroupDiv
+                |> List.concat
 
         clipPathDefs =
             lazyclipPathDefs model.image model.edgePoints
