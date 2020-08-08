@@ -3,10 +3,13 @@ module Util exposing (..)
 {-| Take the first element from the list that satisfies the condition.
 If no such element exists, return Nothing.
 
-    takeFirst (\x -> x > 0) [-1, 3, 4] == Just 3
-    takeFirst (\x -> x > 0) [-2, -1, 0] == Nothing
+    takeFirst (\x -> x > 0) [ -1, 3, 4 ] == Just 3
+
+    takeFirst (\x -> x > 0) [ -2, -1, 0 ] == Nothing
 
 -}
+
+
 takeFirst : (a -> Bool) -> List a -> Maybe a
 takeFirst condition list =
     case list of
@@ -29,6 +32,7 @@ zip xs ys =
 {-| Convenience function that flips the order of arguments.
 
     flip (>) 2 3 == True
+
     flip (-) 5 10 == 5
 
 -}
@@ -39,9 +43,11 @@ flip f y x =
 
 {-| Remove element of given index from a List.
 
-    pop 3 [0, 1, 2, 3, 4, 5] == (Just 3, [0, 1, 2, 4, 5])
-    pop 0 [] == (Nothing, [])
-    pop 0 [1] == (Just 1, [])
+    pop 3 [ 0, 1, 2, 3, 4, 5 ] == ( Just 3, [ 0, 1, 2, 4, 5 ] )
+
+    pop 0 [] == ( Nothing, [] )
+
+    pop 0 [ 1 ] == ( Just 1, [] )
 
 -}
 pop : Int -> List a -> ( Maybe a, List a )
