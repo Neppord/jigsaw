@@ -190,7 +190,7 @@ viewDiv model =
     in
     [ Html.Keyed.node 
         "div"
-        turnOffTheBloodyImageDragging
+        []
         viewPieces
     , Svg.svg
         []
