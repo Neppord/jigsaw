@@ -44,7 +44,7 @@ view model =
             , Html.Attributes.style "top" "100px"
             , Html.Attributes.style "left" "0px"
             ]
-            (viewDiv model ++ viewSelectionBox (model.maxZLevel + 1) model.selectionBox)
+            (viewSelectionBox (model.maxZLevel + 1) model.selectionBox ++ viewDiv model)
         ]
 
 
