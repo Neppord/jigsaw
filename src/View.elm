@@ -37,10 +37,6 @@ view model =
         [ Html.button
             [ Html.Events.onClick Scramble ]
             [ Html.text "scramble" ]
-
-        --    , Html.h1
-        --      []
-        --      [ Html.text model.debug ]
         , Html.div
             [ Html.Attributes.style "width" <| String.fromInt model.image.width ++ "px"
             , Html.Attributes.style "height" <| String.fromInt model.image.height ++ "px"
