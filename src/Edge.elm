@@ -1,27 +1,41 @@
-module Edge exposing (EdgePoints, pieceCurveFromPieceId, makeEdgePoints)
+module Edge exposing (EdgePoints, makeEdgePoints, pieceCurveFromPieceId)
 
 import Array
 import Point exposing (Point)
 import Random
 
 
+type Chirality
+    = UpEar
+    | DownEar
+
+
+randomChirarlity : Random.Generator Chirality
+randomChirarlity =
+    Random.uniform UpEar [ DownEar ]
+
+
 makeEdgePoints : Int -> Random.Seed -> ( Array.Array EdgePoints, Random.Seed )
 makeEdgePoints n seed =
     let
+        randomOffsets =
+            Random.list n <| Point.randomPoints 8 -5 5 -5 5
+
         ( offsets, seed1 ) =
-            Random.step (Random.list n <| Point.randomPoints 8 -5 5 -5 5) seed
+            Random.step randomOffsets seed
 
         ( chiralities, seed2 ) =
-            Random.step (Random.list n <| Random.int 0 1) seed1
+            Random.step (Random.list n <| randomChirarlity) seed1
 
         -- Chirality 0 means the 'ear' is pointing up, 1 means it points down
-        setChirality : EdgePoints -> Int -> List Point
+        setChirality : EdgePoints -> Chirality -> List Point
         setChirality ep ch =
-            if ch == 0 then
-                ep
+            case ch of
+                UpEar ->
+                    ep
 
-            else
-                List.map (\p -> Point p.x -p.y) ep
+                DownEar ->
+                    List.map (\p -> Point p.x -p.y) ep
 
         translatePoints ep =
             List.map2 Point.add defaultPoints (ep ++ [ Point 0 0 ])
@@ -151,7 +165,13 @@ edgeToString e =
         Flat { a, b } ->
             "L " ++ Point.toString a ++ ", " ++ Point.toString b
 
-type Orientation = North | East | South | West
+
+type Orientation
+    = North
+    | East
+    | South
+    | West
+
 
 pieceCurveFromPieceId : Int -> Int -> Int -> Array.Array EdgePoints -> String
 pieceCurveFromPieceId nx ny id edgePoints =
@@ -161,7 +181,7 @@ pieceCurveFromPieceId nx ny id edgePoints =
             getEdge orientation nx ny id edgePoints
 
         curveString =
-            List.map (edge >> edgeToString) [ North, East, South, West]
+            List.map (edge >> edgeToString) [ North, East, South, West ]
                 |> String.concat
     in
     "M 0 0 " ++ curveString
