@@ -1,4 +1,4 @@
-module Edge exposing (..)
+module Edge exposing (EdgePoints, pieceCurveFromPieceId, makeEdgePoints)
 
 import Array
 import Point exposing (Point)
