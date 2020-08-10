@@ -5,14 +5,6 @@ import Point exposing (Point)
 import Random
 
 
-type alias Model =
-    { curves : String
-    , seed : Random.Seed
-    , nx : Int
-    , ny : Int
-    }
-
-
 makeEdgePoints : Int -> Random.Seed -> ( Array.Array EdgePoints, Random.Seed )
 makeEdgePoints n seed =
     let
