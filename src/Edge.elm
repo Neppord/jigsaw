@@ -3,6 +3,7 @@ module Edge exposing (EdgePoints, pieceCurveFromPieceId, makeEdgePoints)
 import Array
 import Point exposing (Point)
 import Random
+import Svg.Attributes exposing (orientation)
 
 
 makeEdgePoints : Int -> Random.Seed -> ( Array.Array EdgePoints, Random.Seed )
@@ -71,7 +72,7 @@ defaultPoints =
     ]
 
 
-makeEdge : String -> List Point -> Edge
+makeEdge : Orientation -> List Point -> Edge
 makeEdge orientation points =
     let
         rotate : Point -> Point
@@ -96,16 +97,16 @@ makeEdge orientation points =
 
         fixOrientation ps =
             case orientation of
-                "W" ->
+                West ->
                     List.map rotate <| reverse ps
 
-                "S" ->
+                South ->
                     List.map translate <| reverse ps
 
-                "E" ->
+                East ->
                     List.map (rotate << translate) ps
 
-                _ ->
+                North ->
                     ps
     in
     case fixOrientation points of
@@ -151,22 +152,23 @@ edgeToString e =
         Flat { a, b } ->
             "L " ++ Point.toString a ++ ", " ++ Point.toString b
 
+type Orientation = North | East | South | West
 
 pieceCurveFromPieceId : Int -> Int -> Int -> Array.Array EdgePoints -> String
 pieceCurveFromPieceId nx ny id edgePoints =
     let
-        edge : String -> Edge
+        edge : Orientation -> Edge
         edge orientation =
             getEdge orientation nx ny id edgePoints
 
         curveString =
-            List.map (edge >> edgeToString) [ "N", "E", "S", "W" ]
+            List.map (edge >> edgeToString) [ North, East, South, West]
                 |> String.concat
     in
     "M 0 0 " ++ curveString
 
 
-getEdge : String -> Int -> Int -> Int -> Array.Array EdgePoints -> Edge
+getEdge : Orientation -> Int -> Int -> Int -> Array.Array EdgePoints -> Edge
 getEdge orientation nx ny id edgePoints =
     let
         nv =
@@ -177,28 +179,28 @@ getEdge orientation nx ny id edgePoints =
 
         index =
             case orientation of
-                "N" ->
+                North ->
                     if id < nx then
                         -1
 
                     else
                         id - nx + nv
 
-                "W" ->
+                West ->
                     if modBy nx id == 0 then
                         -1
 
                     else
                         id - (id // nx) - 1
 
-                "S" ->
+                South ->
                     if id >= n - nx then
                         -1
 
                     else
                         id + nv
 
-                _ ->
+                East ->
                     if modBy nx id == (nx - 1) then
                         -1
 
