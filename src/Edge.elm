@@ -18,18 +18,24 @@ randomChirarlity =
 makeEdgePoints : Int -> Random.Seed -> ( Array.Array EdgePoints, Random.Seed )
 makeEdgePoints n seed =
     let
+        randomListOf =
+            Random.list n
+
         randomOffsets =
-            Random.list n <| Point.randomPoints 8 -5 5 -5 5
+            randomListOf (Point.randomPoints 8 -5 5 -5 5)
+
+        randomChirarlities =
+            randomListOf randomChirarlity
 
         ( offsets, seed1 ) =
             Random.step randomOffsets seed
 
         ( chiralities, seed2 ) =
-            Random.step (Random.list n <| randomChirarlity) seed1
+            Random.step randomChirarlities seed1
 
         -- Chirality 0 means the 'ear' is pointing up, 1 means it points down
-        setChirality : EdgePoints -> Chirality -> List Point
-        setChirality ep ch =
+        mirror : EdgePoints -> Chirality -> List Point
+        mirror ep ch =
             case ch of
                 UpEar ->
                     ep
@@ -39,9 +45,12 @@ makeEdgePoints n seed =
 
         translatePoints ep =
             List.map2 Point.add defaultPoints (ep ++ [ Point 0 0 ])
+        
+        mirrorAndTranslate: List Point -> Chirality -> List Point
+        mirrorAndTranslate = mirror << translatePoints
 
         edgePoints =
-            List.map2 (setChirality << translatePoints) offsets chiralities
+            List.map2 mirrorAndTranslate offsets chiralities
                 |> Array.fromList
     in
     ( edgePoints, seed2 )
