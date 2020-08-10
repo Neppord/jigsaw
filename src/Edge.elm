@@ -3,6 +3,7 @@ module Edge exposing (EdgePoints, makeEdgePoints, pieceCurveFromPieceId)
 import Array
 import Point exposing (Point)
 import Random
+import Svg.Attributes exposing (offset)
 
 
 type Chirality
@@ -21,17 +22,8 @@ makeEdgePoints n seed =
         randomListOf =
             Random.list n
 
-        randomOffsets =
-            randomListOf (Point.randomPoints 8 -5 5 -5 5)
-
-        randomChirarlities =
-            randomListOf randomChirarlity
-
-        ( offsets, seed1 ) =
-            Random.step randomOffsets seed
-
-        ( chiralities, seed2 ) =
-            Random.step randomChirarlities seed1
+        offsetPoints =
+            Point.randomPoints 8 -5 5 -5 5
 
         -- Chirality 0 means the 'ear' is pointing up, 1 means it points down
         mirror : EdgePoints -> Chirality -> List Point
@@ -45,15 +37,19 @@ makeEdgePoints n seed =
 
         translatePoints ep =
             List.map2 Point.add defaultPoints (ep ++ [ Point 0 0 ])
-        
-        mirrorAndTranslate: List Point -> Chirality -> List Point
-        mirrorAndTranslate = mirror << translatePoints
 
+        mirrorAndTranslate : List Point -> Chirality -> List Point
+        mirrorAndTranslate =
+            mirror << translatePoints
+        
+        randomEdgePoints: Random.Generator (List Point)
+        randomEdgePoints = 
+            Random.map2 mirrorAndTranslate offsetPoints randomChirarlity
         edgePoints =
-            List.map2 mirrorAndTranslate offsets chiralities
-                |> Array.fromList
+            randomListOf randomEdgePoints
+                |> Random.map Array.fromList
     in
-    ( edgePoints, seed2 )
+    Random.step edgePoints seed
 
 
 type Edge
