@@ -4,6 +4,7 @@ import Array
 import Point exposing (Point)
 import Random
 import Svg.Attributes exposing (offset)
+import Random
 
 
 type Chirality
@@ -15,15 +16,15 @@ randomChirarlity : Random.Generator Chirality
 randomChirarlity =
     Random.uniform UpEar [ DownEar ]
 
-
-makeEdgePoints : Int -> Random.Seed -> ( Array.Array EdgePoints, Random.Seed )
-makeEdgePoints n seed =
+generateEdgePoints : Int -> Random.Generator(Array.Array EdgePoints)
+generateEdgePoints n =
     let
         randomListOf =
             Random.list n
 
         offsetPoints =
             Point.randomPoints 8 -5 5 -5 5
+        
 
         -- Chirality 0 means the 'ear' is pointing up, 1 means it points down
         mirror : EdgePoints -> Chirality -> List Point
@@ -48,8 +49,11 @@ makeEdgePoints n seed =
         edgePoints =
             randomListOf randomEdgePoints
                 |> Random.map Array.fromList
-    in
-    Random.step edgePoints seed
+    in edgePoints
+
+makeEdgePoints : Int -> Random.Seed -> ( Array.Array EdgePoints, Random.Seed )
+makeEdgePoints n seed =
+    Random.step (generateEdgePoints n) seed
 
 
 type Edge
