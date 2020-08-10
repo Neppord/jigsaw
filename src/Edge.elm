@@ -3,7 +3,6 @@ module Edge exposing (EdgePoints, pieceCurveFromPieceId, makeEdgePoints)
 import Array
 import Point exposing (Point)
 import Random
-import Svg.Attributes exposing (orientation)
 
 
 makeEdgePoints : Int -> Random.Seed -> ( Array.Array EdgePoints, Random.Seed )
