@@ -5,33 +5,30 @@ import Point exposing (Point)
 import Random
 
 
-createEdgePoint : Point -> Point -> Point -> Point
-createEdgePoint default offset flipY =
-    default
-        |> Point.add offset
-        |> Point.dot flipY
-
-
-createEdge : List Point -> List Point -> List Point -> List Point
-createEdge =
-    List.map3 createEdgePoint
+rApply : Random.Generator (a -> b) -> Random.Generator a -> Random.Generator b
+rApply toApply on =
+    toApply
+        |> Random.andThen (\f -> Random.map f on)
 
 
 randomOffsets : Random.Generator (List Point)
 randomOffsets =
-    Point.randomPoints 8 -5 5 -5 5
-        |> Random.map (\list -> list ++ [ Point 0 0 ])
+    Random.map (\list -> list ++ [ Point 0 0 ]) (Point.randomPoints 8 -5 5 -5 5)
 
 
-randomFlipYs : Random.Generator (List Point)
-randomFlipYs =
+flipY : Random.Generator (List Point -> List Point)
+flipY =
     Random.uniform (Point 1 1) [ Point 1 -1 ]
-        |> Random.map (List.repeat 9)
+        |> Random.map Point.dot
+        |> Random.map List.map
 
 
 generateEdgePoints : Int -> Random.Generator (Array.Array EdgePoints)
 generateEdgePoints n =
-    Random.map2 (createEdge defaultPoints) randomOffsets randomFlipYs
+    defaultPoints
+        |> Random.constant
+        |> Random.map2 (List.map2 Point.add) randomOffsets
+        |> rApply flipY
         |> Random.list n
         |> Random.map Array.fromList
 
