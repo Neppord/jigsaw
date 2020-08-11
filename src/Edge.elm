@@ -29,19 +29,11 @@ randomFlipYs =
         |> Random.map (List.repeat 9)
 
 
-createRandomEdge : Random.Generator (List Point)
-createRandomEdge =
-    Random.map2 (createEdge defaultPoints) randomOffsets randomFlipYs
-
-
 generateEdgePoints : Int -> Random.Generator (Array.Array EdgePoints)
 generateEdgePoints n =
-    let
-        randomArrayOf x =
-            Random.list n x
-                |> Random.map Array.fromList
-    in
-    randomArrayOf createRandomEdge
+    Random.map2 (createEdge defaultPoints) randomOffsets randomFlipYs
+        |> Random.list n
+        |> Random.map Array.fromList
 
 
 makeEdgePoints : Int -> Random.Seed -> ( Array.Array EdgePoints, Random.Seed )
