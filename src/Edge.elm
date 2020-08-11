@@ -3,53 +3,46 @@ module Edge exposing (EdgePoints, makeEdgePoints, pieceCurveFromPieceId)
 import Array
 import Point exposing (Point)
 import Random
-import Svg.Attributes exposing (offset)
-import Random
 
 
-type Chirality
-    = UpEar
-    | DownEar
+createEdgePoint : Point -> Point -> Point -> Point
+createEdgePoint default offset flipY =
+    default
+        |> Point.add offset
+        |> Point.dot flipY
 
 
-randomChirarlity : Random.Generator Chirality
-randomChirarlity =
-    Random.uniform UpEar [ DownEar ]
+createEdge : List Point -> List Point -> List Point -> List Point
+createEdge =
+    List.map3 createEdgePoint
 
-generateEdgePoints : Int -> Random.Generator(Array.Array EdgePoints)
+
+randomOffsets : Random.Generator (List Point)
+randomOffsets =
+    Point.randomPoints 8 -5 5 -5 5
+        |> Random.map (\list -> list ++ [ Point 0 0 ])
+
+
+randomFlipYs : Random.Generator (List Point)
+randomFlipYs =
+    Random.uniform (Point 1 1) [ Point 1 -1 ]
+        |> Random.map (List.repeat 9)
+
+
+createRandomEdge : Random.Generator (List Point)
+createRandomEdge =
+    Random.map2 (createEdge defaultPoints) randomOffsets randomFlipYs
+
+
+generateEdgePoints : Int -> Random.Generator (Array.Array EdgePoints)
 generateEdgePoints n =
     let
-        randomListOf =
-            Random.list n
-
-        offsetPoints =
-            Point.randomPoints 8 -5 5 -5 5
-        
-
-        -- Chirality 0 means the 'ear' is pointing up, 1 means it points down
-        mirror : EdgePoints -> Chirality -> List Point
-        mirror ep ch =
-            case ch of
-                UpEar ->
-                    ep
-
-                DownEar ->
-                    List.map (\p -> Point p.x -p.y) ep
-
-        translatePoints ep =
-            List.map2 Point.add defaultPoints (ep ++ [ Point 0 0 ])
-
-        mirrorAndTranslate : List Point -> Chirality -> List Point
-        mirrorAndTranslate =
-            mirror << translatePoints
-        
-        randomEdgePoints: Random.Generator (List Point)
-        randomEdgePoints = 
-            Random.map2 mirrorAndTranslate offsetPoints randomChirarlity
-        edgePoints =
-            randomListOf randomEdgePoints
+        randomArrayOf x =
+            Random.list n x
                 |> Random.map Array.fromList
-    in edgePoints
+    in
+    randomArrayOf createRandomEdge
+
 
 makeEdgePoints : Int -> Random.Seed -> ( Array.Array EdgePoints, Random.Seed )
 makeEdgePoints n seed =
