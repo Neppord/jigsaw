@@ -134,8 +134,8 @@ pointsToSvg pts =
         |> List.map Point.toString
         |> String.join ", "
 
-bezierToString : Bezier -> String
-bezierToString b =
+bezierToSvg : Bezier -> String
+bezierToSvg b =
     case b of
         C p1 p2 p3 ->
             "C " ++ pointsToSvg [ p1, p2, p3 ]
@@ -144,11 +144,11 @@ bezierToString b =
             "S " ++ pointsToSvg [ p1, p2 ]
 
 
-edgeToString : Edge -> String
-edgeToString e =
+edgeToSvg : Edge -> String
+edgeToSvg e =
     case e of
         Curved { b1, b2, b3, b4 } ->
-            List.map bezierToString [ b1, b2, b3, b4 ]
+            List.map bezierToSvg [ b1, b2, b3, b4 ]
                 |> String.join " "
 
         Flat { a, b } ->
@@ -180,7 +180,7 @@ pieceCurveFromPieceId nx ny id edgePoints =
 edgesToSvg: List Edge -> String
 edgesToSvg edges =
     edges
-        |> List.map edgeToString
+        |> List.map edgeToSvg
         |> String.concat
 
 getEdge : Orientation -> Int -> Int -> Int -> Array.Array EdgePoints -> Edge
