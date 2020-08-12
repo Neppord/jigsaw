@@ -172,7 +172,8 @@ pieceCurveFromPieceId nx ny id edgePoints =
             getEdge orientation nx ny id edgePoints
 
         curveString =
-            List.map (edge >> edgeToString) [ North, East, South, West ]
+            [ North, East, South, West ]
+                |> List.map (edge >> edgeToString) 
                 |> String.concat
     in
     "M 0 0 " ++ curveString
