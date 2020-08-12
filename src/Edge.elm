@@ -132,8 +132,7 @@ pointsToSvg : List Point -> String
 pointsToSvg pts =
     pts
         |> List.map Point.toString
-        |> List.intersperse ", "
-        |> String.concat
+        |> String.join ", "
 
 bezierToString : Bezier -> String
 bezierToString b =
@@ -150,8 +149,7 @@ edgeToString e =
     case e of
         Curved { b1, b2, b3, b4 } ->
             List.map bezierToString [ b1, b2, b3, b4 ]
-                |> List.intersperse " "
-                |> String.concat
+                |> String.join " "
 
         Flat { a, b } ->
             "L " ++ pointsToSvg [a, b]
