@@ -6,6 +6,8 @@ import Edge exposing (EdgePoints)
 import Html exposing (Attribute, Html)
 import Html.Attributes
 import Html.Events
+import Html.Keyed
+import Html.Lazy
 import JigsawImage
     exposing
         ( JigsawImage
@@ -14,10 +16,10 @@ import JigsawImage
         )
 import Model
     exposing
-        ( Model
+        ( Box
+        , Model
         , Msg(..)
         , SelectionBox(..)
-        , Box
         , boxBottomRight
         , boxTopLeft
         )
@@ -26,8 +28,7 @@ import Set
 import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Lazy
-import Html.Lazy
-import Html.Keyed
+import SvgUtil
 
 
 view : Model -> Html Msg
@@ -168,12 +169,13 @@ pieceDiv image pg pid =
 viewDiv : Model -> List (Html Msg)
 viewDiv model =
     let
-        pieceGroupDiv : PieceGroup -> List (String, Html msg)
+        pieceGroupDiv : PieceGroup -> List ( String, Html msg )
         pieceGroupDiv pg =
             let
                 render pid =
-                    ("piece-" ++ String.fromInt pid
-                    , lazyPieceDiv model.image pg pid)
+                    ( "piece-" ++ String.fromInt pid
+                    , lazyPieceDiv model.image pg pid
+                    )
             in
             List.map render pg.members
 
@@ -188,7 +190,7 @@ viewDiv model =
         clipPathDefs =
             lazyclipPathDefs model.image model.edgePoints
     in
-    [ Html.Keyed.node 
+    [ Html.Keyed.node
         "div"
         []
         viewPieces
@@ -221,7 +223,7 @@ piecePath image edgePoints id =
             Point (floor (w / 2)) (floor (h / 2))
 
         curve =
-            Edge.pieceCurveFromPieceId image.xpieces image.ypieces id edgePoints
+            SvgUtil.pieceCurveFromPieceId image.xpieces image.ypieces id edgePoints
 
         move =
             "translate(" ++ Point.toString offset ++ ") "
