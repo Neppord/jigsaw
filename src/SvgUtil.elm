@@ -2,18 +2,15 @@ module SvgUtil exposing
     ( bezierToSvg
     , edgeToSvg
     , edgesToSvg
-    , pieceCurveFromPieceId
+    , pieceToSvg
     , pointsToSvg
     )
 
-import Array
 import Edge
     exposing
         ( Bezier(..)
         , Edge(..)
-        , EdgePoints
         , Orientation(..)
-        , pieceEdges
         )
 import Point exposing (Point)
 
@@ -56,8 +53,3 @@ pointsToSvg pts =
 pieceToSvg : List Edge -> String
 pieceToSvg edges =
     "M 0 0" ++ edgesToSvg edges
-
-
-pieceCurveFromPieceId : Int -> Int -> Int -> Array.Array EdgePoints -> String
-pieceCurveFromPieceId nx ny id edgePoints =
-    pieceToSvg (pieceEdges nx ny id edgePoints)

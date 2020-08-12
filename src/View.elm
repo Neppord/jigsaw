@@ -223,7 +223,8 @@ piecePath image edgePoints id =
             Point (floor (w / 2)) (floor (h / 2))
 
         curve =
-            SvgUtil.pieceCurveFromPieceId image.xpieces image.ypieces id edgePoints
+            Edge.pieceEdges image.xpieces image.ypieces id edgePoints
+            |> SvgUtil.pieceToSvg
 
         move =
             "translate(" ++ Point.toString offset ++ ") "
