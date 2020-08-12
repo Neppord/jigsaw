@@ -2,7 +2,7 @@ module Edge exposing
     ( Bezier(..)
     , Edge(..)
     , EdgePoints
-    , Orientation(..)
+    , Orientation(..), indexOf
     , getEdge
     , makeEdgePoints
     , pieceEdges
@@ -11,6 +11,7 @@ module Edge exposing
 import Array
 import Point exposing (Point)
 import Random
+import Debug
 
 
 rApply : Random.Generator (a -> b) -> Random.Generator a -> Random.Generator b
@@ -144,42 +145,42 @@ type Orientation
     | West
 
 indexOf: Orientation -> Int -> Int -> Int -> Int
-indexOf orientation nx ny id =
+indexOf orientation width height id =
     let
         nv =
-            (nx - 1) * ny
+            (width - 1) * height
 
-        n =
-            nx * ny
+        numberOfPieces =
+            width * height
     in
     case orientation of
         North ->
-            if id < nx then
+            if id < width then
                 -1
 
             else
-                id - nx + nv
+                id - width + nv
 
         West ->
-            if modBy nx id == 0 then
+            if modBy width id == 0 then
                 -1
 
             else
-                id - (id // nx) - 1
+                id - (id // width) - 1
 
         South ->
-            if id >= n - nx then
+            if id >= numberOfPieces - width then
                 -1
 
             else
                 id + nv
 
         East ->
-            if modBy nx id == (nx - 1) then
+            if modBy width id == (width - 1) then
                 -1
 
             else
-                id - (id // nx)
+                id - (id // width)
 
 
 getEdge : Orientation -> Int -> Int -> Int -> Array.Array EdgePoints -> Edge
