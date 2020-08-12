@@ -2,16 +2,18 @@ module Edge exposing
     ( Bezier(..)
     , Edge(..)
     , EdgePoints
-    , Orientation(..), indexOf
+    , Orientation(..)
+    , cords
     , getEdge
+    , indexOf
     , makeEdgePoints
     , pieceEdges
     )
 
 import Array
+import Debug
 import Point exposing (Point)
 import Random
-import Debug
 
 
 rApply : Random.Generator (a -> b) -> Random.Generator a -> Random.Generator b
@@ -144,7 +146,15 @@ type Orientation
     | South
     | West
 
-indexOf: Orientation -> Int -> Int -> Int -> Int
+
+cords : Int -> Int -> ( Int, Int )
+cords width index =
+    ( modBy width index
+    , index // width
+    )
+
+
+indexOf : Orientation -> Int -> Int -> Int -> Int
 indexOf orientation width height id =
     let
         nv =
