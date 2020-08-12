@@ -128,22 +128,21 @@ makeEdge orientation points =
         _ ->
             defaultCurvedEdge
 
+pointsToSvg : List Point -> String
+pointsToSvg pts =
+    pts
+        |> List.map Point.toString
+        |> List.intersperse ", "
+        |> String.concat
 
 bezierToString : Bezier -> String
 bezierToString b =
-    let
-        combine pts =
-            pts
-                |> List.map Point.toString
-                |> List.intersperse ", "
-                |> String.concat
-    in
     case b of
         C p1 p2 p3 ->
-            "C " ++ combine [ p1, p2, p3 ]
+            "C " ++ pointsToSvg [ p1, p2, p3 ]
 
         S p1 p2 ->
-            "S " ++ combine [ p1, p2 ]
+            "S " ++ pointsToSvg [ p1, p2 ]
 
 
 edgeToString : Edge -> String
@@ -155,7 +154,7 @@ edgeToString e =
                 |> String.concat
 
         Flat { a, b } ->
-            "L " ++ Point.toString a ++ ", " ++ Point.toString b
+            "L " ++ pointsToSvg [a, b]
 
 
 type Orientation
