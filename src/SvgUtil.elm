@@ -6,12 +6,7 @@ module SvgUtil exposing
     , pointsToSvg
     )
 
-import Edge
-    exposing
-        ( Bezier(..)
-        , Edge(..)
-        , Orientation(..)
-        )
+import Edge exposing (Bezier(..), Edge(..), Orientation(..))
 import Point exposing (Point)
 
 
