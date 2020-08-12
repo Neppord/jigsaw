@@ -13,7 +13,7 @@ import Edge
         , Edge(..)
         , EdgePoints
         , Orientation(..)
-        , getEdge
+        , pieceEdges
         )
 import Point exposing (Point)
 
@@ -53,13 +53,10 @@ pointsToSvg pts =
         |> String.join ", "
 
 
-pieceEdges : Int -> Int -> Int -> Array.Array EdgePoints -> List Edge
-pieceEdges nx ny id edgePoints =
-    [ North, East, South, West ]
-        |> List.map (\orientation -> getEdge orientation nx ny id edgePoints)
+pieceToSvg : List Edge -> String
+pieceToSvg edges =
+    "M 0 0" ++ edgesToSvg edges
 
-pieceToSvg: List Edge -> String
-pieceToSvg edges = "M 0 0" ++ edgesToSvg edges
 
 pieceCurveFromPieceId : Int -> Int -> Int -> Array.Array EdgePoints -> String
 pieceCurveFromPieceId nx ny id edgePoints =

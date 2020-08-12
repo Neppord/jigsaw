@@ -2,9 +2,10 @@ module Edge exposing
     ( Bezier(..)
     , Edge(..)
     , EdgePoints
+    , Orientation(..)
     , getEdge
     , makeEdgePoints
-    , Orientation(..)
+    , pieceEdges
     )
 
 import Array
@@ -187,3 +188,9 @@ getEdge orientation nx ny id edgePoints =
                 |> Maybe.withDefault [ Point 0 0, Point 200 0 ]
     in
     makeEdge orientation points
+
+
+pieceEdges : Int -> Int -> Int -> Array.Array EdgePoints -> List Edge
+pieceEdges nx ny id edgePoints =
+    [ North, East, South, West ]
+        |> List.map (\orientation -> getEdge orientation nx ny id edgePoints)
