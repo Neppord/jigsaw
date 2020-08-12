@@ -133,9 +133,10 @@ bezierToString : Bezier -> String
 bezierToString b =
     let
         combine pts =
-            String.concat <|
-                List.intersperse ", " <|
-                    List.map Point.toString pts
+            pts
+                |> List.map Point.toString
+                |> List.intersperse ", "
+                |> String.concat
     in
     case b of
         C p1 p2 p3 ->
