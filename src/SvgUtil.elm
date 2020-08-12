@@ -1,6 +1,10 @@
-module SvgUtil exposing 
-    (bezierToSvg
-    , edgeToSvg, edgesToSvg, pointsToSvg, pieceCurveFromPieceId)
+module SvgUtil exposing
+    ( bezierToSvg
+    , edgeToSvg
+    , edgesToSvg
+    , pieceCurveFromPieceId
+    , pointsToSvg
+    )
 
 import Array
 import Edge
@@ -49,16 +53,14 @@ pointsToSvg pts =
         |> String.join ", "
 
 
+pieceEdges : Int -> Int -> Int -> Array.Array EdgePoints -> List Edge
+pieceEdges nx ny id edgePoints =
+    [ North, East, South, West ]
+        |> List.map (\orientation -> getEdge orientation nx ny id edgePoints)
+
+pieceToSvg: List Edge -> String
+pieceToSvg edges = "M 0 0" ++ edgesToSvg edges
+
 pieceCurveFromPieceId : Int -> Int -> Int -> Array.Array EdgePoints -> String
 pieceCurveFromPieceId nx ny id edgePoints =
-    let
-        edge : Orientation -> Edge
-        edge orientation =
-            getEdge orientation nx ny id edgePoints
-
-        pieceContour : List Edge
-        pieceContour =
-            [ North, East, South, West ]
-                |> List.map edge
-    in
-    "M 0 0 " ++ edgesToSvg pieceContour
+    pieceToSvg (pieceEdges nx ny id edgePoints)
