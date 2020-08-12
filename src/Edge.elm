@@ -143,45 +143,50 @@ type Orientation
     | South
     | West
 
-
-getEdge : Orientation -> Int -> Int -> Int -> Array.Array EdgePoints -> Edge
-getEdge orientation nx ny id edgePoints =
+indexOf: Orientation -> Int -> Int -> Int -> Int
+indexOf orientation nx ny id =
     let
         nv =
             (nx - 1) * ny
 
         n =
             nx * ny
+    in
+    case orientation of
+        North ->
+            if id < nx then
+                -1
 
+            else
+                id - nx + nv
+
+        West ->
+            if modBy nx id == 0 then
+                -1
+
+            else
+                id - (id // nx) - 1
+
+        South ->
+            if id >= n - nx then
+                -1
+
+            else
+                id + nv
+
+        East ->
+            if modBy nx id == (nx - 1) then
+                -1
+
+            else
+                id - (id // nx)
+
+
+getEdge : Orientation -> Int -> Int -> Int -> Array.Array EdgePoints -> Edge
+getEdge orientation nx ny id edgePoints =
+    let
         index =
-            case orientation of
-                North ->
-                    if id < nx then
-                        -1
-
-                    else
-                        id - nx + nv
-
-                West ->
-                    if modBy nx id == 0 then
-                        -1
-
-                    else
-                        id - (id // nx) - 1
-
-                South ->
-                    if id >= n - nx then
-                        -1
-
-                    else
-                        id + nv
-
-                East ->
-                    if modBy nx id == (nx - 1) then
-                        -1
-
-                    else
-                        id - (id // nx)
+            indexOf orientation nx ny id
 
         points =
             Array.get index edgePoints
