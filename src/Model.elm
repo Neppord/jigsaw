@@ -1,8 +1,7 @@
 module Model exposing (..)
 
-import Array as A
 import Dict as D
-import Edge exposing (EdgePoints, Edge)
+import Edge exposing (Edge, EdgePoints)
 import JigsawImage
     exposing
         ( JigsawImage

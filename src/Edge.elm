@@ -2,8 +2,9 @@ module Edge exposing
     ( Bezier(..)
     , Edge(..)
     , EdgePoints
-    , Orientation(..), generateEdgePoints
+    , Orientation(..)
     , cords
+    , generateEdgePoints
     , getEdge
     , indexOf
     , pieceEdges

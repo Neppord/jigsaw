@@ -4,7 +4,6 @@ import Dict as D
 import Point exposing (Point)
 import Random
 import Set as S
-import Random
 
 
 type alias JigsawImage =

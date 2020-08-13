@@ -3,7 +3,6 @@ module Main exposing (main)
 import Browser
 import Browser.Events
 import Dict as D
-import Array
 import Edge exposing (generateEdgePoints)
 import JigsawImage
     exposing

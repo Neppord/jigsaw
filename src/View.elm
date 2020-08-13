@@ -1,6 +1,5 @@
 module View exposing (view)
 
-import Array as A
 import Dict
 import Edge exposing (Edge)
 import Html exposing (Attribute, Html)
@@ -207,7 +206,7 @@ lazyclipPathDefs =
 
 definePieceClipPaths : JigsawImage -> List (List Edge) -> List (Svg msg)
 definePieceClipPaths image edges =
-    List.map2 (piecePath image) edges  (List.range 0 (image.xpieces * image.ypieces - 1))
+    List.map2 (piecePath image) edges (List.range 0 (image.xpieces * image.ypieces - 1))
 
 
 piecePath : JigsawImage -> List Edge -> Int -> Svg msg
