@@ -564,16 +564,15 @@ snapToNeighbour model selected =
 
         closeNeighbour : Maybe PieceGroup
         closeNeighbour =
-            case takeFirst smallEnough distanceToSelected of
-                Nothing ->
-                    Nothing
+            takeFirst smallEnough distanceToSelected
+                |> Maybe.andThen
+                    (\( _, neighbour ) ->
+                        if S.member neighbour.visibilityGroup model.visibleGroups then
+                            Just neighbour
 
-                Just ( _, neighbour ) ->
-                    if S.member neighbour.visibilityGroup model.visibleGroups then
-                        Just neighbour
-
-                    else
-                        Nothing
+                        else
+                            Nothing
+                    )
 
         merge : PieceGroup -> PieceGroup -> PieceGroup
         merge a b =
