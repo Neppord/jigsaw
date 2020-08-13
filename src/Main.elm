@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Events
 import Dict as D
-import Edge exposing (makeEdgePoints)
+import Edge exposing (generateEdgePoints)
 import JigsawImage
     exposing
         ( JigsawImage
@@ -74,7 +74,7 @@ resetModel image seed =
             shuffleZLevels (nx * ny) seed1
 
         ( edgePoints, seed3 ) =
-            makeEdgePoints numberOfEdges seed2
+            Random.step (generateEdgePoints numberOfEdges) seed2
     in
     { cursor = Nothing
     , pieceGroups = createPieceGroups image positions zlevels

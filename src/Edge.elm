@@ -2,16 +2,14 @@ module Edge exposing
     ( Bezier(..)
     , Edge(..)
     , EdgePoints
-    , Orientation(..)
+    , Orientation(..), generateEdgePoints
     , cords
     , getEdge
     , indexOf
-    , makeEdgePoints
     , pieceEdges
     )
 
 import Array
-import Debug
 import Point exposing (Point)
 import Random
 
@@ -42,11 +40,6 @@ generateEdgePoints n =
         |> rApply flipY
         |> Random.list n
         |> Random.map Array.fromList
-
-
-makeEdgePoints : Int -> Random.Seed -> ( Array.Array EdgePoints, Random.Seed )
-makeEdgePoints n seed =
-    Random.step (generateEdgePoints n) seed
 
 
 type Edge
