@@ -93,6 +93,13 @@ divSelectionBox zIndex box color =
 
 viewSelectionBox : Int -> SelectionBox -> List (Html msg)
 viewSelectionBox zIndex selectionBox =
+    let
+        hidden =
+            { staticCorner = { x = -10, y = -10 }
+            , movingCorner = { x = -10, y = -10 }
+            , selectedIds = Set.empty
+            }
+    in
     case selectionBox of
         Normal box ->
             [ lazyDivSelectionBox zIndex box "rgba(0,0,255,0.2)" ]
@@ -101,7 +108,7 @@ viewSelectionBox zIndex selectionBox =
             [ lazyDivSelectionBox zIndex box "rgba(0,255,0,0.2)" ]
 
         NullBox ->
-            []
+            [ lazyDivSelectionBox zIndex hidden "rgba(0,255,0,0.2)" ]
 
 
 lazyPieceDiv : JigsawImage -> PieceGroup -> Int -> Html msg
@@ -138,7 +145,7 @@ pieceDiv image pg pid =
         [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
         , Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
         , Html.Attributes.style "position" "absolute"
-        , Html.Attributes.style "transform" ("translate(" ++ left ++ "," ++ top ++")")
+        , Html.Attributes.style "transform" ("translate(" ++ left ++ "," ++ top ++ ")")
         ]
         [ Html.div
             [ Html.Attributes.style "width" <| String.fromInt w ++ "px"
