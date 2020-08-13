@@ -68,7 +68,7 @@ resetModel image seed =
             2 * nx * ny - nx - ny
 
         ( positions, seed1 ) =
-            shufflePiecePositions w h image seed
+            Random.step (shufflePiecePositions w h image) seed
 
         ( zlevels, seed2 ) =
             shuffleZLevels (nx * ny) seed1

@@ -4,6 +4,7 @@ import Dict as D
 import Point exposing (Point)
 import Random
 import Set as S
+import Random
 
 
 type alias JigsawImage =
@@ -27,8 +28,8 @@ type alias PieceGroup =
     }
 
 
-shufflePiecePositions : Int -> Int -> JigsawImage -> Random.Seed -> ( List Point, Random.Seed )
-shufflePiecePositions w h image seed =
+shufflePiecePositions : Int -> Int -> JigsawImage -> Random.Generator (List Point)
+shufflePiecePositions w h image =
     let
         n =
             image.xpieces * image.ypieces
@@ -45,7 +46,7 @@ shufflePiecePositions w h image seed =
         ymax =
             h - image.height // image.ypieces
     in
-    Random.step (Point.randomPoints n xmin xmax ymin ymax) seed
+    Point.randomPoints n xmin xmax ymin ymax
 
 
 createPieceGroups : JigsawImage -> List Point -> List Int -> D.Dict Int PieceGroup
