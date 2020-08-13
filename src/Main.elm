@@ -34,6 +34,7 @@ import Util exposing (takeFirst)
 import View exposing (view)
 
 
+main : Program () Model Msg
 main =
     Browser.element
         { init = init
@@ -613,6 +614,7 @@ snapToNeighbour model selected =
             model.pieceGroups
 
 
+allSelectedPieceGroups : D.Dict Int PieceGroup -> D.Dict Int PieceGroup
 allSelectedPieceGroups pieceGroups =
     D.filter (\_ pg -> pg.isSelected) pieceGroups
 
