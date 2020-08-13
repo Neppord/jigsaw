@@ -1,7 +1,18 @@
-module Model exposing (..)
+module Model exposing
+    ( Box
+    , Key(..)
+    , Keyboard
+    , Model
+    , Msg(..)
+    , Selected(..)
+    , SelectionBox(..)
+    , boxBottomRight
+    , boxTopLeft
+    , defaultPieceGroup
+    )
 
 import Dict as D
-import Edge exposing (Edge, EdgePoints)
+import Edge exposing (Edge)
 import JigsawImage
     exposing
         ( JigsawImage

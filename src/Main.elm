@@ -14,7 +14,18 @@ import JigsawImage
         , shufflePiecePositions
         )
 import Json.Decode
-import Model exposing (..)
+import Model
+    exposing
+        ( Key(..)
+        , Keyboard
+        , Model
+        , Msg(..)
+        , Selected(..)
+        , SelectionBox(..)
+        , boxBottomRight
+        , boxTopLeft
+        , defaultPieceGroup
+        )
 import Point exposing (Point)
 import Random
 import Random.List
