@@ -138,8 +138,7 @@ pieceDiv image pg pid =
         [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
         , Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
         , Html.Attributes.style "position" "absolute"
-        , Html.Attributes.style "top" top
-        , Html.Attributes.style "left" left
+        , Html.Attributes.style "transform" ("translate(" ++ left ++ "," ++ top ++")")
         ]
         [ Html.div
             [ Html.Attributes.style "width" <| String.fromInt w ++ "px"
