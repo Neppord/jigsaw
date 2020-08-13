@@ -97,7 +97,6 @@ resetModel image seed =
     , height = h
     , snapDistance = 30.0
     , selectionBox = NullBox
-    , debug = "Nothing to see here..."
     , seed = seed3
     , edges =
         List.range 0 (image.xpieces * image.ypieces - 1)
@@ -227,11 +226,6 @@ update msg model =
                         ( False, True ) ->
                             ( { model
                                 | visibleGroups = toggleVisibilityOf model.visibleGroups x
-                                , debug =
-                                    S.toList (toggleVisibilityOf model.visibleGroups x)
-                                        |> List.map String.fromInt
-                                        |> List.intersperse ", "
-                                        |> String.concat
                               }
                             , Cmd.none
                             )
@@ -288,7 +282,7 @@ update msg model =
                     else
                         selectPieceGroup model clickedPieceGroup.id coordinate keyboard
             in
-            ( { newModel | debug = String.fromInt clickedPieceGroup.id }, Cmd.none )
+            ( newModel, Cmd.none )
 
         MouseUp ->
             let

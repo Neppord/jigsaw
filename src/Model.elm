@@ -47,7 +47,6 @@ type alias Model =
     , height : Int
     , snapDistance : Float
     , selectionBox : SelectionBox
-    , debug : String
     , seed : Random.Seed
     , edges : List (List Edge)
     , visibleGroups : S.Set Int
