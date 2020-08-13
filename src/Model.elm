@@ -2,7 +2,7 @@ module Model exposing (..)
 
 import Array as A
 import Dict as D
-import Edge exposing (EdgePoints)
+import Edge exposing (EdgePoints, Edge)
 import JigsawImage
     exposing
         ( JigsawImage
@@ -40,6 +40,7 @@ type alias Model =
     , debug : String
     , seed : Random.Seed
     , edgePoints : A.Array EdgePoints
+    , edges : A.Array (List Edge)
     , visibleGroups : S.Set Int
     , keyboard : Keyboard
     }

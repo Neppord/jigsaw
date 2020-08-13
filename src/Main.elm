@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Events
 import Dict as D
+import Array
 import Edge exposing (generateEdgePoints)
 import JigsawImage
     exposing
@@ -88,6 +89,10 @@ resetModel image seed =
     , debug = "Nothing to see here..."
     , seed = seed3
     , edgePoints = edgePoints
+    , edges =
+        List.range 0 (image.xpieces * image.ypieces - 1)
+            |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id edgePoints)
+            |> Array.fromList
     , visibleGroups = S.fromList [ -1 ]
     , keyboard = { shift = False, ctrl = False }
     }
@@ -280,14 +285,14 @@ update msg model =
             let
                 newModel =
                     case model.selectionBox of
-                        Normal box ->
+                        Normal _ ->
                             { model
                                 | selectionBox = NullBox
                                 , cursor = Nothing
                                 , selected = currentSelection model.pieceGroups
                             }
 
-                        Inverted box ->
+                        Inverted _ ->
                             { model
                                 | selectionBox = NullBox
                                 , cursor = Nothing
