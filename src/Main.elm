@@ -186,8 +186,16 @@ subscriptions model =
         [ trackMouseMovement
         , trackMouseDown
         , trackMouseUp
-        , Browser.Events.onKeyDown (Json.Decode.map (keyDecoder True) (Json.Decode.field "key" Json.Decode.string))
-        , Browser.Events.onKeyUp (Json.Decode.map (keyDecoder False) (Json.Decode.field "key" Json.Decode.string))
+        , Browser.Events.onKeyDown
+            (Json.Decode.map
+                (keyDecoder True)
+                (Json.Decode.field "key" Json.Decode.string)
+            )
+        , Browser.Events.onKeyUp
+            (Json.Decode.map
+                (keyDecoder False)
+                (Json.Decode.field "key" Json.Decode.string)
+            )
         ]
 
 
