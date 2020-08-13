@@ -88,7 +88,6 @@ resetModel image seed =
     , selectionBox = NullBox
     , debug = "Nothing to see here..."
     , seed = seed3
-    , edgePoints = edgePoints
     , edges =
         List.range 0 (image.xpieces * image.ypieces - 1)
             |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id edgePoints)

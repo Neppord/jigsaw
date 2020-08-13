@@ -39,7 +39,6 @@ type alias Model =
     , selectionBox : SelectionBox
     , debug : String
     , seed : Random.Seed
-    , edgePoints : A.Array EdgePoints
     , edges : A.Array (List Edge)
     , visibleGroups : S.Set Int
     , keyboard : Keyboard
