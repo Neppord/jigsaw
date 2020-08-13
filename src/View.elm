@@ -2,7 +2,7 @@ module View exposing (view)
 
 import Array as A
 import Dict
-import Edge exposing (EdgePoints)
+import Edge exposing (Edge)
 import Html exposing (Attribute, Html)
 import Html.Attributes
 import Html.Events
@@ -188,7 +188,7 @@ viewDiv model =
                 |> List.concat
 
         clipPathDefs =
-            lazyclipPathDefs model.image model.edgePoints
+            lazyclipPathDefs model.image model.edges
     in
     [ Html.Keyed.node
         "div"
@@ -200,18 +200,18 @@ viewDiv model =
     ]
 
 
-lazyclipPathDefs : JigsawImage -> A.Array EdgePoints -> Svg.Svg msg
+lazyclipPathDefs : JigsawImage -> A.Array (List Edge) -> Svg.Svg msg
 lazyclipPathDefs =
-    Svg.Lazy.lazy2 (\image points -> Svg.defs [] (definePieceClipPaths image points))
+    Svg.Lazy.lazy2 (\image edges -> Svg.defs [] (definePieceClipPaths image edges))
 
 
-definePieceClipPaths : JigsawImage -> A.Array EdgePoints -> List (Svg msg)
-definePieceClipPaths image edgePoints =
-    List.map (piecePath image edgePoints) (List.range 0 (image.xpieces * image.ypieces - 1))
+definePieceClipPaths : JigsawImage -> A.Array (List Edge) -> List (Svg msg)
+definePieceClipPaths image edges =
+    List.map2 (piecePath image) (A.toList edges)  (List.range 0 (image.xpieces * image.ypieces - 1))
 
 
-piecePath : JigsawImage -> A.Array EdgePoints -> Int -> Svg msg
-piecePath image edgePoints id =
+piecePath : JigsawImage -> List Edge -> Int -> Svg msg
+piecePath image edges id =
     let
         w =
             image.scale * toFloat (image.width // image.xpieces)
@@ -223,8 +223,7 @@ piecePath image edgePoints id =
             Point (floor (w / 2)) (floor (h / 2))
 
         curve =
-            Edge.pieceEdges image.xpieces image.ypieces id edgePoints
-            |> SvgUtil.pieceToSvg
+            SvgUtil.pieceToSvg edges
 
         move =
             "translate(" ++ Point.toString offset ++ ") "
