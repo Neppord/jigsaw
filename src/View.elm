@@ -200,14 +200,14 @@ viewDiv model =
     ]
 
 
-lazyclipPathDefs : JigsawImage -> A.Array (List Edge) -> Svg.Svg msg
+lazyclipPathDefs : JigsawImage -> List (List Edge) -> Svg.Svg msg
 lazyclipPathDefs =
     Svg.Lazy.lazy2 (\image edges -> Svg.defs [] (definePieceClipPaths image edges))
 
 
-definePieceClipPaths : JigsawImage -> A.Array (List Edge) -> List (Svg msg)
+definePieceClipPaths : JigsawImage -> List (List Edge) -> List (Svg msg)
 definePieceClipPaths image edges =
-    List.map2 (piecePath image) (A.toList edges)  (List.range 0 (image.xpieces * image.ypieces - 1))
+    List.map2 (piecePath image) edges  (List.range 0 (image.xpieces * image.ypieces - 1))
 
 
 piecePath : JigsawImage -> List Edge -> Int -> Svg msg

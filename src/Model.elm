@@ -39,7 +39,7 @@ type alias Model =
     , selectionBox : SelectionBox
     , debug : String
     , seed : Random.Seed
-    , edges : A.Array (List Edge)
+    , edges : List (List Edge)
     , visibleGroups : S.Set Int
     , keyboard : Keyboard
     }

@@ -91,7 +91,6 @@ resetModel image seed =
     , edges =
         List.range 0 (image.xpieces * image.ypieces - 1)
             |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id edgePoints)
-            |> Array.fromList
     , visibleGroups = S.fromList [ -1 ]
     , keyboard = { shift = False, ctrl = False }
     }
