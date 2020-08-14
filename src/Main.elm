@@ -71,7 +71,7 @@ resetModel : JigsawImage -> Random.Seed -> Model
 resetModel image seed =
     let
         ( w, h ) =
-            ( 1800, 1100 )
+            ( image.width, image.height )
 
         ( nx, ny ) =
             ( image.xpieces, image.ypieces )
@@ -238,23 +238,22 @@ updateKeyChange isDown key model =
 
         newPieceGroups visibilityGroup =
             D.map (assignVisibilityGroup visibilityGroup) model.pieceGroups
-
-        toggleVisibilityOf group number =
-            if S.member number group then
-                S.remove number group
-
-            else
-                S.insert number group
+            
     in
     case key of
         Number x ->
             case ( model.keyboard.ctrl, isDown ) of
                 ( True, True ) ->
-                    ( { model | pieceGroups = newPieceGroups x }, Cmd.none )
+                    ( { model | pieceGroups = newPieceGroups x }
+                    , Cmd.none )
 
                 ( False, True ) ->
                     ( { model
-                        | visibleGroups = toggleVisibilityOf model.visibleGroups x
+                        | visibleGroups = 
+                            if S.member x model.visibleGroups then
+                                S.remove x model.visibleGroups
+                            else
+                                S.insert x model.visibleGroups
                       }
                     , Cmd.none
                     )
