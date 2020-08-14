@@ -207,56 +207,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         KeyChanged isDown key ->
-            let
-                assignVisibilityGroup visibilityGroup _ pg =
-                    if pg.isSelected && pg.visibilityGroup /= visibilityGroup then
-                        { pg | visibilityGroup = visibilityGroup, isSelected = False }
-
-                    else
-                        pg
-
-                newPieceGroups visibilityGroup =
-                    D.map (assignVisibilityGroup visibilityGroup) model.pieceGroups
-
-                toggleVisibilityOf group number =
-                    if S.member number group then
-                        S.remove number group
-
-                    else
-                        S.insert number group
-            in
-            case key of
-                Number x ->
-                    case ( model.keyboard.ctrl, isDown ) of
-                        ( True, True ) ->
-                            ( { model | pieceGroups = newPieceGroups x }, Cmd.none )
-
-                        ( False, True ) ->
-                            ( { model
-                                | visibleGroups = toggleVisibilityOf model.visibleGroups x
-                              }
-                            , Cmd.none
-                            )
-
-                        ( _, False ) ->
-                            ( model, Cmd.none )
-
-                Control ->
-                    let
-                        newKeyboard keyboard =
-                            { keyboard | ctrl = isDown }
-                    in
-                    ( { model | keyboard = newKeyboard model.keyboard }, Cmd.none )
-
-                Shift ->
-                    let
-                        newKeyboard keyboard =
-                            { keyboard | shift = isDown }
-                    in
-                    ( { model | keyboard = newKeyboard model.keyboard }, Cmd.none )
-
-                Other ->
-                    ( model, Cmd.none )
+            updateKeyChange isDown key model
 
         Scramble ->
             let
@@ -266,6 +217,70 @@ update msg model =
             ( newModel, Cmd.none )
 
         MouseDown coordinate keyboard ->
+            updateMouseDown coordinate keyboard model
+
+        MouseUp ->
+            updateMouseUp model
+
+        MouseMove newPos ->
+            updateMoveMouse newPos model
+
+
+updateKeyChange : Bool -> Key -> Model -> ( Model, Cmd msg )
+updateKeyChange isDown key model =
+    let
+        assignVisibilityGroup visibilityGroup _ pg =
+            if pg.isSelected && pg.visibilityGroup /= visibilityGroup then
+                { pg | visibilityGroup = visibilityGroup, isSelected = False }
+
+            else
+                pg
+
+        newPieceGroups visibilityGroup =
+            D.map (assignVisibilityGroup visibilityGroup) model.pieceGroups
+
+        toggleVisibilityOf group number =
+            if S.member number group then
+                S.remove number group
+
+            else
+                S.insert number group
+    in
+    case key of
+        Number x ->
+            case ( model.keyboard.ctrl, isDown ) of
+                ( True, True ) ->
+                    ( { model | pieceGroups = newPieceGroups x }, Cmd.none )
+
+                ( False, True ) ->
+                    ( { model
+                        | visibleGroups = toggleVisibilityOf model.visibleGroups x
+                      }
+                    , Cmd.none
+                    )
+
+                ( _, False ) ->
+                    ( model, Cmd.none )
+
+        Control ->
+            let
+                newKeyboard keyboard =
+                    { keyboard | ctrl = isDown }
+            in
+            ( { model | keyboard = newKeyboard model.keyboard }, Cmd.none )
+
+        Shift ->
+            let
+                newKeyboard keyboard =
+                    { keyboard | shift = isDown }
+            in
+            ( { model | keyboard = newKeyboard model.keyboard }, Cmd.none )
+
+        Other ->
+            ( model, Cmd.none )
+
+updateMouseDown : Point -> Keyboard -> Model -> (Model, Cmd Msg)
+updateMouseDown coordinate keyboard model =
             let
                 clickedPieceGroup =
                     D.values model.pieceGroups
@@ -292,46 +307,44 @@ update msg model =
             in
             ( newModel, Cmd.none )
 
-        MouseUp ->
-            let
-                newModel =
-                    case model.selectionBox of
-                        Normal _ ->
+updateMouseUp : Model -> ( Model, Cmd Msg )
+updateMouseUp model =
+    let
+        newModel =
+            case model.selectionBox of
+                Normal _ ->
+                    { model
+                        | selectionBox = NullBox
+                        , cursor = Nothing
+                        , selected = currentSelection model.pieceGroups
+                    }
+
+                Inverted _ ->
+                    { model
+                        | selectionBox = NullBox
+                        , cursor = Nothing
+                        , selected = currentSelection model.pieceGroups
+                    }
+
+                NullBox ->
+                    case model.selected of
+                        Multiple ->
+                            { model | cursor = Nothing }
+
+                        NullSelection ->
+                            { model | cursor = Nothing }
+
+                        Single id ->
                             { model
-                                | selectionBox = NullBox
-                                , cursor = Nothing
-                                , selected = currentSelection model.pieceGroups
+                                | cursor = Nothing
+                                , selected = NullSelection
+                                , pieceGroups =
+                                    D.get id model.pieceGroups
+                                        |> Maybe.withDefault defaultPieceGroup
+                                        |> snapToNeighbour model
                             }
-
-                        Inverted _ ->
-                            { model
-                                | selectionBox = NullBox
-                                , cursor = Nothing
-                                , selected = currentSelection model.pieceGroups
-                            }
-
-                        NullBox ->
-                            case model.selected of
-                                Multiple ->
-                                    { model | cursor = Nothing }
-
-                                NullSelection ->
-                                    { model | cursor = Nothing }
-
-                                Single id ->
-                                    { model
-                                        | cursor = Nothing
-                                        , selected = NullSelection
-                                        , pieceGroups =
-                                            D.get id model.pieceGroups
-                                                |> Maybe.withDefault defaultPieceGroup
-                                                |> snapToNeighbour model
-                                    }
-            in
-            ( newModel, Cmd.none )
-
-        MouseMove newPos ->
-            updateMoveMouse newPos model
+    in
+    ( newModel, Cmd.none )
 
 
 updateMoveMouse : Point -> Model -> ( Model, Cmd Msg )
