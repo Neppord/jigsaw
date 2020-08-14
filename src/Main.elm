@@ -4,6 +4,7 @@ import Browser
 import Browser.Events
 import Dict as D
 import Edge exposing (generateEdgePoints)
+import Html exposing (a)
 import JigsawImage
     exposing
         ( JigsawImage
@@ -225,6 +226,15 @@ update msg model =
         MouseMove newPos ->
             updateMoveMouse newPos model
 
+{- this could be replaced from Set.Extra -}
+sToggle : comparable -> S.Set comparable -> S.Set comparable
+sToggle a set =
+    if S.member a set then
+        S.remove a set
+
+    else
+        S.insert a set
+
 
 updateKeyChange : Bool -> Key -> Model -> ( Model, Cmd msg )
 updateKeyChange isDown key model =
@@ -238,22 +248,18 @@ updateKeyChange isDown key model =
 
         newPieceGroups visibilityGroup =
             D.map (assignVisibilityGroup visibilityGroup) model.pieceGroups
-            
     in
     case key of
         Number x ->
             case ( model.keyboard.ctrl, isDown ) of
                 ( True, True ) ->
                     ( { model | pieceGroups = newPieceGroups x }
-                    , Cmd.none )
+                    , Cmd.none
+                    )
 
                 ( False, True ) ->
                     ( { model
-                        | visibleGroups = 
-                            if S.member x model.visibleGroups then
-                                S.remove x model.visibleGroups
-                            else
-                                S.insert x model.visibleGroups
+                        | visibleGroups = sToggle x model.visibleGroups
                       }
                     , Cmd.none
                     )
@@ -278,33 +284,35 @@ updateKeyChange isDown key model =
         Other ->
             ( model, Cmd.none )
 
-updateMouseDown : Point -> Keyboard -> Model -> (Model, Cmd Msg)
+
+updateMouseDown : Point -> Keyboard -> Model -> ( Model, Cmd Msg )
 updateMouseDown coordinate keyboard model =
-            let
-                clickedPieceGroup =
-                    D.values model.pieceGroups
-                        |> List.filter (isPointInsidePieceGroup model.visibleGroups model.image coordinate)
-                        |> List.foldl
-                            (\a b ->
-                                if a.zlevel > b.zlevel then
-                                    a
+    let
+        clickedPieceGroup =
+            D.values model.pieceGroups
+                |> List.filter (isPointInsidePieceGroup model.visibleGroups model.image coordinate)
+                |> List.foldl
+                    (\a b ->
+                        if a.zlevel > b.zlevel then
+                            a
 
-                                else
-                                    b
-                            )
-                            defaultPieceGroup
+                        else
+                            b
+                    )
+                    defaultPieceGroup
 
-                clickedOnBackground =
-                    clickedPieceGroup.id == -10
+        clickedOnBackground =
+            clickedPieceGroup.id == -10
 
-                newModel =
-                    if clickedOnBackground then
-                        startSelectionBox model coordinate keyboard
+        newModel =
+            if clickedOnBackground then
+                startSelectionBox model coordinate keyboard
 
-                    else
-                        selectPieceGroup model clickedPieceGroup.id coordinate keyboard
-            in
-            ( newModel, Cmd.none )
+            else
+                selectPieceGroup model clickedPieceGroup.id coordinate keyboard
+    in
+    ( newModel, Cmd.none )
+
 
 updateMouseUp : Model -> ( Model, Cmd Msg )
 updateMouseUp model =
