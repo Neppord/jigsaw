@@ -4,7 +4,6 @@ import Browser
 import Browser.Events
 import Dict as D
 import Edge exposing (generateEdgePoints)
-import Html exposing (a)
 import JigsawImage
     exposing
         ( JigsawImage
