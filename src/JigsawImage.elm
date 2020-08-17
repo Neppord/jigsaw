@@ -63,16 +63,22 @@ createPieceGroup image id pos zlevel =
                 == 1
 
         possibleNeighbours i =
-             [ i - image.xpieces, i - 1, i + 1, i + image.xpieces ]
+            [ i - image.xpieces, i - 1, i + 1, i + image.xpieces ]
+
+        neighbours =
+            possibleNeighbours id
+                |> S.fromList
+                |> S.filter (isRealNeighbour id)
+
+        position =
+            Point.sub pos (pieceIdToOffset image id)
     in
-    { position = Point.sub pos (pieceIdToOffset image id)
+    { position = position
     , isSelected = False
     , id = id
     , zlevel = zlevel
     , members = [ id ]
-    , neighbours =
-        S.filter (isRealNeighbour id) <|
-            S.fromList (possibleNeighbours id)
+    , neighbours = neighbours
     , visibilityGroup = -1
     }
 
@@ -81,7 +87,7 @@ createPieceGroups : JigsawImage -> List Point -> List Int -> D.Dict Int PieceGro
 createPieceGroups image points levels =
     let
         numberOfPieces =
-            image.xpieces * image.ypieces 
+            image.xpieces * image.ypieces
 
         ids =
             List.range 0 (numberOfPieces - 1)
@@ -99,11 +105,10 @@ createPieceGroups image points levels =
 
             else
                 levels
-
     in
     List.map3 (createPieceGroup image) ids positions zlevels
-    |> List.map2 Tuple.pair ids
-    |> D.fromList
+        |> List.map2 Tuple.pair ids
+        |> D.fromList
 
 
 pieceIdToOffset : JigsawImage -> Int -> Point
