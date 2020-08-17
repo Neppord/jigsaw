@@ -1,6 +1,7 @@
 module JigsawImage exposing (..)
 
 import Dict as D
+import Math.Matrix4 exposing (identity)
 import Point exposing (Point)
 import Random
 import Set as S
@@ -48,64 +49,61 @@ shufflePiecePositions w h image =
     Point.randomPoints n xmin xmax ymin ymax
 
 
-createPieceGroups : JigsawImage -> List Point -> List Int -> D.Dict Int PieceGroup
-createPieceGroups image points levels =
+createPieceGroup : JigsawImage -> Int -> Point -> Int -> PieceGroup
+createPieceGroup image id pos zlevel =
     let
-        nx =
-            image.xpieces
-
-        ny =
-            image.ypieces
-
-        n =
-            nx * ny
-
-        range =
-            List.range 0 (n - 1)
-
-        positions =
-            if List.length points < n then
-                List.map (pieceIdToOffset image) range
-
-            else
-                points
-
-        zlevels =
-            if List.length levels < n then
-                range
-
-            else
-                levels
-
-        neighbourOffsets =
-            [ -nx, -1, 1, nx ]
-
-        possibleNeighbours i =
-            List.map ((+) i) neighbourOffsets
-
         isRealNeighbour i x =
             x
                 >= 0
                 && x
-                < n
+                < (image.xpieces * image.ypieces)
                 && Point.taxiDist
                     (pieceIdToPoint i image.xpieces)
                     (pieceIdToPoint x image.xpieces)
                 == 1
 
-        onePieceGroup i pos zlevel =
-            ( i
-            , { position = Point.sub pos (pieceIdToOffset image i)
-              , isSelected = False
-              , id = i
-              , zlevel = zlevel
-              , members = [ i ]
-              , neighbours = S.filter (isRealNeighbour i) <| S.fromList (possibleNeighbours i)
-              , visibilityGroup = -1
-              }
-            )
+        possibleNeighbours i =
+             [ i - image.xpieces, i - 1, i + 1, i + image.xpieces ]
     in
-    D.fromList <| List.map3 onePieceGroup range positions zlevels
+    { position = Point.sub pos (pieceIdToOffset image id)
+    , isSelected = False
+    , id = id
+    , zlevel = zlevel
+    , members = [ id ]
+    , neighbours =
+        S.filter (isRealNeighbour id) <|
+            S.fromList (possibleNeighbours id)
+    , visibilityGroup = -1
+    }
+
+
+createPieceGroups : JigsawImage -> List Point -> List Int -> D.Dict Int PieceGroup
+createPieceGroups image points levels =
+    let
+        numberOfPieces =
+            image.xpieces * image.ypieces 
+
+        ids =
+            List.range 0 (numberOfPieces - 1)
+
+        positions =
+            if List.length points < numberOfPieces then
+                List.map (pieceIdToOffset image) ids
+
+            else
+                points
+
+        zlevels =
+            if List.length levels < numberOfPieces then
+                ids
+
+            else
+                levels
+
+    in
+    List.map3 (createPieceGroup image) ids positions zlevels
+    |> List.map2 Tuple.pair ids
+    |> D.fromList
 
 
 pieceIdToOffset : JigsawImage -> Int -> Point
