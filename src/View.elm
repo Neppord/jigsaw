@@ -142,13 +142,11 @@ pieceDiv image pg pid =
                 "black"
     in
     Html.div
-        [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
-        , Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
-        , Html.Attributes.style "position" "absolute"
-        , Html.Attributes.style "transform" ("translate(" ++ left ++ "," ++ top ++ ")")
+        [ Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
         ]
         [ Html.div
-            [ Html.Attributes.style "width" <| String.fromInt w ++ "px"
+            [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
+            , Html.Attributes.style "width" <| String.fromInt w ++ "px"
             , Html.Attributes.style "height" <| String.fromInt h ++ "px"
             , Html.Attributes.style "clipPath" <| clipPathRef pid
             , Html.Attributes.style "background-image" <| "url('" ++ image.path ++ "')"
@@ -162,6 +160,8 @@ pieceDiv image pg pid =
                     ++ "px "
                     ++ String.fromInt (h // 4 - offset.y)
                     ++ "px"
+            , Html.Attributes.style "position" "absolute"
+            , Html.Attributes.style "transform" ("translate(" ++ left ++ "," ++ top ++ ")")
             ]
             []
         ]
