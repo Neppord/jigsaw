@@ -141,31 +141,37 @@ pieceDiv image pg pid =
             else
                 "black"
     in
-    Html.div
-        [ Html.Attributes.style "filter" <| "drop-shadow(0px 0px 2px " ++ color ++ ")"
+    [ Html.div
+        [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
+        , Html.Attributes.style "width" <| String.fromInt w ++ "px"
+        , Html.Attributes.style "height" <| String.fromInt h ++ "px"
+        , Html.Attributes.style "clipPath" <| clipPathRef pid
+        , Html.Attributes.style "background-image" <| "url('" ++ image.path ++ "')"
+        , Html.Attributes.style "background-size" <|
+            String.fromInt (floor <| image.scale * toFloat image.width)
+                ++ "px "
+                ++ String.fromInt (floor <| image.scale * toFloat image.height)
+                ++ "px"
+        , Html.Attributes.style "background-position" <|
+            String.fromInt (w // 4 - offset.x)
+                ++ "px "
+                ++ String.fromInt (h // 4 - offset.y)
+                ++ "px"
+        , Html.Attributes.style "position" "absolute"
+        , Html.Attributes.style "transform" ("translate(" ++ left ++ "," ++ top ++ ")")
         ]
-        [ Html.div
-            [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
-            , Html.Attributes.style "width" <| String.fromInt w ++ "px"
-            , Html.Attributes.style "height" <| String.fromInt h ++ "px"
-            , Html.Attributes.style "clipPath" <| clipPathRef pid
-            , Html.Attributes.style "background-image" <| "url('" ++ image.path ++ "')"
-            , Html.Attributes.style "background-size" <|
-                String.fromInt (floor <| image.scale * toFloat image.width)
-                    ++ "px "
-                    ++ String.fromInt (floor <| image.scale * toFloat image.height)
-                    ++ "px"
-            , Html.Attributes.style "background-position" <|
-                String.fromInt (w // 4 - offset.x)
-                    ++ "px "
-                    ++ String.fromInt (h // 4 - offset.y)
-                    ++ "px"
-            , Html.Attributes.style "position" "absolute"
-            , Html.Attributes.style "transform" ("translate(" ++ left ++ "," ++ top ++ ")")
-            ]
-            []
-        ]
+        []
+    ] |> shadow color
+        
 
+shadow : String -> List (Html msg) -> Html msg
+shadow color = 
+    Html.div
+            [ Html.Attributes.style "filter" <|
+                "drop-shadow(0px 0px 2px "
+                    ++ color
+                    ++ ")"
+            ]
 
 viewDiv : Model -> List (Html Msg)
 viewDiv model =
