@@ -15,6 +15,7 @@ import Model
         , Keyboard
         , Model
         , Msg(..)
+        , NewModel(..)
         , Selected(..)
         , SelectionBox(..)
         , boxBottomRight
@@ -23,7 +24,6 @@ import Model
         , init
         , toNewModel
         , toOldModel
-        , NewModel(..)
         )
 import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
@@ -290,120 +290,115 @@ updateMouseUp model =
 
 updateMoveMouse : Point -> Model -> ( Model, Cmd Msg )
 updateMoveMouse newPos model =
-    case ( model.cursor, model.selectionBox ) of
-        ( Nothing, _ ) ->
-            ( model, Cmd.none )
-
-        ( Just oldPos, NullBox ) ->
-            ( model
-                |> toNewModel
-                |> (\m ->
-                        case m of
-                            Moving data ->
-                                Moving { data | current = newPos }
-
-                            _ ->
-                                m
-                   )
-                |> toOldModel
+    case toNewModel model of
+        Model.Moving data ->
+            ( Model.Moving { data | current = newPos }
+                |> Model.toOldModel
             , Cmd.none
             )
+        Model.Identity _ ->
+            case ( model.cursor, model.selectionBox ) of
+                ( Nothing, _ ) ->
+                    ( model, Cmd.none )
 
-        ( Just _, Normal box ) ->
-            let
-                tl =
-                    boxTopLeft box
+                ( Just _, NullBox ) ->
+                    Debug.todo "This is a moving model and should not happen"
 
-                br =
-                    boxBottomRight box
-
-                selectPiece _ pg =
+                ( Just _, Normal box ) ->
                     let
-                        isVisible =
-                            S.member pg.visibilityGroup model.visibleGroups
+                        tl =
+                            boxTopLeft box
 
-                        originallySelected =
-                            S.member pg.id box.selectedIds
+                        br =
+                            boxBottomRight box
 
-                        insideBoxNow =
-                            isPieceGroupInsideBox model.image tl br pg
+                        selectPiece _ pg =
+                            let
+                                isVisible =
+                                    S.member pg.visibilityGroup model.visibleGroups
 
-                        newSelectionStatus =
-                            if isVisible then
-                                if originallySelected && insideBoxNow then
-                                    True
+                                originallySelected =
+                                    S.member pg.id box.selectedIds
 
-                                else if originallySelected && not insideBoxNow then
-                                    True
+                                insideBoxNow =
+                                    isPieceGroupInsideBox model.image tl br pg
 
-                                else if not originallySelected && insideBoxNow then
-                                    True
+                                newSelectionStatus =
+                                    if isVisible then
+                                        if originallySelected && insideBoxNow then
+                                            True
 
-                                else
-                                    False
+                                        else if originallySelected && not insideBoxNow then
+                                            True
 
-                            else
-                                False
+                                        else if not originallySelected && insideBoxNow then
+                                            True
+
+                                        else
+                                            False
+
+                                    else
+                                        False
+                            in
+                            { pg | isSelected = newSelectionStatus }
+
+                        updatedPieceGroups =
+                            D.map selectPiece model.pieceGroups
                     in
-                    { pg | isSelected = newSelectionStatus }
+                    ( { model
+                        | selectionBox = Normal { box | movingCorner = newPos }
+                        , pieceGroups = updatedPieceGroups
+                      }
+                    , Cmd.none
+                    )
 
-                updatedPieceGroups =
-                    D.map selectPiece model.pieceGroups
-            in
-            ( { model
-                | selectionBox = Normal { box | movingCorner = newPos }
-                , pieceGroups = updatedPieceGroups
-              }
-            , Cmd.none
-            )
-
-        ( Just _, Inverted box ) ->
-            let
-                tl =
-                    boxTopLeft box
-
-                br =
-                    boxBottomRight box
-
-                selectPiece _ pg =
+                ( Just _, Inverted box ) ->
                     let
-                        isVisible =
-                            S.member pg.visibilityGroup model.visibleGroups
+                        tl =
+                            boxTopLeft box
 
-                        originallySelected =
-                            S.member pg.id box.selectedIds
+                        br =
+                            boxBottomRight box
 
-                        insideBoxNow =
-                            isPieceGroupInsideBox model.image tl br pg
+                        selectPiece _ pg =
+                            let
+                                isVisible =
+                                    S.member pg.visibilityGroup model.visibleGroups
 
-                        newSelectionStatus =
-                            if isVisible then
-                                if originallySelected && insideBoxNow then
-                                    False
+                                originallySelected =
+                                    S.member pg.id box.selectedIds
 
-                                else if originallySelected && not insideBoxNow then
-                                    True
+                                insideBoxNow =
+                                    isPieceGroupInsideBox model.image tl br pg
 
-                                else if not originallySelected && insideBoxNow then
-                                    True
+                                newSelectionStatus =
+                                    if isVisible then
+                                        if originallySelected && insideBoxNow then
+                                            False
 
-                                else
-                                    False
+                                        else if originallySelected && not insideBoxNow then
+                                            True
 
-                            else
-                                False
+                                        else if not originallySelected && insideBoxNow then
+                                            True
+
+                                        else
+                                            False
+
+                                    else
+                                        False
+                            in
+                            { pg | isSelected = newSelectionStatus }
+
+                        updatedPieceGroups =
+                            D.map selectPiece model.pieceGroups
                     in
-                    { pg | isSelected = newSelectionStatus }
-
-                updatedPieceGroups =
-                    D.map selectPiece model.pieceGroups
-            in
-            ( { model
-                | selectionBox = Inverted { box | movingCorner = newPos }
-                , pieceGroups = updatedPieceGroups
-              }
-            , Cmd.none
-            )
+                    ( { model
+                        | selectionBox = Inverted { box | movingCorner = newPos }
+                        , pieceGroups = updatedPieceGroups
+                      }
+                    , Cmd.none
+                    )
 
 
 selectPieceGroup : Model -> Int -> Point -> Keyboard -> Model
