@@ -575,31 +575,24 @@ snapToNeighbour model selected =
         neighbourFromId id =
             Maybe.withDefault defaultPieceGroup <|
                 D.get id model.pieceGroups
+        
+        isVisible : PieceGroup -> Bool
+        isVisible pg = S.member pg.visibilityGroup model.visibleGroups
 
         distanceToSelected : List ( Float, PieceGroup )
         distanceToSelected =
             selected.neighbours
                 |> S.toList
                 |> List.map neighbourFromId
+                |> List.filter isVisible
                 |> List.map (\x -> (x, x))
                 |> List.map (Tuple.mapFirst (PieceGroup.distance selected))
-
-        smallEnough : ( Float, a ) -> Bool
-        smallEnough ( dx, _ ) =
-            dx < model.snapDistance
 
         closeNeighbour : Maybe PieceGroup
         closeNeighbour =
             distanceToSelected
-                |> takeFirst smallEnough 
-                |> Maybe.andThen
-                    (\( _, neighbour ) ->
-                        if S.member neighbour.visibilityGroup model.visibleGroups then
-                            Just neighbour
-
-                        else
-                            Nothing
-                    )
+                |> takeFirst (Tuple.first >> (>=) model.snapDistance) 
+                |> Maybe.map Tuple.second
     in
     case closeNeighbour of
         Just neighbour ->
