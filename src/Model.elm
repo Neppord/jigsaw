@@ -31,7 +31,6 @@ import Point exposing (Point)
 import Random
 import Random.List
 import Set as S
-import Html.Attributes exposing (selected)
 
 
 type Msg
@@ -69,14 +68,14 @@ type NewModel
     = Identity 
         { oldModel : Model
         , selected : List PieceGroup
-        , unSelected : Dict.Dict Int PieceGroup
+        , unSelected : List PieceGroup
         }
     | Moving
         { oldModel : Model
         , start : Point
         , current : Point
         , selected : List PieceGroup
-        , unSelected : Dict.Dict Int PieceGroup
+        , unSelected : List PieceGroup
         }
     | SelectingWithBox
         { oldModel : Model
@@ -84,6 +83,7 @@ type NewModel
         , current : Point
         , within : List PieceGroup
         , alreadySelected : List PieceGroup
+        , unSelected : List PieceGroup
         }
     | DeselectingWithBox
         { oldModel : Model
@@ -91,6 +91,7 @@ type NewModel
         , current : Point
         , within : List PieceGroup
         , alreadySelected : List PieceGroup
+        , unSelected : List PieceGroup
         }
 
 
@@ -99,6 +100,7 @@ toNewModel oldModel =
     let
         ( selected, unSelected ) =
             Dict.partition (always .isSelected) oldModel.pieceGroups
+            |> Tuple.mapBoth Dict.values Dict.values
     in
     case ( oldModel.cursor, oldModel.selectionBox ) of
         ( Just current, NullBox ) ->
@@ -106,20 +108,44 @@ toNewModel oldModel =
                 { oldModel = oldModel
                 , start = current
                 , current = current
-                , selected = Dict.values selected
+                , selected = selected
                 , unSelected = unSelected
                 }
 
         ( Just _, Normal box ) ->
+            let
+                within =
+                    oldModel.pieceGroups
+                        |> Dict.values
+                        |> List.filter
+                            (\pg -> S.member pg.visibilityGroup oldModel.visibleGroups)
+                        |> List.filter
+                            (isPieceGroupInsideBox
+                                oldModel.image
+                                (boxTopLeft box)
+                                (boxBottomRight box)
+                            )
+                alreadySelected = 
+                    oldModel.pieceGroups
+                        |> Dict.values
+                        |> List.filter (\pg -> S.member pg.id box.selectedIds)
+                notSelected = 
+                    oldModel.pieceGroups
+                        |> Dict.values
+                        |> List.filter (\pg -> not <| S.member pg.id box.selectedIds)
+            in
             SelectingWithBox
                 { oldModel = oldModel
                 , start = box.staticCorner
                 , current = box.movingCorner
-                , alreadySelected =
-                    oldModel.pieceGroups
-                        |> Dict.values
-                        |> List.filter (\pg -> S.member pg.id box.selectedIds)
-                , within =
+                , alreadySelected = alreadySelected
+                , within = within
+                , unSelected = notSelected
+                }
+
+        ( Just _, Inverted box ) ->
+            let
+                within =
                     oldModel.pieceGroups
                         |> Dict.values
                         |> List.filter
@@ -130,34 +156,28 @@ toNewModel oldModel =
                                 (boxTopLeft box)
                                 (boxBottomRight box)
                             )
-                }
-
-        ( Just _, Inverted box ) ->
+                alreadySelected = 
+                    oldModel.pieceGroups
+                        |> Dict.values
+                        |> List.filter (\pg -> S.member pg.id box.selectedIds)
+                notSelected = 
+                    oldModel.pieceGroups
+                        |> Dict.values
+                        |> List.filter (\pg -> not <| S.member pg.id box.selectedIds)
+            in
             DeselectingWithBox
                 { oldModel = oldModel
                 , start = box.staticCorner
                 , current = box.movingCorner
-                , alreadySelected =
-                    oldModel.pieceGroups
-                        |> Dict.values
-                        |> List.filter (\pg -> S.member pg.id box.selectedIds)
-                , within =
-                    oldModel.pieceGroups
-                        |> Dict.values
-                        |> List.filter
-                            (\pg -> S.member pg.visibilityGroup oldModel.visibleGroups)
-                        |> List.filter
-                            (isPieceGroupInsideBox
-                                oldModel.image
-                                (boxTopLeft box)
-                                (boxBottomRight box)
-                            )
+                , alreadySelected = alreadySelected
+                , within = within
+                , unSelected = notSelected
                 }
 
         ( _, _ ) ->
             Identity 
                 { oldModel = oldModel
-                , selected = selected |> Dict.values
+                , selected = selected
                 , unSelected = unSelected
                 }
 
@@ -173,9 +193,9 @@ toOldModel newModel =
                 | pieceGroups =
                     selected
                         |> List.map (PieceGroup.move (Point.sub current start))
+                        |> List.append unSelected
                         |> List.map (\pg -> ( pg.id, pg ))
                         |> Dict.fromList
-                        |> Dict.union unSelected
                 , cursor = Just current
             }
 
