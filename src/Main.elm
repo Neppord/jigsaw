@@ -3,14 +3,10 @@ module Main exposing (main)
 import Browser
 import Browser.Events
 import Dict as D
-import Edge exposing (generateEdgePoints)
 import JigsawImage
     exposing
-        ( JigsawImage
-        , createPieceGroups
-        , isPieceGroupInsideBox
+        ( isPieceGroupInsideBox
         , isPointInsidePieceGroup
-        , shufflePiecePositions
         )
 import Json.Decode
 import Model
@@ -18,6 +14,7 @@ import Model
         ( Key(..)
         , Keyboard
         , Model
+        , init
         , Msg(..)
         , Selected(..)
         , SelectionBox(..)
@@ -27,8 +24,6 @@ import Model
         )
 import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
-import Random
-import Random.List
 import Set as S
 import Util exposing (takeFirst)
 import View exposing (view)
@@ -42,75 +37,6 @@ main =
         , view = view
         , subscriptions = subscriptions
         }
-
-
-
--- MODEL
--- INIT
-
-
-init : () -> ( Model, Cmd Msg )
-init () =
-    let
-        image =
-            { path = "../resources/kitten.png"
-            , width = 533
-            , height = 538
-            , xpieces = 4
-            , ypieces = 4
-            , scale = 1.0
-            }
-
-        model =
-            resetModel image (Random.initialSeed 0)
-    in
-    ( model, Cmd.none )
-
-
-resetModel : JigsawImage -> Random.Seed -> Model
-resetModel image seed =
-    let
-        ( w, h ) =
-            ( image.width, image.height )
-
-        ( nx, ny ) =
-            ( image.xpieces, image.ypieces )
-
-        numberOfEdges =
-            2 * nx * ny - nx - ny
-
-        ( positions, seed1 ) =
-            Random.step (shufflePiecePositions w h image) seed
-
-        ( zlevels, seed2 ) =
-            shuffleZLevels (nx * ny) seed1
-
-        ( edgePoints, seed3 ) =
-            Random.step (generateEdgePoints numberOfEdges) seed2
-    in
-    { cursor = Nothing
-    , pieceGroups = createPieceGroups image positions zlevels
-    , selected = NullSelection
-    , maxZLevel = nx * ny
-    , image = image
-    , width = w
-    , height = h
-    , snapDistance = 30.0
-    , selectionBox = NullBox
-    , seed = seed3
-    , edges =
-        List.range 0 (image.xpieces * image.ypieces - 1)
-            |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id edgePoints)
-    , visibleGroups = S.fromList [ -1 ]
-    , keyboard = { shift = False, ctrl = False }
-    }
-
-
-shuffleZLevels : Int -> Random.Seed -> ( List Int, Random.Seed )
-shuffleZLevels n seed =
-    Random.step (Random.List.shuffle <| List.range 0 (n - 1)) seed
-
-
 
 -- SUBSCRIPTIONS
 
@@ -212,7 +138,7 @@ update msg model =
         Scramble ->
             let
                 newModel =
-                    resetModel model.image model.seed
+                    Model.resetModel model.image model.seed
             in
             ( newModel, Cmd.none )
 
@@ -575,11 +501,12 @@ snapToNeighbour model selected =
         neighbourFromId id =
             Maybe.withDefault defaultPieceGroup <|
                 D.get id model.pieceGroups
-        
-        isVisible : PieceGroup -> Bool
-        isVisible pg = S.member pg.visibilityGroup model.visibleGroups
 
-        visibleNeighbours = 
+        isVisible : PieceGroup -> Bool
+        isVisible pg =
+            S.member pg.visibilityGroup model.visibleGroups
+
+        visibleNeighbours =
             selected.neighbours
                 |> S.toList
                 |> List.map neighbourFromId
@@ -588,13 +515,13 @@ snapToNeighbour model selected =
         distanceToSelected : List ( Float, PieceGroup )
         distanceToSelected =
             visibleNeighbours
-                |> List.map (\x -> (x, x))
+                |> List.map (\x -> ( x, x ))
                 |> List.map (Tuple.mapFirst (PieceGroup.distance selected))
 
         closeNeighbour : Maybe PieceGroup
         closeNeighbour =
             distanceToSelected
-                |> takeFirst (Tuple.first >> (>=) model.snapDistance) 
+                |> takeFirst (Tuple.first >> (>=) model.snapDistance)
                 |> Maybe.map Tuple.second
     in
     case closeNeighbour of
