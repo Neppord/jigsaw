@@ -585,7 +585,10 @@ snapToNeighbour model selected =
 
         distanceToSelected : List ( Float, PieceGroup )
         distanceToSelected =
-            List.map (neighbourDistance selected << neighbourFromId) (S.toList selected.neighbours)
+            selected.neighbours
+                |> S.toList
+                |> List.map neighbourFromId
+                |> List.map (neighbourDistance selected)
 
         smallEnough : ( Float, a ) -> Bool
         smallEnough ( dx, _ ) =
