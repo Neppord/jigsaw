@@ -601,22 +601,6 @@ snapToNeighbour model selected =
                         else
                             Nothing
                     )
-
-        merge : PieceGroup -> PieceGroup -> PieceGroup
-        merge a b =
-            let
-                newMembers =
-                    b.members ++ a.members
-
-                newNeighbours =
-                    S.diff (S.union b.neighbours a.neighbours) (S.fromList newMembers)
-            in
-            { b
-                | isSelected = False
-                , members = newMembers
-                , neighbours = newNeighbours
-                , zlevel = a.zlevel
-            }
     in
     case closeNeighbour of
         Just neighbour ->
@@ -632,7 +616,7 @@ snapToNeighbour model selected =
                 replaceSelectedIdWithNeighbourId _ pg =
                     { pg | neighbours = fixNeighbours pg.neighbours selected.id neighbour.id }
             in
-            merge selected neighbour
+            PieceGroup.merge selected neighbour
                 |> Util.flip (D.insert neighbour.id) model.pieceGroups
                 |> D.remove selected.id
                 |> D.map replaceSelectedIdWithNeighbourId
