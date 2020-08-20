@@ -31,6 +31,7 @@ import Point exposing (Point)
 import Random
 import Random.List
 import Set as S
+import Html.Attributes exposing (selected)
 
 
 type Msg
@@ -65,7 +66,11 @@ type alias Model =
 
 
 type NewModel
-    = Identity Model
+    = Identity 
+        { oldModel : Model
+        , selected : List PieceGroup
+        , unSelected : Dict.Dict Int PieceGroup
+        }
     | Moving
         { oldModel : Model
         , start : Point
@@ -91,12 +96,12 @@ type NewModel
 
 toNewModel : Model -> NewModel
 toNewModel oldModel =
+    let
+        ( selected, unSelected ) =
+            Dict.partition (always .isSelected) oldModel.pieceGroups
+    in
     case ( oldModel.cursor, oldModel.selectionBox ) of
         ( Just current, NullBox ) ->
-            let
-                ( selected, unSelected ) =
-                    Dict.partition (always .isSelected) oldModel.pieceGroups
-            in
             Moving
                 { oldModel = oldModel
                 , start = current
@@ -106,10 +111,6 @@ toNewModel oldModel =
                 }
 
         ( Just _, Normal box ) ->
-            let
-                ( _, unSelected ) =
-                    Dict.partition (always .isSelected) oldModel.pieceGroups
-            in
             SelectingWithBox
                 { oldModel = oldModel
                 , start = box.staticCorner
@@ -132,10 +133,6 @@ toNewModel oldModel =
                 }
 
         ( Just _, Inverted box ) ->
-            let
-                ( _, unSelected ) =
-                    Dict.partition (always .isSelected) oldModel.pieceGroups
-            in
             DeselectingWithBox
                 { oldModel = oldModel
                 , start = box.staticCorner
@@ -158,13 +155,17 @@ toNewModel oldModel =
                 }
 
         ( _, _ ) ->
-            Identity oldModel
+            Identity 
+                { oldModel = oldModel
+                , selected = selected |> Dict.values
+                , unSelected = unSelected
+                }
 
 
 toOldModel : NewModel -> Model
 toOldModel newModel =
     case newModel of
-        Identity oldModel ->
+        Identity {oldModel} ->
             oldModel
 
         Moving { oldModel, start, current, selected, unSelected } ->
@@ -245,6 +246,8 @@ toOldModel newModel =
                 | selectionBox = Inverted box
                 , pieceGroups = updatedPieceGroups
             }
+            
+
 
 
 init : () -> ( Model, Cmd Msg )
