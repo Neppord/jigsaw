@@ -571,9 +571,13 @@ startSelectionBox model coordinate keyboard =
 snapToNeighbour : Model -> PieceGroup -> D.Dict Int PieceGroup
 snapToNeighbour model selected =
     let
+        distance : PieceGroup -> PieceGroup -> Float
+        distance from to =
+            Point.dist from.position to.position
+
         neighbourDistance : PieceGroup -> PieceGroup -> ( Float, PieceGroup )
         neighbourDistance selectedPiece neighbour =
-            ( Point.dist selectedPiece.position neighbour.position
+            ( distance selectedPiece neighbour
             , neighbour
             )
 
@@ -587,8 +591,8 @@ snapToNeighbour model selected =
             List.map (neighbourDistance selected << neighbourFromId) (S.toList selected.neighbours)
 
         smallEnough : ( Float, a ) -> Bool
-        smallEnough ( distance, _ ) =
-            distance < model.snapDistance
+        smallEnough ( dx, _ ) =
+            dx < model.snapDistance
 
         closeNeighbour : Maybe PieceGroup
         closeNeighbour =
