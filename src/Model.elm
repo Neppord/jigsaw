@@ -4,6 +4,7 @@ module Model exposing
     , Keyboard
     , Model
     , Msg(..)
+    , NewModel(..)
     , Selected(..)
     , SelectionBox(..)
     , boxBottomRight

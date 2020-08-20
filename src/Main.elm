@@ -14,13 +14,16 @@ import Model
         ( Key(..)
         , Keyboard
         , Model
-        , init
         , Msg(..)
         , Selected(..)
         , SelectionBox(..)
         , boxBottomRight
         , boxTopLeft
         , defaultPieceGroup
+        , init
+        , toNewModel
+        , toOldModel
+        , NewModel(..)
         )
 import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
@@ -37,6 +40,8 @@ main =
         , view = view
         , subscriptions = subscriptions
         }
+
+
 
 -- SUBSCRIPTIONS
 
@@ -290,22 +295,19 @@ updateMoveMouse newPos model =
             ( model, Cmd.none )
 
         ( Just oldPos, NullBox ) ->
-            let
-                movePieceGroup : Int -> PieceGroup -> PieceGroup
-                movePieceGroup _ pg =
-                    if pg.isSelected then
-                        { pg | position = Point.add pg.position <| Point.sub newPos oldPos }
+            ( model
+                |> toNewModel
+                |> (\m ->
+                        case m of
+                            Moving data ->
+                                Moving { data | current = newPos }
 
-                    else
-                        pg
-
-                updatedModel =
-                    { model
-                        | cursor = Just newPos
-                        , pieceGroups = D.map movePieceGroup model.pieceGroups
-                    }
-            in
-            ( updatedModel, Cmd.none )
+                            _ ->
+                                m
+                   )
+                |> toOldModel
+            , Cmd.none
+            )
 
         ( Just _, Normal box ) ->
             let
