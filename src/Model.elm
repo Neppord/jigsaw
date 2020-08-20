@@ -22,8 +22,8 @@ import JigsawImage
     exposing
         ( JigsawImage
         , createPieceGroups
+        , isPieceGroupInsideBox
         , shufflePiecePositions
-        ,isPieceGroupInsideBox
         )
 import List
 import PieceGroup exposing (PieceGroup)
@@ -117,6 +117,8 @@ toNewModel oldModel =
                     oldModel.pieceGroups
                         |> Dict.values
                         |> List.filter
+                            (\pg -> S.member pg.visibilityGroup oldModel.visibleGroups)
+                        |> List.filter 
                             (isPieceGroupInsideBox
                                 oldModel.image
                                 (boxTopLeft box)
@@ -145,8 +147,38 @@ toOldModel newModel =
                 , cursor = Just current
             }
 
-        SelectingWithBox { oldModel } ->
-            oldModel
+        SelectingWithBox { oldModel, start, current, alreadySelected, within } ->
+            let
+                withinIds =
+                    within
+                        |>List.map .id
+                        |> S.fromList
+                alreadySelectedIds =
+                        alreadySelected
+                            |> List.map .id
+                            |> S.fromList
+
+                updatedPieceGroups =
+                    oldModel.pieceGroups
+                        |> Dict.map
+                            (\id pg ->
+                                { pg
+                                    | isSelected =
+                                        S.member id alreadySelectedIds
+                                            || S.member id withinIds
+                                }
+                            )
+                            
+                box =
+                    { staticCorner = start
+                    , movingCorner = current
+                    , selectedIds = alreadySelectedIds
+                    }
+            in
+            { oldModel
+                | selectionBox = Normal box
+                , pieceGroups = updatedPieceGroups
+            }
 
 
 init : () -> ( Model, Cmd Msg )

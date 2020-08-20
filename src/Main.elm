@@ -320,21 +320,7 @@ updateMoveMouse newPos model =
                         insideBoxNow = List.member pg within
 
                         newSelectionStatus =
-                            if isVisible then
-                                if originallySelected && insideBoxNow then
-                                    True
-
-                                else if originallySelected && not insideBoxNow then
-                                    True
-
-                                else if not originallySelected && insideBoxNow then
-                                    True
-
-                                else
-                                    False
-
-                            else
-                                False
+                            isVisible && originallySelected || insideBoxNow
                     in
                     { pg | isSelected = newSelectionStatus }
 
