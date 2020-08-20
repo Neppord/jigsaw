@@ -3,12 +3,14 @@ module Main exposing (main)
 import Browser
 import Browser.Events
 import Dict as D
+import Html.Attributes exposing (id)
 import JigsawImage
     exposing
         ( isPieceGroupInsideBox
         , isPointInsidePieceGroup
         )
 import Json.Decode
+import List
 import Model
     exposing
         ( Key(..)
@@ -296,6 +298,57 @@ updateMoveMouse newPos model =
                 |> Model.toOldModel
             , Cmd.none
             )
+
+        Model.SelectingWithBox { current, start, within, alreadySelected } ->
+            let
+                box =
+                    { staticCorner = start
+                    , movingCorner = current
+                    , selectedIds =
+                        alreadySelected
+                            |> List.map .id
+                            |> S.fromList
+                    }
+
+                selectPiece _ pg =
+                    let
+                        isVisible =
+                            S.member pg.visibilityGroup model.visibleGroups
+
+                        originallySelected =
+                            List.member pg alreadySelected
+
+                        insideBoxNow = List.member pg within
+
+                        newSelectionStatus =
+                            if isVisible then
+                                if originallySelected && insideBoxNow then
+                                    True
+
+                                else if originallySelected && not insideBoxNow then
+                                    True
+
+                                else if not originallySelected && insideBoxNow then
+                                    True
+
+                                else
+                                    False
+
+                            else
+                                False
+                    in
+                    { pg | isSelected = newSelectionStatus }
+
+                updatedPieceGroups =
+                    D.map selectPiece model.pieceGroups
+            in
+            ( { model
+                | selectionBox = Normal { box | movingCorner = newPos }
+                , pieceGroups = updatedPieceGroups
+              }
+            , Cmd.none
+            )
+
         Model.Identity _ ->
             case ( model.cursor, model.selectionBox ) of
                 ( Nothing, _ ) ->
@@ -305,52 +358,7 @@ updateMoveMouse newPos model =
                     Debug.todo "This is a moving model and should not happen"
 
                 ( Just _, Normal box ) ->
-                    let
-                        tl =
-                            boxTopLeft box
-
-                        br =
-                            boxBottomRight box
-
-                        selectPiece _ pg =
-                            let
-                                isVisible =
-                                    S.member pg.visibilityGroup model.visibleGroups
-
-                                originallySelected =
-                                    S.member pg.id box.selectedIds
-
-                                insideBoxNow =
-                                    isPieceGroupInsideBox model.image tl br pg
-
-                                newSelectionStatus =
-                                    if isVisible then
-                                        if originallySelected && insideBoxNow then
-                                            True
-
-                                        else if originallySelected && not insideBoxNow then
-                                            True
-
-                                        else if not originallySelected && insideBoxNow then
-                                            True
-
-                                        else
-                                            False
-
-                                    else
-                                        False
-                            in
-                            { pg | isSelected = newSelectionStatus }
-
-                        updatedPieceGroups =
-                            D.map selectPiece model.pieceGroups
-                    in
-                    ( { model
-                        | selectionBox = Normal { box | movingCorner = newPos }
-                        , pieceGroups = updatedPieceGroups
-                      }
-                    , Cmd.none
-                    )
+                    Debug.todo "This is a selcting with a box model and should not happen"
 
                 ( Just _, Inverted box ) ->
                     let
