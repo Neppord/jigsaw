@@ -29,18 +29,6 @@ zip xs ys =
     List.map2 Tuple.pair xs ys
 
 
-{-| Convenience function that flips the order of arguments.
-
-    flip (>) 2 3 == True
-
-    flip (-) 5 10 == 5
-
--}
-flip : (a -> b -> c) -> b -> a -> c
-flip f y x =
-    f x y
-
-
 {-| Remove element of given index from a List.
 
     pop 3 [ 0, 1, 2, 3, 4, 5 ] == ( Just 3, [ 0, 1, 2, 4, 5 ] )
