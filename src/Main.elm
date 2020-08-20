@@ -579,12 +579,15 @@ snapToNeighbour model selected =
         isVisible : PieceGroup -> Bool
         isVisible pg = S.member pg.visibilityGroup model.visibleGroups
 
-        distanceToSelected : List ( Float, PieceGroup )
-        distanceToSelected =
+        visibleNeighbours = 
             selected.neighbours
                 |> S.toList
                 |> List.map neighbourFromId
                 |> List.filter isVisible
+
+        distanceToSelected : List ( Float, PieceGroup )
+        distanceToSelected =
+            visibleNeighbours
                 |> List.map (\x -> (x, x))
                 |> List.map (Tuple.mapFirst (PieceGroup.distance selected))
 
