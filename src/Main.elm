@@ -608,7 +608,9 @@ snapToNeighbour model selected =
                 fixNeighbours : S.Set Int -> Int -> Int -> S.Set Int
                 fixNeighbours neighbours wrong right =
                     if S.member wrong neighbours then
-                        S.insert right <| S.remove wrong neighbours
+                        neighbours
+                            |> S.remove wrong
+                            |> S.insert right
 
                     else
                         neighbours
@@ -616,7 +618,7 @@ snapToNeighbour model selected =
                 replaceSelectedIdWithNeighbourId _ pg =
                     { pg | neighbours = fixNeighbours pg.neighbours selected.id neighbour.id }
             in
-             model.pieceGroups
+            model.pieceGroups
                 |> D.insert neighbour.id (PieceGroup.merge selected neighbour)
                 |> D.remove selected.id
                 |> D.map replaceSelectedIdWithNeighbourId
