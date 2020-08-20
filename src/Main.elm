@@ -291,27 +291,22 @@ updateMouseUp model =
 
 updateMoveMouse : Point -> Model -> ( Model, Cmd Msg )
 updateMoveMouse newPos model =
-    case toNewModel model of
-        Model.Moving data ->
-            ( Model.Moving { data | current = newPos }
-                |> Model.toOldModel
-            , Cmd.none
-            )
+    ( Model.toOldModel
+        (case toNewModel model of
+            Model.Moving data ->
+                Model.Moving { data | current = newPos }
 
-        Model.SelectingWithBox data ->
-            ( Model.SelectingWithBox {data | current = newPos}
-                |> Model.toOldModel
-            , Cmd.none
-            )
-            
-        Model.DeselectingWithBox data ->
-            ( Model.DeselectingWithBox {data | current = newPos}
-                |> Model.toOldModel
-            , Cmd.none
-            )
+            Model.SelectingWithBox data ->
+                Model.SelectingWithBox { data | current = newPos }
 
-        Model.Identity _ ->
-            ( model, Cmd.none )
+            Model.DeselectingWithBox data ->
+                Model.DeselectingWithBox { data | current = newPos }
+
+            Model.Identity data ->
+                Model.Identity data
+        )
+    , Cmd.none
+    )
 
 
 selectPieceGroup : Model -> Int -> Point -> Keyboard -> Model
