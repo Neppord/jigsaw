@@ -1,4 +1,4 @@
-module Util exposing (..)
+module Util exposing (takeFirst, zip, pop)
 
 {-| Take the first element from the list that satisfies the condition.
 If no such element exists, return Nothing.

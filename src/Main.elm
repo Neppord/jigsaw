@@ -3,11 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Events
 import Dict as D
-import JigsawImage
-    exposing
-        ( isPieceGroupInsideBox
-        , isPointInsidePieceGroup
-        )
+import JigsawImage exposing (isPointInsidePieceGroup)
 import Json.Decode
 import List
 import Model
@@ -19,8 +15,6 @@ import Model
         , NewModel(..)
         , Selected(..)
         , SelectionBox(..)
-        , boxBottomRight
-        , boxTopLeft
         , defaultPieceGroup
         , init
         , toNewModel
