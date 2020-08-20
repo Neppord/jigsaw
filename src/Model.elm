@@ -29,6 +29,8 @@ import Point exposing (Point)
 import Random
 import Random.List
 import Set as S
+import Html.Attributes exposing (selected)
+import List
 
 
 type Msg
@@ -68,28 +70,25 @@ type NewModel
         { oldModel : Model
         , start : Point
         , current : Point
+        , selected : List PieceGroup
+        , unSelected : Dict.Dict Int PieceGroup
         }
-
-
-moveSelectedBy : Point -> Model -> Model
-moveSelectedBy offset oldModel =
-    { oldModel
-        | pieceGroups =
-            oldModel.pieceGroups
-                |> Dict.partition (always .isSelected)
-                |> Tuple.mapFirst (Dict.map <| always <| PieceGroup.move offset)
-                |> (\( first, second ) -> Dict.union first second)
-    }
 
 
 toNewModel : Model -> NewModel
 toNewModel oldModel =
     case ( oldModel.cursor, oldModel.selectionBox ) of
         ( Just current, NullBox ) ->
+            let
+                (selected, unSelected) =
+                    Dict.partition (always .isSelected) oldModel.pieceGroups
+            in
             Moving
                 { oldModel = oldModel
                 , start = current
                 , current = current
+                , selected = Dict.values selected
+                , unSelected = unSelected
                 }
 
         ( _, _ ) ->
@@ -102,10 +101,16 @@ toOldModel newModel =
         Identity oldModel ->
             oldModel
 
-        Moving { oldModel, start, current } ->
-            oldModel
-                |> moveSelectedBy (Point.sub current start)
-                |> (\m -> { m | cursor = Just current })
+        Moving { oldModel, start, current, selected, unSelected } ->
+            {oldModel
+                | pieceGroups =
+                    selected
+                        |> List.map (PieceGroup.move (Point.sub current start))
+                        |> List.map (\pg -> (pg.id, pg))
+                        |> Dict.fromList
+                        |> Dict.union unSelected
+                , cursor = Just current
+            }
 
 
 init : () -> ( Model, Cmd Msg )
