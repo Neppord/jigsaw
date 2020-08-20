@@ -1,4 +1,4 @@
-module PieceGroup exposing (PieceGroup, distance, merge)
+module PieceGroup exposing (PieceGroup, move, distance, merge)
 
 import Point exposing (Point)
 import Set as S
@@ -34,3 +34,6 @@ merge a b =
 distance : PieceGroup -> PieceGroup -> Float
 distance from to =
     Point.dist from.position to.position
+
+move : Point -> PieceGroup -> PieceGroup
+move offset pg = {pg | position = Point.add offset pg.position}

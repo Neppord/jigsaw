@@ -5,13 +5,17 @@ module Model exposing
     , Model
     , Msg(..)
     , Selected(..)
-    , SelectionBox(..), resetModel, init, toNewModel, toOldModel
+    , SelectionBox(..)
     , boxBottomRight
     , boxTopLeft
     , defaultPieceGroup
+    , init
+    , resetModel
+    , toNewModel
+    , toOldModel
     )
 
-import Dict as D
+import Dict
 import Edge exposing (Edge, generateEdgePoints)
 import JigsawImage
     exposing
@@ -42,7 +46,7 @@ type alias Keyboard =
 
 type alias Model =
     { cursor : Maybe Point
-    , pieceGroups : D.Dict Int PieceGroup
+    , pieceGroups : Dict.Dict Int PieceGroup
     , selected : Selected
     , maxZLevel : Int
     , image : JigsawImage
@@ -59,17 +63,48 @@ type alias Model =
 
 type NewModel
     = Identity Model
+    | Moving
+        { oldModel : Model
+        , start : Point
+        , current : Point
+        }
+
+
+moveSelectedBy : Point -> Model -> Model
+moveSelectedBy offset oldModel =
+    { oldModel
+        | pieceGroups =
+            oldModel.pieceGroups
+                |> Dict.partition (always .isSelected)
+                |> Tuple.mapFirst (Dict.map <| always <| PieceGroup.move offset)
+                |> (\( first, second ) -> Dict.union first second)
+    }
 
 
 toNewModel : Model -> NewModel
 toNewModel oldModel =
-    Identity oldModel
+    case ( oldModel.cursor, oldModel.selectionBox ) of
+        ( Just current, NullBox ) ->
+            Moving
+                { oldModel = oldModel
+                , start = current
+                , current = current
+                }
+
+        ( _, _ ) ->
+            Identity oldModel
 
 
 toOldModel : NewModel -> Model
 toOldModel newModel =
     case newModel of
-        Identity oldModel -> oldModel
+        Identity oldModel ->
+            oldModel
+
+        Moving { oldModel, start, current } ->
+            oldModel
+                |> moveSelectedBy (Point.sub current start)
+                |> (\m -> { m | cursor = Just current })
 
 
 init : () -> ( Model, Cmd Msg )
