@@ -3,7 +3,6 @@ module Main exposing (main)
 import Browser
 import Browser.Events
 import Dict as D
-import Html.Attributes exposing (id)
 import JigsawImage
     exposing
         ( isPieceGroupInsideBox
@@ -357,7 +356,7 @@ updateMoveMouse newPos model =
                 ( Just _, NullBox ) ->
                     Debug.todo "This is a moving model and should not happen"
 
-                ( Just _, Normal box ) ->
+                ( Just _, Normal _ ) ->
                     Debug.todo "This is a selcting with a box model and should not happen"
 
                 ( Just _, Inverted box ) ->

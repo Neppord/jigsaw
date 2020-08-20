@@ -18,12 +18,12 @@ module Model exposing
 
 import Dict
 import Edge exposing (Edge, generateEdgePoints)
-import Html.Attributes exposing (selected)
 import JigsawImage
     exposing
         ( JigsawImage
         , createPieceGroups
         , shufflePiecePositions
+        ,isPieceGroupInsideBox
         )
 import List
 import PieceGroup exposing (PieceGroup)
@@ -31,7 +31,6 @@ import Point exposing (Point)
 import Random
 import Random.List
 import Set as S
-import JigsawImage exposing (isPieceGroupInsideBox)
 
 
 type Msg
@@ -100,9 +99,9 @@ toNewModel oldModel =
                 , unSelected = unSelected
                 }
 
-        ( Just current, Normal box ) ->
+        ( Just _, Normal box ) ->
             let
-                ( selected, unSelected ) =
+                ( _, unSelected ) =
                     Dict.partition (always .isSelected) oldModel.pieceGroups
             in
             SelectingWithBox
