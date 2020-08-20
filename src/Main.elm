@@ -590,7 +590,8 @@ snapToNeighbour model selected =
 
         closeNeighbour : Maybe PieceGroup
         closeNeighbour =
-            takeFirst smallEnough distanceToSelected
+            distanceToSelected
+                |> takeFirst smallEnough 
                 |> Maybe.andThen
                     (\( _, neighbour ) ->
                         if S.member neighbour.visibilityGroup model.visibleGroups then
