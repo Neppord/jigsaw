@@ -251,42 +251,40 @@ updateMouseDown coordinate keyboard model =
 
 updateMouseUp : Model -> ( Model, Cmd Msg )
 updateMouseUp model =
-    let
-        newModel =
-            case model.selectionBox of
-                Normal _ ->
+    ( case model.selectionBox of
+        Normal _ ->
+            { model
+                | selectionBox = NullBox
+                , cursor = Nothing
+                , selected = currentSelection model.pieceGroups
+            }
+
+        Inverted _ ->
+            { model
+                | selectionBox = NullBox
+                , cursor = Nothing
+                , selected = currentSelection model.pieceGroups
+            }
+
+        NullBox ->
+            case model.selected of
+                Multiple ->
+                    { model | cursor = Nothing }
+
+                NullSelection ->
+                    { model | cursor = Nothing }
+
+                Single id ->
                     { model
-                        | selectionBox = NullBox
-                        , cursor = Nothing
-                        , selected = currentSelection model.pieceGroups
+                        | cursor = Nothing
+                        , selected = NullSelection
+                        , pieceGroups =
+                            D.get id model.pieceGroups
+                                |> Maybe.withDefault defaultPieceGroup
+                                |> snapToNeighbour model
                     }
-
-                Inverted _ ->
-                    { model
-                        | selectionBox = NullBox
-                        , cursor = Nothing
-                        , selected = currentSelection model.pieceGroups
-                    }
-
-                NullBox ->
-                    case model.selected of
-                        Multiple ->
-                            { model | cursor = Nothing }
-
-                        NullSelection ->
-                            { model | cursor = Nothing }
-
-                        Single id ->
-                            { model
-                                | cursor = Nothing
-                                , selected = NullSelection
-                                , pieceGroups =
-                                    D.get id model.pieceGroups
-                                        |> Maybe.withDefault defaultPieceGroup
-                                        |> snapToNeighbour model
-                            }
-    in
-    ( newModel, Cmd.none )
+    , Cmd.none
+    )
 
 
 updateMoveMouse : Point -> Model -> ( Model, Cmd Msg )
