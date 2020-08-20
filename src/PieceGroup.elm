@@ -1,4 +1,4 @@
-module PieceGroup exposing (PieceGroup, merge)
+module PieceGroup exposing (PieceGroup, distance, merge)
 
 import Point exposing (Point)
 import Set as S
@@ -29,3 +29,8 @@ merge a b =
         , neighbours = newNeighbours
         , zlevel = a.zlevel
     }
+
+
+distance : PieceGroup -> PieceGroup -> Float
+distance from to =
+    Point.dist from.position to.position
