@@ -298,100 +298,20 @@ updateMoveMouse newPos model =
             , Cmd.none
             )
 
-        Model.SelectingWithBox { current, start, within, alreadySelected } ->
-            let
-                box =
-                    { staticCorner = start
-                    , movingCorner = current
-                    , selectedIds =
-                        alreadySelected
-                            |> List.map .id
-                            |> S.fromList
-                    }
-
-                selectPiece _ pg =
-                    let
-                        isVisible =
-                            S.member pg.visibilityGroup model.visibleGroups
-
-                        originallySelected =
-                            List.member pg alreadySelected
-
-                        insideBoxNow = List.member pg within
-
-                        newSelectionStatus =
-                            isVisible && originallySelected || insideBoxNow
-                    in
-                    { pg | isSelected = newSelectionStatus }
-
-                updatedPieceGroups =
-                    D.map selectPiece model.pieceGroups
-            in
-            ( { model
-                | selectionBox = Normal { box | movingCorner = newPos }
-                , pieceGroups = updatedPieceGroups
-              }
+        Model.SelectingWithBox data ->
+            ( Model.SelectingWithBox {data | current = newPos}
+                |> Model.toOldModel
+            , Cmd.none
+            )
+            
+        Model.DeselectingWithBox data ->
+            ( Model.DeselectingWithBox {data | current = newPos}
+                |> Model.toOldModel
             , Cmd.none
             )
 
         Model.Identity _ ->
-            case ( model.cursor, model.selectionBox ) of
-                ( Nothing, _ ) ->
-                    ( model, Cmd.none )
-
-                ( Just _, NullBox ) ->
-                    Debug.todo "This is a moving model and should not happen"
-
-                ( Just _, Normal _ ) ->
-                    Debug.todo "This is a selcting with a box model and should not happen"
-
-                ( Just _, Inverted box ) ->
-                    let
-                        tl =
-                            boxTopLeft box
-
-                        br =
-                            boxBottomRight box
-
-                        selectPiece _ pg =
-                            let
-                                isVisible =
-                                    S.member pg.visibilityGroup model.visibleGroups
-
-                                originallySelected =
-                                    S.member pg.id box.selectedIds
-
-                                insideBoxNow =
-                                    isPieceGroupInsideBox model.image tl br pg
-
-                                newSelectionStatus =
-                                    if isVisible then
-                                        if originallySelected && insideBoxNow then
-                                            False
-
-                                        else if originallySelected && not insideBoxNow then
-                                            True
-
-                                        else if not originallySelected && insideBoxNow then
-                                            True
-
-                                        else
-                                            False
-
-                                    else
-                                        False
-                            in
-                            { pg | isSelected = newSelectionStatus }
-
-                        updatedPieceGroups =
-                            D.map selectPiece model.pieceGroups
-                    in
-                    ( { model
-                        | selectionBox = Inverted { box | movingCorner = newPos }
-                        , pieceGroups = updatedPieceGroups
-                      }
-                    , Cmd.none
-                    )
+            ( model, Cmd.none )
 
 
 selectPieceGroup : Model -> Int -> Point -> Keyboard -> Model

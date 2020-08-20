@@ -79,7 +79,13 @@ type NewModel
         , current : Point
         , within : List PieceGroup
         , alreadySelected : List PieceGroup
-        , unSelected : Dict.Dict Int PieceGroup
+        }
+    | DeselectingWithBox
+        { oldModel : Model
+        , start : Point
+        , current : Point
+        , within : List PieceGroup
+        , alreadySelected : List PieceGroup
         }
 
 
@@ -112,13 +118,38 @@ toNewModel oldModel =
                     oldModel.pieceGroups
                         |> Dict.values
                         |> List.filter (\pg -> S.member pg.id box.selectedIds)
-                , unSelected = unSelected
                 , within =
                     oldModel.pieceGroups
                         |> Dict.values
                         |> List.filter
                             (\pg -> S.member pg.visibilityGroup oldModel.visibleGroups)
-                        |> List.filter 
+                        |> List.filter
+                            (isPieceGroupInsideBox
+                                oldModel.image
+                                (boxTopLeft box)
+                                (boxBottomRight box)
+                            )
+                }
+
+        ( Just _, Inverted box ) ->
+            let
+                ( _, unSelected ) =
+                    Dict.partition (always .isSelected) oldModel.pieceGroups
+            in
+            DeselectingWithBox
+                { oldModel = oldModel
+                , start = box.staticCorner
+                , current = box.movingCorner
+                , alreadySelected =
+                    oldModel.pieceGroups
+                        |> Dict.values
+                        |> List.filter (\pg -> S.member pg.id box.selectedIds)
+                , within =
+                    oldModel.pieceGroups
+                        |> Dict.values
+                        |> List.filter
+                            (\pg -> S.member pg.visibilityGroup oldModel.visibleGroups)
+                        |> List.filter
                             (isPieceGroupInsideBox
                                 oldModel.image
                                 (boxTopLeft box)
@@ -151,12 +182,13 @@ toOldModel newModel =
             let
                 withinIds =
                     within
-                        |>List.map .id
+                        |> List.map .id
                         |> S.fromList
+
                 alreadySelectedIds =
-                        alreadySelected
-                            |> List.map .id
-                            |> S.fromList
+                    alreadySelected
+                        |> List.map .id
+                        |> S.fromList
 
                 updatedPieceGroups =
                     oldModel.pieceGroups
@@ -168,7 +200,7 @@ toOldModel newModel =
                                             || S.member id withinIds
                                 }
                             )
-                            
+
                 box =
                     { staticCorner = start
                     , movingCorner = current
@@ -177,6 +209,40 @@ toOldModel newModel =
             in
             { oldModel
                 | selectionBox = Normal box
+                , pieceGroups = updatedPieceGroups
+            }
+            
+        DeselectingWithBox { oldModel, start, current, alreadySelected, within } ->
+            let
+                withinIds =
+                    within
+                        |> List.map .id
+                        |> S.fromList
+
+                alreadySelectedIds =
+                    alreadySelected
+                        |> List.map .id
+                        |> S.fromList
+
+                updatedPieceGroups =
+                    oldModel.pieceGroups
+                        |> Dict.map
+                            (\id pg ->
+                                { pg
+                                    | isSelected =
+                                        S.member id alreadySelectedIds
+                                            && not (S.member id withinIds)
+                                }
+                            )
+
+                box =
+                    { staticCorner = start
+                    , movingCorner = current
+                    , selectedIds = alreadySelectedIds
+                    }
+            in
+            { oldModel
+                | selectionBox = Inverted box
                 , pieceGroups = updatedPieceGroups
             }
 
