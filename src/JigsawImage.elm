@@ -1,10 +1,10 @@
 module JigsawImage exposing (..)
 
 import Dict as D
-import Math.Matrix4 exposing (identity)
 import Point exposing (Point)
 import Random
 import Set as S
+import PieceGroup exposing (PieceGroup)
 
 
 type alias JigsawImage =
@@ -16,16 +16,6 @@ type alias JigsawImage =
     , scale : Float
     }
 
-
-type alias PieceGroup =
-    { id : Int
-    , members : List Int
-    , neighbours : S.Set Int
-    , position : Point
-    , isSelected : Bool
-    , zlevel : Int
-    , visibilityGroup : Int
-    }
 
 
 shufflePiecePositions : Int -> Int -> JigsawImage -> Random.Generator (List Point)

@@ -13,11 +13,8 @@ module Model exposing
 
 import Dict as D
 import Edge exposing (Edge)
-import JigsawImage
-    exposing
-        ( JigsawImage
-        , PieceGroup
-        )
+import JigsawImage exposing (JigsawImage)
+import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
 import Random
 import Set as S

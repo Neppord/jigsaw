@@ -7,7 +7,6 @@ import Edge exposing (generateEdgePoints)
 import JigsawImage
     exposing
         ( JigsawImage
-        , PieceGroup
         , createPieceGroups
         , isPieceGroupInsideBox
         , isPointInsidePieceGroup
@@ -26,6 +25,7 @@ import Model
         , boxTopLeft
         , defaultPieceGroup
         )
+import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
 import Random
 import Random.List
@@ -225,7 +225,11 @@ update msg model =
         MouseMove newPos ->
             updateMoveMouse newPos model
 
+
+
 {- this could be replaced from Set.Extra -}
+
+
 sToggle : comparable -> S.Set comparable -> S.Set comparable
 sToggle a set =
     if S.member a set then

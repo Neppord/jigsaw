@@ -7,12 +7,7 @@ import Html.Attributes
 import Html.Events
 import Html.Keyed
 import Html.Lazy
-import JigsawImage
-    exposing
-        ( JigsawImage
-        , PieceGroup
-        , pieceIdToOffset
-        )
+import JigsawImage exposing (JigsawImage, pieceIdToOffset)
 import Model
     exposing
         ( Box
@@ -22,6 +17,7 @@ import Model
         , boxBottomRight
         , boxTopLeft
         )
+import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
 import Set
 import Svg exposing (Svg)
@@ -161,17 +157,19 @@ pieceDiv image pg pid =
         , Html.Attributes.style "transform" ("translate(" ++ left ++ "," ++ top ++ ")")
         ]
         []
-    ] |> shadow color
-        
+    ]
+        |> shadow color
+
 
 shadow : String -> List (Html msg) -> Html msg
-shadow color = 
+shadow color =
     Html.div
-            [ Html.Attributes.style "filter" <|
-                "drop-shadow(0px 0px 2px "
-                    ++ color
-                    ++ ")"
-            ]
+        [ Html.Attributes.style "filter" <|
+            "drop-shadow(0px 0px 2px "
+                ++ color
+                ++ ")"
+        ]
+
 
 viewDiv : Model -> List (Html Msg)
 viewDiv model =
