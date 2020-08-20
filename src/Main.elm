@@ -616,8 +616,8 @@ snapToNeighbour model selected =
                 replaceSelectedIdWithNeighbourId _ pg =
                     { pg | neighbours = fixNeighbours pg.neighbours selected.id neighbour.id }
             in
-            PieceGroup.merge selected neighbour
-                |> Util.flip (D.insert neighbour.id) model.pieceGroups
+             model.pieceGroups
+                |> D.insert neighbour.id (PieceGroup.merge selected neighbour)
                 |> D.remove selected.id
                 |> D.map replaceSelectedIdWithNeighbourId
 
