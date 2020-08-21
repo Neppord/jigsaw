@@ -13,7 +13,7 @@ import Model
         ( Box
         , Model
         , Msg(..)
-        , NewModel
+        , NewModel(..)
         , SelectionBox(..)
         , boxBottomRight
         , boxTopLeft
@@ -49,7 +49,7 @@ view model =
             , Html.Attributes.style "top" "100px"
             , Html.Attributes.style "left" "0px"
             ]
-            (viewSelectionBox (oldModel.maxZLevel + 1) oldModel.selectionBox ++ viewDiv oldModel)
+            (viewSelectionBox (oldModel.maxZLevel + 1) oldModel.selectionBox ++ viewDiv model)
         ]
 
 
@@ -180,8 +180,24 @@ shadow color =
         ]
 
 
-viewDiv : Model -> List (Html Msg)
+viewDiv : NewModel -> List (Html Msg)
 viewDiv model =
+    case model of
+        Moving _ ->
+            oldViewDiv (toOldModel model)
+
+        SelectingWithBox { oldModel } ->
+            oldViewDiv oldModel
+
+        DeselectingWithBox { oldModel } ->
+            oldViewDiv oldModel
+
+        Identity { oldModel } ->
+            oldViewDiv oldModel
+
+
+oldViewDiv : Model -> List (Html Msg)
+oldViewDiv model =
     let
         pieceGroupDiv : PieceGroup -> List ( String, Html msg )
         pieceGroupDiv pg =
