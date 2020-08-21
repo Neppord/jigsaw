@@ -270,7 +270,7 @@ toOldModel newModel =
 
 
 
-init : () -> ( Model, Cmd Msg )
+init : () -> ( NewModel, Cmd Msg )
 init () =
     let
         image =
@@ -288,7 +288,7 @@ init () =
     ( model, Cmd.none )
 
 
-resetModel : JigsawImage -> Random.Seed -> Model
+resetModel : JigsawImage -> Random.Seed -> NewModel
 resetModel image seed =
     let
         ( w, h ) =
@@ -309,7 +309,7 @@ resetModel image seed =
         ( edgePoints, seed3 ) =
             Random.step (generateEdgePoints numberOfEdges) seed2
     in
-    { cursor = Nothing
+    toNewModel { cursor = Nothing
     , pieceGroups = createPieceGroups image positions zlevels
     , selected = NullSelection
     , maxZLevel = nx * ny

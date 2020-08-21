@@ -13,9 +13,11 @@ import Model
         ( Box
         , Model
         , Msg(..)
+        , NewModel
         , SelectionBox(..)
         , boxBottomRight
         , boxTopLeft
+        , toOldModel
         )
 import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
@@ -26,8 +28,13 @@ import Svg.Lazy
 import SvgUtil
 
 
-view : Model -> Html Msg
+view : NewModel -> Html Msg
 view model =
+    oldView (toOldModel model)
+
+
+oldView : Model -> Html Msg
+oldView model =
     Html.div
         turnOffTheBloodyImageDragging
         [ Html.button

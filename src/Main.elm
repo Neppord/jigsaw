@@ -27,7 +27,7 @@ import Util exposing (takeFirst)
 import View exposing (view)
 
 
-main : Program () Model Msg
+main : Program () NewModel Msg
 main =
     Browser.element
         { init = init
@@ -84,9 +84,12 @@ keyDecoder isDown key =
             KeyChanged isDown Other
 
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions : NewModel -> Sub Msg
+subscriptions newModel =
     let
+        model =
+            toOldModel newModel
+
         trackMouseMovement =
             if model.cursor /= Nothing then
                 Browser.Events.onMouseMove <|
@@ -129,27 +132,31 @@ subscriptions model =
 -- UPDATE
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Msg -> NewModel -> ( NewModel, Cmd Msg )
+update msg newModel =
     case msg of
         KeyChanged isDown key ->
-            updateKeyChange isDown key model
+            updateKeyChange isDown key (toOldModel newModel)
+                |> Tuple.mapFirst toNewModel
 
         Scramble ->
-            let
-                newModel =
-                    Model.resetModel model.image model.seed
-            in
-            ( newModel, Cmd.none )
+            ( Model.resetModel
+                (toOldModel newModel).image
+                (toOldModel newModel).seed
+            , Cmd.none
+            )
 
         MouseDown coordinate keyboard ->
-            updateMouseDown coordinate keyboard model
+            updateMouseDown coordinate keyboard (toOldModel newModel)
+                |> Tuple.mapFirst toNewModel
 
         MouseUp ->
-            updateMouseUp model
+            updateMouseUp (toOldModel newModel)
+                |> Tuple.mapFirst toNewModel
 
         MouseMove newPos ->
-            updateMoveMouse newPos model
+            updateMoveMouse newPos (toOldModel newModel)
+                |> Tuple.mapFirst toNewModel
 
 
 
