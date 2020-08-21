@@ -3,7 +3,7 @@ module View exposing (view)
 import Dict
 import Edge exposing (Edge)
 import Html exposing (Attribute, Html)
-import Html.Attributes
+import Html.Attributes exposing (selected)
 import Html.Events
 import Html.Keyed
 import Html.Lazy
@@ -183,8 +183,60 @@ shadow color =
 viewDiv : NewModel -> List (Html Msg)
 viewDiv model =
     case model of
-        Moving _ ->
-            oldViewDiv (toOldModel model)
+        Moving { selected, unSelected, current, start } ->
+            let
+                offset = Point.sub current start
+       
+                top =
+                    String.fromInt offset.y ++ "px"
+
+                left =
+                    String.fromInt offset.x ++ "px"         
+                oldModel =
+                    toOldModel model
+
+                edges =
+                    oldModel.edges
+
+                image =
+                    oldModel.image
+
+                visibleGroups =
+                    oldModel.visibleGroups
+
+                pieceGroupDiv : PieceGroup -> List ( String, Html msg )
+                pieceGroupDiv pg =
+                    let
+                        render pid =
+                            ( "piece-" ++ String.fromInt pid
+                            , lazyPieceDiv image pg pid
+                            )
+                    in
+                    List.map render pg.members
+
+                renderPieces pieces =
+                    pieces
+                        |> List.filter
+                            (\pieceGroup -> Set.member pieceGroup.visibilityGroup visibleGroups)
+                        |> List.map pieceGroupDiv
+                        |> List.concat
+
+                clipPathDefs =
+                    lazyclipPathDefs image edges
+            in
+            [ Html.Keyed.node
+                "div"
+                []
+                (renderPieces unSelected)
+            , Html.Keyed.node
+                "div"
+                [ Html.Attributes.style "transform" ("translate(" ++ left ++ "," ++ top ++ ")")
+                ]
+                (renderPieces selected)
+            , Svg.svg
+                []
+                [ clipPathDefs ]
+            ]
 
         SelectingWithBox { oldModel } ->
             oldViewDiv oldModel
