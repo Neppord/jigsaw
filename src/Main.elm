@@ -155,8 +155,7 @@ update msg newModel =
                 |> Tuple.mapFirst toNewModel
 
         MouseMove newPos ->
-            updateMoveMouse newPos (toOldModel newModel)
-                |> Tuple.mapFirst toNewModel
+            updateMoveMouse newPos newModel
 
 
 
@@ -288,22 +287,20 @@ updateMouseUp model =
     )
 
 
-updateMoveMouse : Point -> Model -> ( Model, Cmd Msg )
+updateMoveMouse : Point -> NewModel -> ( NewModel, Cmd Msg )
 updateMoveMouse newPos model =
-    ( Model.toOldModel
-        (case toNewModel model of
-            Model.Moving data ->
-                Model.Moving { data | current = newPos }
+    ( case model of
+        Model.Moving data ->
+            Model.Moving { data | current = newPos }
 
-            Model.SelectingWithBox data ->
-                Model.SelectingWithBox { data | current = newPos }
+        Model.SelectingWithBox data ->
+            Model.SelectingWithBox { data | current = newPos }
 
-            Model.DeselectingWithBox data ->
-                Model.DeselectingWithBox { data | current = newPos }
+        Model.DeselectingWithBox data ->
+            Model.DeselectingWithBox { data | current = newPos }
 
-            Model.Identity data ->
-                Model.Identity data
-        )
+        Model.Identity data ->
+            Model.Identity data
     , Cmd.none
     )
 
