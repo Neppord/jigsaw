@@ -30,24 +30,26 @@ import SvgUtil
 
 view : NewModel -> Html Msg
 view model =
-    oldView (toOldModel model)
+    let
+        image =
+            oldModel.image
 
-
-oldView : Model -> Html Msg
-oldView model =
+        oldModel =
+            toOldModel model
+    in
     Html.div
         turnOffTheBloodyImageDragging
         [ Html.button
             [ Html.Events.onClick Scramble ]
             [ Html.text "scramble" ]
         , Html.div
-            [ Html.Attributes.style "width" <| String.fromInt model.image.width ++ "px"
-            , Html.Attributes.style "height" <| String.fromInt model.image.height ++ "px"
+            [ Html.Attributes.style "width" <| String.fromInt image.width ++ "px"
+            , Html.Attributes.style "height" <| String.fromInt image.height ++ "px"
             , Html.Attributes.style "position" "absolute"
             , Html.Attributes.style "top" "100px"
             , Html.Attributes.style "left" "0px"
             ]
-            (viewSelectionBox (model.maxZLevel + 1) model.selectionBox ++ viewDiv model)
+            (viewSelectionBox (oldModel.maxZLevel + 1) oldModel.selectionBox ++ viewDiv oldModel)
         ]
 
 
