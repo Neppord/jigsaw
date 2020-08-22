@@ -3,7 +3,7 @@ module View exposing (view)
 import Dict
 import Edge exposing (Edge)
 import Html exposing (Attribute, Html)
-import Html.Attributes exposing (selected)
+import Html.Attributes
 import Html.Events
 import Html.Keyed
 import Html.Lazy
@@ -116,13 +116,13 @@ viewSelectionBox zIndex selectionBox =
             [ lazyDivSelectionBox zIndex hidden "rgba(0,255,0,0.2)" ]
 
 
-lazyPieceDiv : JigsawImage -> PieceGroup -> Int -> Html msg
+lazyPieceDiv : JigsawImage -> PieceGroup -> Int -> Int -> Html msg
 lazyPieceDiv =
-    Html.Lazy.lazy3 pieceDiv
+    Html.Lazy.lazy4 pieceDiv
 
 
-pieceDiv : JigsawImage -> PieceGroup -> Int -> Html msg
-pieceDiv image pg pid =
+pieceDiv : JigsawImage -> PieceGroup -> Int -> Int -> Html msg
+pieceDiv image pg zIndex pid =
     let
         offset =
             pieceIdToOffset image pid
@@ -147,7 +147,7 @@ pieceDiv image pg pid =
                 "black"
     in
     [ Html.div
-        [ Html.Attributes.style "z-index" <| String.fromInt pg.zlevel
+        [ Html.Attributes.style "z-index" <| String.fromInt zIndex
         , Html.Attributes.style "width" <| String.fromInt w ++ "px"
         , Html.Attributes.style "height" <| String.fromInt h ++ "px"
         , Html.Attributes.style "clipPath" <| clipPathRef pid
@@ -209,7 +209,7 @@ viewDiv model =
                     let
                         render pid =
                             ( "piece-" ++ String.fromInt pid
-                            , lazyPieceDiv image pg pid
+                            , lazyPieceDiv image pg pg.zlevel pid
                             )
                     in
                     List.map render pg.members
@@ -256,7 +256,7 @@ oldViewDiv model =
             let
                 render pid =
                     ( "piece-" ++ String.fromInt pid
-                    , lazyPieceDiv model.image pg pid
+                    , lazyPieceDiv model.image pg pg.zlevel pid
                     )
             in
             List.map render pg.members

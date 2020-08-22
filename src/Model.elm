@@ -277,8 +277,8 @@ init () =
             { path = "../resources/kitten.png"
             , width = 533
             , height = 538
-            , xpieces = 4
-            , ypieces = 4
+            , xpieces = 50
+            , ypieces = 50
             , scale = 1.0
             }
 
