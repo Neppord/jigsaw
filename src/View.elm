@@ -3,7 +3,7 @@ module View exposing (view)
 import Dict
 import Edge exposing (Edge)
 import Html exposing (Attribute, Html)
-import Html.Attributes
+import Html.Attributes exposing (style)
 import Html.Events
 import Html.Keyed
 import Html.Lazy
@@ -43,11 +43,11 @@ view model =
             [ Html.Events.onClick Scramble ]
             [ Html.text "scramble" ]
         , Html.div
-            [ Html.Attributes.style "width" <| String.fromInt image.width ++ "px"
-            , Html.Attributes.style "height" <| String.fromInt image.height ++ "px"
-            , Html.Attributes.style "position" "absolute"
-            , Html.Attributes.style "top" "100px"
-            , Html.Attributes.style "left" "0px"
+            [ style "width" <| String.fromInt image.width ++ "px"
+            , style "height" <| String.fromInt image.height ++ "px"
+            , style "position" "absolute"
+            , style "top" "100px"
+            , style "left" "0px"
             ]
             (viewSelectionBox (oldModel.maxZLevel + 1) oldModel.selectionBox ++ viewDiv model)
         ]
@@ -55,11 +55,11 @@ view model =
 
 turnOffTheBloodyImageDragging : List (Attribute msg)
 turnOffTheBloodyImageDragging =
-    [ Html.Attributes.style "-webkit-user-select" "none"
-    , Html.Attributes.style "-khtml-user-select" "none"
-    , Html.Attributes.style "-moz-user-select" "none"
-    , Html.Attributes.style "-o-user-select" "none"
-    , Html.Attributes.style "user-select" "none"
+    [ style "-webkit-user-select" "none"
+    , style "-khtml-user-select" "none"
+    , style "-moz-user-select" "none"
+    , style "-o-user-select" "none"
+    , style "user-select" "none"
     , Html.Attributes.draggable "false"
     ]
 
@@ -82,14 +82,14 @@ divSelectionBox zIndex box color =
             max 100 topLeft.y
     in
     Html.div
-        ([ Html.Attributes.style "width" <| String.fromInt (bottomRight.x - topLeft.x) ++ "px"
-         , Html.Attributes.style "height" <| String.fromInt (bottomRight.y - top) ++ "px"
-         , Html.Attributes.style "background-color" color
-         , Html.Attributes.style "border-style" "dotted"
-         , Html.Attributes.style "top" <| String.fromInt (top - 100) ++ "px"
-         , Html.Attributes.style "left" <| String.fromInt topLeft.x ++ "px"
-         , Html.Attributes.style "z-index" <| String.fromInt zIndex
-         , Html.Attributes.style "position" "absolute"
+        ([ style "width" <| String.fromInt (bottomRight.x - topLeft.x) ++ "px"
+         , style "height" <| String.fromInt (bottomRight.y - top) ++ "px"
+         , style "background-color" color
+         , style "border-style" "dotted"
+         , style "top" <| String.fromInt (top - 100) ++ "px"
+         , style "left" <| String.fromInt topLeft.x ++ "px"
+         , style "z-index" <| String.fromInt zIndex
+         , style "position" "absolute"
          ]
             ++ turnOffTheBloodyImageDragging
         )
@@ -155,23 +155,23 @@ renderPiece image pg zIndex pid =
             String.fromInt (pg.position.x + offset.x - w // 4) ++ "px"
     in
     Html.div
-        [ Html.Attributes.style "z-index" <| String.fromInt zIndex
-        , Html.Attributes.style "width" <| String.fromInt w ++ "px"
-        , Html.Attributes.style "height" <| String.fromInt h ++ "px"
-        , Html.Attributes.style "clipPath" <| clipPathRef pid
-        , Html.Attributes.style "background-image" <| "url('" ++ image.path ++ "')"
-        , Html.Attributes.style "background-size" <|
+        [ style "z-index" <| String.fromInt zIndex
+        , style "width" <| String.fromInt w ++ "px"
+        , style "height" <| String.fromInt h ++ "px"
+        , style "clipPath" <| clipPathRef pid
+        , style "background-image" <| "url('" ++ image.path ++ "')"
+        , style "background-size" <|
             String.fromInt (floor <| image.scale * toFloat image.width)
                 ++ "px "
                 ++ String.fromInt (floor <| image.scale * toFloat image.height)
                 ++ "px"
-        , Html.Attributes.style "background-position" <|
+        , style "background-position" <|
             String.fromInt (w // 4 - offset.x)
                 ++ "px "
                 ++ String.fromInt (h // 4 - offset.y)
                 ++ "px"
-        , Html.Attributes.style "position" "absolute"
-        , Html.Attributes.style "transform" ("translate(" ++ left ++ "," ++ top ++ ")")
+        , style "position" "absolute"
+        , style "transform" ("translate(" ++ left ++ "," ++ top ++ ")")
         ]
         []
 
@@ -179,7 +179,7 @@ renderPiece image pg zIndex pid =
 shadow : String -> List (Html msg) -> Html msg
 shadow color =
     Html.div
-        [ Html.Attributes.style "filter" <|
+        [ style "filter" <|
             "drop-shadow(0px 0px 2px "
                 ++ color
                 ++ ")"
@@ -229,7 +229,7 @@ viewDiv model =
                     |> renderPieces image
                 )
             , keyedDiv
-                [ Html.Attributes.style
+                [ style
                     "transform"
                     ("translate(" ++ left ++ "," ++ top ++ ")")
                 ]
