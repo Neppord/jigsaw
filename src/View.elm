@@ -33,7 +33,7 @@ view : NewModel -> Html Msg
 view model =
     let
         image =
-            oldModel.image
+            getImage model
 
         oldModel =
             toOldModel model
@@ -133,8 +133,6 @@ pieceDiv image pg zIndex pid =
                 "black"
     in
     renderPiece image pg zIndex pid
-        |> List.singleton
-        |> shadow color
 
 
 renderPiece : JigsawImage -> PieceGroup -> Int -> Int -> Html msg
@@ -216,6 +214,17 @@ viewDiv model =
             Set.member
                 pieceGroup.visibilityGroup
                 visibleGroups
+
+        shadowWithColor : String -> List ( String, Html msg ) -> List ( String, Html msg )
+        shadowWithColor color keyedPieces =
+            keyedPieces
+                |> List.map (Tuple.mapSecond (shadow color << List.singleton))
+
+        shadowBlack =
+            shadowWithColor "black"
+
+        shadowRed =
+            shadowWithColor "red"
     in
     case model of
         Moving { selected, unSelected, current, start } ->
@@ -228,6 +237,7 @@ viewDiv model =
                 (unSelected
                     |> List.filter isVisible
                     |> renderPieces image
+                    |> shadowBlack
                 )
             , keyedDiv
                 [ style
@@ -236,6 +246,7 @@ viewDiv model =
                 ]
                 (selected
                     |> renderPieces image
+                    |> shadowRed
                 )
             , clipPaths
             ]
@@ -245,10 +256,12 @@ viewDiv model =
                 (unSelected
                     |> List.filter isVisible
                     |> renderPieces image
+                    |> shadowBlack
                 )
             , keyedDiv []
                 (alreadySelected
                     |> renderPieces image
+                    |> shadowRed
                 )
             , clipPaths
             ]
@@ -258,10 +271,12 @@ viewDiv model =
                 (unSelected
                     |> List.filter isVisible
                     |> renderPieces image
+                    |> shadowBlack
                 )
             , keyedDiv []
                 (alreadySelected
                     |> renderPieces image
+                    |> shadowRed
                 )
             , clipPaths
             ]
@@ -271,10 +286,12 @@ viewDiv model =
                 (unSelected
                     |> List.filter isVisible
                     |> renderPieces image
+                    |> shadowBlack
                 )
             , keyedDiv []
                 (selected
                     |> renderPieces image
+                    |> shadowRed
                 )
             , clipPaths
             ]
