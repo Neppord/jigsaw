@@ -70,6 +70,13 @@ turnOffTheBloodyImageDragging =
 viewSelectionBox : NewModel -> Html msg
 viewSelectionBox model =
     let
+        getDimentions { start, current } =
+            { x = min start.x current.x
+            , y = min start.y current.y
+            , w = abs (start.x - current.x)
+            , h = abs (start.y - current.y)
+            }
+
         box x y w h color =
             Html.div
                 ([ style "width" <| String.fromInt w ++ "px"
@@ -85,31 +92,17 @@ viewSelectionBox model =
                 []
     in
     case model of
-        SelectingWithBox { start, current } ->
+        SelectingWithBox data ->
             let
-                ( x, y ) =
-                    ( min start.x current.x
-                    , min start.y current.y
-                    )
-
-                ( w, h ) =
-                    ( abs (start.x - current.x)
-                    , abs (start.y - current.y)
-                    )
+                { x, y, w, h } =
+                    getDimentions data
             in
             box x y w h "rgba(0,0,255,0.2)"
 
-        DeselectingWithBox { start, current } ->
+        DeselectingWithBox data ->
             let
-                ( x, y ) =
-                    ( min start.x current.x
-                    , min start.y current.y
-                    )
-
-                ( w, h ) =
-                    ( abs (start.x - current.x)
-                    , abs (start.y - current.y)
-                    )
+                { x, y, w, h } =
+                    getDimentions data
             in
             box x y w h "rgba(0,255,0,0.2)"
 
