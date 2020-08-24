@@ -125,19 +125,6 @@ lazyPieceDiv =
 pieceDiv : JigsawImage -> PieceGroup -> Int -> Int -> Html msg
 pieceDiv image pg zIndex pid =
     let
-        color =
-            if pg.isSelected then
-                "red"
-
-            else
-                "black"
-    in
-    renderPiece image pg zIndex pid
-
-
-renderPiece : JigsawImage -> PieceGroup -> Int -> Int -> Html msg
-renderPiece image pg zIndex pid =
-    let
         offset =
             pieceIdToOffset image pid
 
