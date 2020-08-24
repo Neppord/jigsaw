@@ -10,16 +10,12 @@ import Html.Lazy
 import JigsawImage exposing (JigsawImage, pieceIdToOffset)
 import Model
     exposing
-        ( Box
-        , Msg(..)
+        ( Msg(..)
         , NewModel(..)
         , SelectionBox(..)
-        , boxBottomRight
-        , boxTopLeft
         , getEdges
         , getImage
         , getVisibilityGroups
-        , toOldModel
         )
 import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
@@ -35,9 +31,6 @@ view model =
     let
         image =
             getImage model
-
-        oldModel =
-            toOldModel model
     in
     Html.div
         turnOffTheBloodyImageDragging
