@@ -327,7 +327,6 @@ piecePath image edges id =
         [ Svg.path
             [ Svg.Attributes.transform <| move ++ scale
             , Svg.Attributes.d curve
-            , Svg.Attributes.fillOpacity "0.0"
             ]
             []
         ]
