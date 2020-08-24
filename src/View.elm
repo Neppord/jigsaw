@@ -124,6 +124,21 @@ lazyPieceDiv =
 pieceDiv : JigsawImage -> PieceGroup -> Int -> Int -> Html msg
 pieceDiv image pg zIndex pid =
     let
+        color =
+            if pg.isSelected then
+                "red"
+
+            else
+                "black"
+    in
+    renderPiece image pg zIndex pid
+        |> List.singleton
+        |> shadow color
+
+renderPiece : JigsawImage -> PieceGroup -> Int -> Int -> Html msg
+renderPiece image pg zIndex pid =
+    let
+    
         offset =
             pieceIdToOffset image pid
 
@@ -138,15 +153,8 @@ pieceDiv image pg zIndex pid =
 
         left =
             String.fromInt (pg.position.x + offset.x - w // 4) ++ "px"
-
-        color =
-            if pg.isSelected then
-                "red"
-
-            else
-                "black"
     in
-    [ Html.div
+    Html.div
         [ Html.Attributes.style "z-index" <| String.fromInt zIndex
         , Html.Attributes.style "width" <| String.fromInt w ++ "px"
         , Html.Attributes.style "height" <| String.fromInt h ++ "px"
@@ -166,9 +174,6 @@ pieceDiv image pg zIndex pid =
         , Html.Attributes.style "transform" ("translate(" ++ left ++ "," ++ top ++ ")")
         ]
         []
-    ]
-        |> shadow color
-
 
 shadow : String -> List (Html msg) -> Html msg
 shadow color =
