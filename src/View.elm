@@ -238,11 +238,12 @@ viewDiv model =
                 [ clipPathDefs ]
             ]
 
-        SelectingWithBox { oldModel } ->
-            oldViewDiv oldModel
+        SelectingWithBox _ ->
+            oldViewDiv (toOldModel model)
 
-        DeselectingWithBox { oldModel } ->
-            oldViewDiv oldModel
+        DeselectingWithBox _ ->
+            oldViewDiv (toOldModel model)
+
 
         Identity { oldModel } ->
             oldViewDiv oldModel
