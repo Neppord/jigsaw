@@ -15,6 +15,9 @@ import Model
         , SelectionBox(..)
         , boxBottomRight
         , boxTopLeft
+        , getEdges
+        , getImage
+        , getVisibilityGroups
         , toOldModel
         )
 import PieceGroup exposing (PieceGroup)
@@ -189,54 +192,6 @@ keyedDiv =
     Html.Keyed.node "div"
 
 
-getImage : NewModel -> JigsawImage
-getImage model =
-    case model of
-        Identity { oldModel } ->
-            oldModel.image
-
-        Moving { oldModel } ->
-            oldModel.image
-
-        SelectingWithBox { oldModel } ->
-            oldModel.image
-
-        DeselectingWithBox { oldModel } ->
-            oldModel.image
-
-
-getEdges : NewModel -> List (List Edge)
-getEdges model =
-    case model of
-        Identity { oldModel } ->
-            oldModel.edges
-
-        Moving { oldModel } ->
-            oldModel.edges
-
-        SelectingWithBox { oldModel } ->
-            oldModel.edges
-
-        DeselectingWithBox { oldModel } ->
-            oldModel.edges
-
-
-getVisibilityGroups : NewModel -> Set.Set Int
-getVisibilityGroups model =
-    case model of
-        Identity { oldModel } ->
-            oldModel.visibleGroups
-
-        Moving { oldModel } ->
-            oldModel.visibleGroups
-
-        SelectingWithBox { oldModel } ->
-            oldModel.visibleGroups
-
-        DeselectingWithBox { oldModel } ->
-            oldModel.visibleGroups
-
-
 px : Int -> String
 px int =
     String.fromInt int ++ " px"
@@ -267,7 +222,6 @@ viewDiv model =
             let
                 { x, y } =
                     Point.sub current start
-
             in
             [ keyedDiv
                 []

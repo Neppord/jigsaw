@@ -6,7 +6,7 @@ module Model exposing
     , Msg(..)
     , NewModel(..)
     , Selected(..)
-    , SelectionBox(..)
+    , SelectionBox(..), getImage, getEdges, getVisibilityGroups
     , boxBottomRight
     , boxTopLeft
     , defaultPieceGroup
@@ -30,7 +30,7 @@ import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
 import Random
 import Random.List
-import Set as S
+import Set as S exposing (Set)
 
 
 type Msg
@@ -390,3 +390,48 @@ defaultPieceGroup =
     , members = []
     , visibilityGroup = -1
     }
+
+getVisibilityGroups : NewModel -> Set Int
+getVisibilityGroups model =
+    case model of
+        Identity { oldModel } ->
+            oldModel.visibleGroups
+
+        Moving { oldModel } ->
+            oldModel.visibleGroups
+
+        SelectingWithBox { oldModel } ->
+            oldModel.visibleGroups
+
+        DeselectingWithBox { oldModel } ->
+            oldModel.visibleGroups
+
+getEdges : NewModel -> List (List Edge)
+getEdges model =
+    case model of
+        Identity { oldModel } ->
+            oldModel.edges
+
+        Moving { oldModel } ->
+            oldModel.edges
+
+        SelectingWithBox { oldModel } ->
+            oldModel.edges
+
+        DeselectingWithBox { oldModel } ->
+            oldModel.edges
+
+getImage : NewModel -> JigsawImage
+getImage model =
+    case model of
+        Identity { oldModel } ->
+            oldModel.image
+
+        Moving { oldModel } ->
+            oldModel.image
+
+        SelectingWithBox { oldModel } ->
+            oldModel.image
+
+        DeselectingWithBox { oldModel } ->
+            oldModel.image
