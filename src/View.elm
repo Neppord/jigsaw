@@ -41,18 +41,25 @@ view model =
     Html.div
         turnOffTheBloodyImageDragging
         [ viewClipPath model
-        , Html.button
-            [ Html.Events.onClick Scramble ]
-            [ Html.text "scramble" ]
+        
         , Html.div
             [ style "width" <| String.fromInt image.width ++ "px"
             , style "height" <| String.fromInt image.height ++ "px"
             , style "position" "absolute"
             , style "top" "0"
-            , style "left" "0px"
+            , style "left" "0"
             ]
             (viewDiv model)
         , viewSelectionBox oldModel.selectionBox
+        , Html.div
+            [ style "position" "absolute"
+            , style "top" "0"
+            , style "left" "0"
+            ]
+            [Html.button
+                [ Html.Events.onClick Scramble ]
+                [ Html.text "scramble" ]
+            ]
         ]
 
 
