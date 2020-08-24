@@ -270,7 +270,6 @@ renderPieces image visiblePieces =
 oldViewDiv : Model -> List (Html Msg)
 oldViewDiv model =
     let
-
         viewPieces =
             model.pieceGroups
                 |> Dict.values
@@ -325,8 +324,8 @@ piecePath image edges id =
     Svg.clipPath
         [ Svg.Attributes.id <| pieceClipId id ]
         [ Svg.path
-            [ Svg.Attributes.transform <| move ++ scale
-            , Svg.Attributes.d curve
+            [ Svg.Attributes.d curve
+            , Svg.Attributes.transform <| move ++ scale
             ]
             []
         ]
