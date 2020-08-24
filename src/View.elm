@@ -194,7 +194,7 @@ keyedDiv =
 
 px : Int -> String
 px int =
-    String.fromInt int ++ " px"
+    String.fromInt int ++ "px"
 
 
 viewDiv : NewModel -> List (Html Msg)
