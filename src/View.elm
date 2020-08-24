@@ -185,6 +185,8 @@ shadow color =
                 ++ ")"
         ]
 
+keyedDiv : List (Attribute msg) -> List ( String, Html msg ) -> Html msg
+keyedDiv = Html.Keyed.node "div"
 
 viewDiv : NewModel -> List (Html Msg)
 viewDiv model =
@@ -233,12 +235,10 @@ viewDiv model =
                         |> List.map pieceGroupDiv
                         |> List.concat
             in
-            [ Html.Keyed.node
-                "div"
+            [ keyedDiv
                 []
                 (renderPieces unSelected)
-            , Html.Keyed.node
-                "div"
+            , keyedDiv
                 [ Html.Attributes.style
                     "transform"
                     ("translate(" ++ left ++ "," ++ top ++ ")")
@@ -278,8 +278,7 @@ oldViewDiv model =
                 |> List.map pieceGroupDiv
                 |> List.concat
     in
-    [ Html.Keyed.node
-        "div"
+    [ keyedDiv
         []
         viewPieces
     , lazyclipPathDefs model.image model.edges
