@@ -325,18 +325,12 @@ piecePath image edges id =
     Svg.clipPath
         [ Svg.Attributes.id <| pieceClipId id ]
         [ Svg.path
-            [ Svg.Attributes.id <| pieceOutlineId id
-            , Svg.Attributes.transform <| move ++ scale
+            [ Svg.Attributes.transform <| move ++ scale
             , Svg.Attributes.d curve
             , Svg.Attributes.fillOpacity "0.0"
             ]
             []
         ]
-
-
-pieceOutlineId : Int -> String
-pieceOutlineId id =
-    "piece-" ++ String.fromInt id ++ "-outline"
 
 
 pieceClipId : Int -> String
