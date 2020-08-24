@@ -40,7 +40,8 @@ view model =
     in
     Html.div
         turnOffTheBloodyImageDragging
-        [ Html.button
+        [ viewClipPath model
+        , Html.button
             [ Html.Events.onClick Scramble ]
             [ Html.text "scramble" ]
         , Html.div
@@ -180,17 +181,23 @@ px int =
     String.fromInt int ++ "px"
 
 
-viewDiv : NewModel -> List (Html Msg)
-viewDiv model =
+viewClipPath : NewModel -> Html Msg
+viewClipPath model =
     let
         image =
             getImage model
 
         edges =
             getEdges model
+    in
+    lazyclipPathDefs image edges
 
-        clipPaths =
-            lazyclipPathDefs image edges
+
+viewDiv : NewModel -> List (Html Msg)
+viewDiv model =
+    let
+        image =
+            getImage model
 
         visibleGroups =
             getVisibilityGroups model
@@ -233,7 +240,6 @@ viewDiv model =
                     |> renderPieces image
                     |> shadowRed
                 )
-            , clipPaths
             ]
 
         SelectingWithBox { unSelected, alreadySelected, within } ->
@@ -250,7 +256,6 @@ viewDiv model =
                     |> renderPieces image
                     |> shadowRed
                 )
-            , clipPaths
             ]
 
         DeselectingWithBox { unSelected, alreadySelected, within } ->
@@ -267,7 +272,6 @@ viewDiv model =
                     |> renderPieces image
                     |> shadowRed
                 )
-            , clipPaths
             ]
 
         Identity { unSelected, selected } ->
@@ -282,7 +286,6 @@ viewDiv model =
                     |> renderPieces image
                     |> shadowRed
                 )
-            , clipPaths
             ]
 
 
