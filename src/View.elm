@@ -245,6 +245,7 @@ viewDiv model =
                 )
             , keyedDiv []
                 (alreadySelected
+                    |> List.filter (\x -> not <| List.member x within)
                     |> List.append within
                     |> renderPieces image
                     |> shadowRed
@@ -256,12 +257,13 @@ viewDiv model =
                 (unSelected
                     |> List.filter isVisible
                     |> List.filter (\x -> not <| List.member x within)
+                    |> List.append within
                     |> renderPieces image
                     |> shadowBlack
                 )
             , keyedDiv []
                 (alreadySelected
-                    |> List.append within
+                    |> List.filter (\x -> not <| List.member x within)
                     |> renderPieces image
                     |> shadowRed
                 )
