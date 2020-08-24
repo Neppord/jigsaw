@@ -2,7 +2,7 @@ module View exposing (view)
 
 import Edge exposing (Edge)
 import Html exposing (Attribute, Html)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (height, style, width)
 import Html.Events
 import Html.Keyed
 import Html.Lazy
@@ -314,7 +314,7 @@ lazyclipPathDefs =
             definePieceClipPaths image edges
                 |> Svg.defs []
                 |> List.singleton
-                |> Svg.svg []
+                |> Svg.svg [ width 0, height 0 ]
         )
 
 
