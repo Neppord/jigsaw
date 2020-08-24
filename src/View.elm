@@ -1,6 +1,5 @@
 module View exposing (view)
 
-import Dict
 import Edge exposing (Edge)
 import Html exposing (Attribute, Html)
 import Html.Attributes exposing (style)
@@ -11,7 +10,6 @@ import JigsawImage exposing (JigsawImage, pieceIdToOffset)
 import Model
     exposing
         ( Box
-        , Model
         , Msg(..)
         , NewModel(..)
         , SelectionBox(..)
@@ -220,6 +218,21 @@ getEdges model =
         DeselectingWithBox { oldModel } ->
             oldModel.edges
 
+getVisibilityGroups : NewModel -> Set.Set Int
+getVisibilityGroups model =
+    case model of
+        Identity { oldModel } ->
+            oldModel.visibleGroups
+
+        Moving { oldModel } ->
+            oldModel.visibleGroups
+
+        SelectingWithBox { oldModel } ->
+            oldModel.visibleGroups
+
+        DeselectingWithBox { oldModel } ->
+            oldModel.visibleGroups
+
 
 viewDiv : NewModel -> List (Html Msg)
 viewDiv model =
@@ -227,7 +240,15 @@ viewDiv model =
         image = getImage model
         edges = getEdges model
         clipPaths = lazyclipPathDefs image edges
-        
+
+
+        visibleGroups =
+            getVisibilityGroups model
+
+        isVisible pieceGroup =
+            Set.member
+                pieceGroup.visibilityGroup
+                visibleGroups
     in
     case model of
         Moving { selected, unSelected, current, start } ->
@@ -240,17 +261,6 @@ viewDiv model =
 
                 left =
                     String.fromInt offset.x ++ "px"
-
-                oldModel =
-                    toOldModel model
-
-                visibleGroups =
-                    oldModel.visibleGroups
-
-                isVisible pieceGroup =
-                    Set.member
-                        pieceGroup.visibilityGroup
-                        visibleGroups
             in
             [ keyedDiv
                 []
@@ -269,14 +279,32 @@ viewDiv model =
             , clipPaths
             ]
 
-        SelectingWithBox _ ->
-            oldViewDiv (toOldModel model)
+        SelectingWithBox { unSelected, alreadySelected } ->
+            [ keyedDiv [] (unSelected
+                |> List.filter isVisible
+                |> renderPieces image) 
+            , keyedDiv [] (alreadySelected
+                |> renderPieces image
+            ) 
+            , clipPaths]
 
-        DeselectingWithBox _ ->
-            oldViewDiv (toOldModel model)
+        DeselectingWithBox { unSelected, alreadySelected } ->
+            [ keyedDiv [] (unSelected
+                |> List.filter isVisible
+                |> renderPieces image) 
+            , keyedDiv [] (alreadySelected
+                |> renderPieces image) 
+            , clipPaths]
 
-        Identity { oldModel } ->
-            oldViewDiv oldModel
+        Identity { unSelected, selected } ->
+            [ keyedDiv [] (unSelected
+                |> List.filter isVisible
+                |> renderPieces image) 
+            , keyedDiv [] (selected
+                |> renderPieces image) 
+            , clipPaths
+            ]
+
 
 
 renderPieces : JigsawImage -> List PieceGroup -> List ( String, Html msg )
@@ -295,24 +323,6 @@ renderPieces image visiblePieces =
     visiblePieces
         |> List.map pieceGroupDiv
         |> List.concat
-
-
-oldViewDiv : Model -> List (Html Msg)
-oldViewDiv model =
-    let
-        viewPieces =
-            model.pieceGroups
-                |> Dict.values
-                |> List.filter
-                    (\pieceGroup -> Set.member pieceGroup.visibilityGroup model.visibleGroups)
-                |> renderPieces model.image
-    in
-    [ keyedDiv
-        []
-        viewPieces
-    , lazyclipPathDefs model.image model.edges
-    ]
-
 
 lazyclipPathDefs : JigsawImage -> List (List Edge) -> Html msg
 lazyclipPathDefs =
