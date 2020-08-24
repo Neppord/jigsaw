@@ -228,6 +228,7 @@ updateMouseDown coordinate keyboard model =
         clickedPieceGroup =
             D.values model.pieceGroups
                 |> List.filter (isPointInsidePieceGroup model.visibleGroups model.image coordinate)
+                |> List.reverse
                 |> List.head
                 |> Maybe.withDefault defaultPieceGroup
 
