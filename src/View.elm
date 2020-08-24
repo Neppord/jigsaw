@@ -50,7 +50,7 @@ view model =
             , style "top" "100px"
             , style "left" "0px"
             ]
-            (viewSelectionBox (oldModel.maxZLevel + 1) oldModel.selectionBox ++ viewDiv model)
+            (viewDiv model ++ viewSelectionBox oldModel.selectionBox)
         ]
 
 
@@ -65,13 +65,13 @@ turnOffTheBloodyImageDragging =
     ]
 
 
-lazyDivSelectionBox : Int -> Box -> String -> Svg.Svg msg
+lazyDivSelectionBox : Box -> String -> Svg.Svg msg
 lazyDivSelectionBox =
-    Svg.Lazy.lazy3 divSelectionBox
+    Svg.Lazy.lazy2 divSelectionBox
 
 
-divSelectionBox : Int -> Box -> String -> Svg.Svg msg
-divSelectionBox zIndex box color =
+divSelectionBox : Box -> String -> Svg.Svg msg
+divSelectionBox box color =
     let
         topLeft =
             boxTopLeft box
@@ -89,7 +89,6 @@ divSelectionBox zIndex box color =
          , style "border-style" "dotted"
          , style "top" <| String.fromInt (top - 100) ++ "px"
          , style "left" <| String.fromInt topLeft.x ++ "px"
-         , style "z-index" <| String.fromInt zIndex
          , style "position" "absolute"
          ]
             ++ turnOffTheBloodyImageDragging
@@ -97,8 +96,8 @@ divSelectionBox zIndex box color =
         []
 
 
-viewSelectionBox : Int -> SelectionBox -> List (Html msg)
-viewSelectionBox zIndex selectionBox =
+viewSelectionBox : SelectionBox -> List (Html msg)
+viewSelectionBox selectionBox =
     let
         hidden =
             { staticCorner = { x = -10, y = -10 }
@@ -108,22 +107,22 @@ viewSelectionBox zIndex selectionBox =
     in
     case selectionBox of
         Normal box ->
-            [ lazyDivSelectionBox zIndex box "rgba(0,0,255,0.2)" ]
+            [ lazyDivSelectionBox box "rgba(0,0,255,0.2)" ]
 
         Inverted box ->
-            [ lazyDivSelectionBox zIndex box "rgba(0,255,0,0.2)" ]
+            [ lazyDivSelectionBox box "rgba(0,255,0,0.2)" ]
 
         NullBox ->
-            [ lazyDivSelectionBox zIndex hidden "rgba(0,255,0,0.2)" ]
+            [ lazyDivSelectionBox hidden "rgba(0,255,0,0.2)" ]
 
 
-lazyPieceDiv : JigsawImage -> PieceGroup -> Int -> Int -> Html msg
+lazyPieceDiv : JigsawImage -> PieceGroup -> Int -> Html msg
 lazyPieceDiv =
-    Html.Lazy.lazy4 pieceDiv
+    Html.Lazy.lazy3 pieceDiv
 
 
-pieceDiv : JigsawImage -> PieceGroup -> Int -> Int -> Html msg
-pieceDiv image pg zIndex pid =
+pieceDiv : JigsawImage -> PieceGroup -> Int -> Html msg
+pieceDiv image pg pid =
     let
         offset =
             pieceIdToOffset image pid
@@ -141,8 +140,7 @@ pieceDiv image pg zIndex pid =
             String.fromInt (pg.position.x + offset.x - w // 4) ++ "px"
     in
     Html.div
-        [ style "z-index" <| String.fromInt zIndex
-        , style "width" <| String.fromInt w ++ "px"
+        [ style "width" <| String.fromInt w ++ "px"
         , style "height" <| String.fromInt h ++ "px"
         , style "clipPath" <| clipPathRef pid
         , style "background-image" <| "url('" ++ image.path ++ "')"
@@ -296,7 +294,7 @@ renderPieces image visiblePieces =
             let
                 render pid =
                     ( "piece-" ++ String.fromInt pid
-                    , lazyPieceDiv image pg pg.zlevel pid
+                    , lazyPieceDiv image pg pid
                     )
             in
             List.map render pg.members
