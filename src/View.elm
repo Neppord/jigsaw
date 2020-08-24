@@ -48,10 +48,11 @@ view model =
             [ style "width" <| String.fromInt image.width ++ "px"
             , style "height" <| String.fromInt image.height ++ "px"
             , style "position" "absolute"
-            , style "top" "100px"
+            , style "top" "0"
             , style "left" "0px"
             ]
-            (viewDiv model ++ viewSelectionBox oldModel.selectionBox)
+            (viewDiv model)
+        , viewSelectionBox oldModel.selectionBox
         ]
 
 
@@ -80,15 +81,14 @@ divSelectionBox box color =
         bottomRight =
             boxBottomRight box
 
-        top =
-            max 100 topLeft.y
+        top = topLeft.y
     in
     Html.div
         ([ style "width" <| String.fromInt (bottomRight.x - topLeft.x) ++ "px"
          , style "height" <| String.fromInt (bottomRight.y - top) ++ "px"
          , style "background-color" color
          , style "border-style" "dotted"
-         , style "top" <| String.fromInt (top - 100) ++ "px"
+         , style "top" <| String.fromInt top ++ "px"
          , style "left" <| String.fromInt topLeft.x ++ "px"
          , style "position" "absolute"
          ]
@@ -97,7 +97,7 @@ divSelectionBox box color =
         []
 
 
-viewSelectionBox : SelectionBox -> List (Html msg)
+viewSelectionBox : SelectionBox -> Html msg
 viewSelectionBox selectionBox =
     let
         hidden =
@@ -108,13 +108,13 @@ viewSelectionBox selectionBox =
     in
     case selectionBox of
         Normal box ->
-            [ lazyDivSelectionBox box "rgba(0,0,255,0.2)" ]
+            lazyDivSelectionBox box "rgba(0,0,255,0.2)"
 
         Inverted box ->
-            [ lazyDivSelectionBox box "rgba(0,255,0,0.2)" ]
+            lazyDivSelectionBox box "rgba(0,255,0,0.2)"
 
         NullBox ->
-            [ lazyDivSelectionBox hidden "rgba(0,255,0,0.2)" ]
+            lazyDivSelectionBox hidden "rgba(0,255,0,0.2)"
 
 
 lazyPieceDiv : JigsawImage -> PieceGroup -> Int -> Html msg

@@ -124,9 +124,9 @@ isPieceInsideBox image pos boxTL boxBR id =
             Point.add pieceTL <| Point pieceWidth pieceHeight
     in
     (pieceTL.x <= boxBR.x)
-        && (pieceTL.y + 100 <= boxBR.y)
+        && (pieceTL.y <= boxBR.y)
         && (pieceBR.x >= boxTL.x)
-        && (pieceBR.y + 100 >= boxTL.y)
+        && (pieceBR.y >= boxTL.y)
 
 
 isPieceGroupInsideBox : JigsawImage -> Point -> Point -> PieceGroup -> Bool
@@ -150,9 +150,9 @@ isPointInsidePiece image point pos id =
             Point.add pieceTL <| Point pieceWidth pieceHeight
     in
     (pieceTL.x <= point.x)
-        && (pieceTL.y + 100 <= point.y)
+        && (pieceTL.y <= point.y)
         && (pieceBR.x >= point.x)
-        && (pieceBR.y + 100 >= point.y)
+        && (pieceBR.y >= point.y)
 
 
 isPointInsidePieceGroup visibleGroups image point pieceGroup =
