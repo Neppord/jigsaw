@@ -1,5 +1,6 @@
 module View exposing (view)
 
+import Debug
 import Edge exposing (Edge)
 import Html exposing (Attribute, Html)
 import Html.Attributes exposing (height, style, width)
@@ -41,7 +42,6 @@ view model =
     Html.div
         turnOffTheBloodyImageDragging
         [ viewClipPath model
-        
         , Html.div
             [ style "width" <| String.fromInt image.width ++ "px"
             , style "height" <| String.fromInt image.height ++ "px"
@@ -50,13 +50,13 @@ view model =
             , style "left" "0"
             ]
             (viewDiv model)
-        , viewSelectionBox oldModel.selectionBox
+        , viewSelectionBox model
         , Html.div
             [ style "position" "absolute"
             , style "top" "0"
             , style "left" "0"
             ]
-            [Html.button
+            [ Html.button
                 [ Html.Events.onClick Scramble ]
                 [ Html.text "scramble" ]
             ]
@@ -74,54 +74,54 @@ turnOffTheBloodyImageDragging =
     ]
 
 
-lazyDivSelectionBox : Box -> String -> Svg.Svg msg
-lazyDivSelectionBox =
-    Svg.Lazy.lazy2 divSelectionBox
-
-
-divSelectionBox : Box -> String -> Svg.Svg msg
-divSelectionBox box color =
+viewSelectionBox : NewModel -> Html msg
+viewSelectionBox model =
     let
-        topLeft =
-            boxTopLeft box
-
-        bottomRight =
-            boxBottomRight box
-
-        top = topLeft.y
+        box x y w h color =
+            Html.div
+                ([ style "width" <| String.fromInt w ++ "px"
+                 , style "height" <| String.fromInt h ++ "px"
+                 , style "background-color" color
+                 , style "border-style" "dotted"
+                 , style "top" <| String.fromInt y ++ "px"
+                 , style "left" <| String.fromInt x ++ "px"
+                 , style "position" "absolute"
+                 ]
+                    ++ turnOffTheBloodyImageDragging
+                )
+                []
     in
-    Html.div
-        ([ style "width" <| String.fromInt (bottomRight.x - topLeft.x) ++ "px"
-         , style "height" <| String.fromInt (bottomRight.y - top) ++ "px"
-         , style "background-color" color
-         , style "border-style" "dotted"
-         , style "top" <| String.fromInt top ++ "px"
-         , style "left" <| String.fromInt topLeft.x ++ "px"
-         , style "position" "absolute"
-         ]
-            ++ turnOffTheBloodyImageDragging
-        )
-        []
+    case model of
+        SelectingWithBox { start, current } ->
+            let
+                ( x, y ) =
+                    ( min start.x current.x
+                    , min start.y current.y
+                    )
 
+                ( w, h ) =
+                    ( abs (start.x - current.x)
+                    , abs (start.y - current.y)
+                    )
+            in
+            box x y w h "rgba(0,0,255,0.2)"
 
-viewSelectionBox : SelectionBox -> Html msg
-viewSelectionBox selectionBox =
-    let
-        hidden =
-            { staticCorner = { x = -10, y = -10 }
-            , movingCorner = { x = -10, y = -10 }
-            , selectedIds = Set.empty
-            }
-    in
-    case selectionBox of
-        Normal box ->
-            lazyDivSelectionBox box "rgba(0,0,255,0.2)"
+        DeselectingWithBox { start, current } ->
+            let
+                ( x, y ) =
+                    ( min start.x current.x
+                    , min start.y current.y
+                    )
 
-        Inverted box ->
-            lazyDivSelectionBox box "rgba(0,255,0,0.2)"
+                ( w, h ) =
+                    ( abs (start.x - current.x)
+                    , abs (start.y - current.y)
+                    )
+            in
+            box x y w h "rgba(0,255,0,0.2)"
 
-        NullBox ->
-            lazyDivSelectionBox hidden "rgba(0,255,0,0.2)"
+        _ ->
+            box -10 -10 0 0 "rgba(0,255,0,0.2)"
 
 
 lazyPieceDiv : JigsawImage -> PieceGroup -> Int -> Html msg
