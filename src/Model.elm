@@ -6,10 +6,13 @@ module Model exposing
     , Msg(..)
     , NewModel(..)
     , Selected(..)
-    , SelectionBox(..), getImage, getEdges, getVisibilityGroups
+    , SelectionBox(..)
     , boxBottomRight
     , boxTopLeft
     , defaultPieceGroup
+    , getEdges
+    , getImage
+    , getVisibilityGroups
     , init
     , resetModel
     , toNewModel
@@ -29,7 +32,6 @@ import List
 import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
 import Random
-import Random.List
 import Set as S exposing (Set)
 
 
@@ -51,7 +53,6 @@ type alias Model =
     { cursor : Maybe Point
     , pieceGroups : Dict.Dict Int PieceGroup
     , selected : Selected
-    , maxZLevel : Int
     , image : JigsawImage
     , width : Int
     , height : Int
@@ -305,34 +306,25 @@ resetModel image seed =
         ( positions, seed1 ) =
             Random.step (shufflePiecePositions w h image) seed
 
-        ( zlevels, seed2 ) =
-            shuffleZLevels (nx * ny) seed1
-
-        ( edgePoints, seed3 ) =
-            Random.step (generateEdgePoints numberOfEdges) seed2
+        ( edgePoints, seed2 ) =
+            Random.step (generateEdgePoints numberOfEdges) seed1
     in
     toNewModel
         { cursor = Nothing
-        , pieceGroups = createPieceGroups image positions zlevels
+        , pieceGroups = createPieceGroups image positions
         , selected = NullSelection
-        , maxZLevel = nx * ny
         , image = image
         , width = w
         , height = h
         , snapDistance = 30.0
         , selectionBox = NullBox
-        , seed = seed3
+        , seed = seed2
         , edges =
             List.range 0 (image.xpieces * image.ypieces - 1)
                 |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id edgePoints)
         , visibleGroups = S.fromList [ -1 ]
         , keyboard = { shift = False, ctrl = False }
         }
-
-
-shuffleZLevels : Int -> Random.Seed -> ( List Int, Random.Seed )
-shuffleZLevels n seed =
-    Random.step (Random.List.shuffle <| List.range 0 (n - 1)) seed
 
 
 type SelectionBox
@@ -384,12 +376,12 @@ defaultPieceGroup : PieceGroup
 defaultPieceGroup =
     { position = Point 0 0
     , isSelected = False
-    , zlevel = -1
     , id = -10
     , neighbours = S.empty
     , members = []
     , visibilityGroup = -1
     }
+
 
 getVisibilityGroups : NewModel -> Set Int
 getVisibilityGroups model =
@@ -406,6 +398,7 @@ getVisibilityGroups model =
         DeselectingWithBox { oldModel } ->
             oldModel.visibleGroups
 
+
 getEdges : NewModel -> List (List Edge)
 getEdges model =
     case model of
@@ -420,6 +413,7 @@ getEdges model =
 
         DeselectingWithBox { oldModel } ->
             oldModel.edges
+
 
 getImage : NewModel -> JigsawImage
 getImage model =

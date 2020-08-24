@@ -228,15 +228,8 @@ updateMouseDown coordinate keyboard model =
         clickedPieceGroup =
             D.values model.pieceGroups
                 |> List.filter (isPointInsidePieceGroup model.visibleGroups model.image coordinate)
-                |> List.foldl
-                    (\a b ->
-                        if a.zlevel > b.zlevel then
-                            a
-
-                        else
-                            b
-                    )
-                    defaultPieceGroup
+                |> List.head
+                |> Maybe.withDefault defaultPieceGroup
 
         clickedOnBackground =
             clickedPieceGroup.id == -10
@@ -345,7 +338,7 @@ selectPieceGroup model id coordinate keyboard =
             wasSelectedBefore && model.selected == Multiple
 
         fixZlevels =
-            D.insert id { clickedPieceGroup | zlevel = model.maxZLevel }
+            D.insert id clickedPieceGroup
 
         selectClickedPieceGroup =
             D.insert id { clickedPieceGroup | isSelected = True }
@@ -370,8 +363,7 @@ selectPieceGroup model id coordinate keyboard =
                 deselectAllOther << fixZlevels
     in
     { model
-        | maxZLevel = model.maxZLevel + 1
-        , cursor = Just coordinate
+        | cursor = Just coordinate
         , selected = currentSelection <| newPieceGroups model.pieceGroups
         , pieceGroups = newPieceGroups model.pieceGroups
     }

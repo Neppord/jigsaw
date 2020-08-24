@@ -39,8 +39,8 @@ shufflePiecePositions w h image =
     Point.randomPoints n xmin xmax ymin ymax
 
 
-createPieceGroup : JigsawImage -> Int -> Point -> Int -> PieceGroup
-createPieceGroup image id pos zlevel =
+createPieceGroup : JigsawImage -> Int -> Point -> PieceGroup
+createPieceGroup image id pos =
     let
         isRealNeighbour i x =
             x
@@ -66,15 +66,14 @@ createPieceGroup image id pos zlevel =
     { position = position
     , isSelected = False
     , id = id
-    , zlevel = zlevel
     , members = [ id ]
     , neighbours = neighbours
     , visibilityGroup = -1
     }
 
 
-createPieceGroups : JigsawImage -> List Point -> List Int -> D.Dict Int PieceGroup
-createPieceGroups image points levels =
+createPieceGroups : JigsawImage -> List Point -> D.Dict Int PieceGroup
+createPieceGroups image points =
     let
         numberOfPieces =
             image.xpieces * image.ypieces
@@ -89,14 +88,8 @@ createPieceGroups image points levels =
             else
                 points
 
-        zlevels =
-            if List.length levels < numberOfPieces then
-                ids
-
-            else
-                levels
     in
-    List.map3 (createPieceGroup image) ids positions zlevels
+    List.map2 (createPieceGroup image) ids positions
         |> List.map2 Tuple.pair ids
         |> D.fromList
 

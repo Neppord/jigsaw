@@ -10,7 +10,6 @@ type alias PieceGroup =
     , neighbours : S.Set Int
     , position : Point
     , isSelected : Bool
-    , zlevel : Int
     , visibilityGroup : Int
     }
 
@@ -27,7 +26,6 @@ merge a b =
         | isSelected = False
         , members = newMembers
         , neighbours = newNeighbours
-        , zlevel = a.zlevel
     }
 
 
