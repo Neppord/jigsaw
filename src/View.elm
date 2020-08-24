@@ -203,6 +203,8 @@ getImage model =
 
         DeselectingWithBox { oldModel } ->
             oldModel.image
+
+
 getEdges : NewModel -> List (List Edge)
 getEdges model =
     case model of
@@ -217,6 +219,7 @@ getEdges model =
 
         DeselectingWithBox { oldModel } ->
             oldModel.edges
+
 
 getVisibilityGroups : NewModel -> Set.Set Int
 getVisibilityGroups model =
@@ -234,13 +237,22 @@ getVisibilityGroups model =
             oldModel.visibleGroups
 
 
+px : Int -> String
+px int =
+    String.fromInt int ++ " px"
+
+
 viewDiv : NewModel -> List (Html Msg)
 viewDiv model =
     let
-        image = getImage model
-        edges = getEdges model
-        clipPaths = lazyclipPathDefs image edges
+        image =
+            getImage model
 
+        edges =
+            getEdges model
+
+        clipPaths =
+            lazyclipPathDefs image edges
 
         visibleGroups =
             getVisibilityGroups model
@@ -253,14 +265,9 @@ viewDiv model =
     case model of
         Moving { selected, unSelected, current, start } ->
             let
-                offset =
+                { x, y } =
                     Point.sub current start
 
-                top =
-                    String.fromInt offset.y ++ "px"
-
-                left =
-                    String.fromInt offset.x ++ "px"
             in
             [ keyedDiv
                 []
@@ -271,7 +278,7 @@ viewDiv model =
             , keyedDiv
                 [ style
                     "transform"
-                    ("translate(" ++ left ++ "," ++ top ++ ")")
+                    ("translate(" ++ (x |> px) ++ "," ++ (y |> px) ++ ")")
                 ]
                 (selected
                     |> renderPieces image
@@ -280,31 +287,43 @@ viewDiv model =
             ]
 
         SelectingWithBox { unSelected, alreadySelected } ->
-            [ keyedDiv [] (unSelected
-                |> List.filter isVisible
-                |> renderPieces image) 
-            , keyedDiv [] (alreadySelected
-                |> renderPieces image
-            ) 
-            , clipPaths]
-
-        DeselectingWithBox { unSelected, alreadySelected } ->
-            [ keyedDiv [] (unSelected
-                |> List.filter isVisible
-                |> renderPieces image) 
-            , keyedDiv [] (alreadySelected
-                |> renderPieces image) 
-            , clipPaths]
-
-        Identity { unSelected, selected } ->
-            [ keyedDiv [] (unSelected
-                |> List.filter isVisible
-                |> renderPieces image) 
-            , keyedDiv [] (selected
-                |> renderPieces image) 
+            [ keyedDiv []
+                (unSelected
+                    |> List.filter isVisible
+                    |> renderPieces image
+                )
+            , keyedDiv []
+                (alreadySelected
+                    |> renderPieces image
+                )
             , clipPaths
             ]
 
+        DeselectingWithBox { unSelected, alreadySelected } ->
+            [ keyedDiv []
+                (unSelected
+                    |> List.filter isVisible
+                    |> renderPieces image
+                )
+            , keyedDiv []
+                (alreadySelected
+                    |> renderPieces image
+                )
+            , clipPaths
+            ]
+
+        Identity { unSelected, selected } ->
+            [ keyedDiv []
+                (unSelected
+                    |> List.filter isVisible
+                    |> renderPieces image
+                )
+            , keyedDiv []
+                (selected
+                    |> renderPieces image
+                )
+            , clipPaths
+            ]
 
 
 renderPieces : JigsawImage -> List PieceGroup -> List ( String, Html msg )
@@ -323,6 +342,7 @@ renderPieces image visiblePieces =
     visiblePieces
         |> List.map pieceGroupDiv
         |> List.concat
+
 
 lazyclipPathDefs : JigsawImage -> List (List Edge) -> Html msg
 lazyclipPathDefs =
