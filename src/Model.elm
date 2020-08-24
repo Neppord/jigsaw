@@ -65,7 +65,7 @@ type alias Model =
 
 
 type NewModel
-    = Identity 
+    = Identity
         { oldModel : Model
         , selected : List PieceGroup
         , unSelected : List PieceGroup
@@ -100,7 +100,7 @@ toNewModel oldModel =
     let
         ( selected, unSelected ) =
             Dict.partition (always .isSelected) oldModel.pieceGroups
-            |> Tuple.mapBoth Dict.values Dict.values
+                |> Tuple.mapBoth Dict.values Dict.values
     in
     case ( oldModel.cursor, oldModel.selectionBox ) of
         ( Just current, NullBox ) ->
@@ -125,11 +125,13 @@ toNewModel oldModel =
                                 (boxTopLeft box)
                                 (boxBottomRight box)
                             )
-                alreadySelected = 
+
+                alreadySelected =
                     oldModel.pieceGroups
                         |> Dict.values
                         |> List.filter (\pg -> S.member pg.id box.selectedIds)
-                notSelected = 
+
+                notSelected =
                     oldModel.pieceGroups
                         |> Dict.values
                         |> List.filter (\pg -> not <| S.member pg.id box.selectedIds)
@@ -156,11 +158,13 @@ toNewModel oldModel =
                                 (boxTopLeft box)
                                 (boxBottomRight box)
                             )
-                alreadySelected = 
+
+                alreadySelected =
                     oldModel.pieceGroups
                         |> Dict.values
                         |> List.filter (\pg -> S.member pg.id box.selectedIds)
-                notSelected = 
+
+                notSelected =
                     oldModel.pieceGroups
                         |> Dict.values
                         |> List.filter (\pg -> not <| S.member pg.id box.selectedIds)
@@ -175,7 +179,7 @@ toNewModel oldModel =
                 }
 
         ( _, _ ) ->
-            Identity 
+            Identity
                 { oldModel = oldModel
                 , selected = selected
                 , unSelected = unSelected
@@ -185,7 +189,7 @@ toNewModel oldModel =
 toOldModel : NewModel -> Model
 toOldModel newModel =
     case newModel of
-        Identity {oldModel} ->
+        Identity { oldModel } ->
             oldModel
 
         Moving { oldModel, start, current, selected, unSelected } ->
@@ -232,7 +236,7 @@ toOldModel newModel =
                 | selectionBox = Normal box
                 , pieceGroups = updatedPieceGroups
             }
-            
+
         DeselectingWithBox { oldModel, start, current, alreadySelected, within } ->
             let
                 withinIds =
@@ -266,8 +270,6 @@ toOldModel newModel =
                 | selectionBox = Inverted box
                 , pieceGroups = updatedPieceGroups
             }
-            
-
 
 
 init : () -> ( NewModel, Cmd Msg )
@@ -277,8 +279,8 @@ init () =
             { path = "../resources/kitten.png"
             , width = 533
             , height = 538
-            , xpieces = 50
-            , ypieces = 50
+            , xpieces = 4
+            , ypieces = 4
             , scale = 1.0
             }
 
@@ -309,22 +311,23 @@ resetModel image seed =
         ( edgePoints, seed3 ) =
             Random.step (generateEdgePoints numberOfEdges) seed2
     in
-    toNewModel { cursor = Nothing
-    , pieceGroups = createPieceGroups image positions zlevels
-    , selected = NullSelection
-    , maxZLevel = nx * ny
-    , image = image
-    , width = w
-    , height = h
-    , snapDistance = 30.0
-    , selectionBox = NullBox
-    , seed = seed3
-    , edges =
-        List.range 0 (image.xpieces * image.ypieces - 1)
-            |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id edgePoints)
-    , visibleGroups = S.fromList [ -1 ]
-    , keyboard = { shift = False, ctrl = False }
-    }
+    toNewModel
+        { cursor = Nothing
+        , pieceGroups = createPieceGroups image positions zlevels
+        , selected = NullSelection
+        , maxZLevel = nx * ny
+        , image = image
+        , width = w
+        , height = h
+        , snapDistance = 30.0
+        , selectionBox = NullBox
+        , seed = seed3
+        , edges =
+            List.range 0 (image.xpieces * image.ypieces - 1)
+                |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id edgePoints)
+        , visibleGroups = S.fromList [ -1 ]
+        , keyboard = { shift = False, ctrl = False }
+        }
 
 
 shuffleZLevels : Int -> Random.Seed -> ( List Int, Random.Seed )

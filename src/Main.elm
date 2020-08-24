@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Events
 import Dict as D
-import JigsawImage exposing (isPointInsidePieceGroup)
+import JigsawImage exposing (isPieceGroupInsideBox, isPointInsidePieceGroup)
 import Json.Decode
 import List
 import Model
@@ -15,6 +15,8 @@ import Model
         , NewModel(..)
         , Selected(..)
         , SelectionBox(..)
+        , boxBottomRight
+        , boxTopLeft
         , defaultPieceGroup
         , init
         , toNewModel
@@ -294,7 +296,31 @@ updateMoveMouse newPos model =
             Model.Moving { data | current = newPos }
 
         Model.SelectingWithBox data ->
-            Model.SelectingWithBox { data | current = newPos }
+            let
+                oldModel =
+                    data.oldModel
+
+                box =
+                    { staticCorner = data.start
+                    , movingCorner = newPos
+                    , selectedIds = S.empty
+                    }
+            in
+            Model.SelectingWithBox
+                { data
+                    | current = newPos
+                    , within =
+                        oldModel.pieceGroups
+                            |> D.values
+                            |> List.filter
+                                (\pg -> S.member pg.visibilityGroup oldModel.visibleGroups)
+                            |> List.filter
+                                (isPieceGroupInsideBox
+                                    oldModel.image
+                                    (boxTopLeft box)
+                                    (boxBottomRight box)
+                                )
+                }
 
         Model.DeselectingWithBox data ->
             Model.DeselectingWithBox { data | current = newPos }
