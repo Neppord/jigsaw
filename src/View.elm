@@ -251,30 +251,34 @@ viewDiv model =
             , clipPaths
             ]
 
-        SelectingWithBox { unSelected, alreadySelected } ->
+        SelectingWithBox { unSelected, alreadySelected, within } ->
             [ keyedDiv []
                 (unSelected
                     |> List.filter isVisible
+                    |> List.filter (\x -> not <| List.member x within)
                     |> renderPieces image
                     |> shadowBlack
                 )
             , keyedDiv []
                 (alreadySelected
+                    |> List.append within
                     |> renderPieces image
                     |> shadowRed
                 )
             , clipPaths
             ]
 
-        DeselectingWithBox { unSelected, alreadySelected } ->
+        DeselectingWithBox { unSelected, alreadySelected, within } ->
             [ keyedDiv []
                 (unSelected
                     |> List.filter isVisible
+                    |> List.filter (\x -> not <| List.member x within)
                     |> renderPieces image
                     |> shadowBlack
                 )
             , keyedDiv []
                 (alreadySelected
+                    |> List.append within
                     |> renderPieces image
                     |> shadowRed
                 )
