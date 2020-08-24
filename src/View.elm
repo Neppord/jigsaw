@@ -191,8 +191,44 @@ keyedDiv =
     Html.Keyed.node "div"
 
 
+getImage : NewModel -> JigsawImage
+getImage model =
+    case model of
+        Identity { oldModel } ->
+            oldModel.image
+
+        Moving { oldModel } ->
+            oldModel.image
+
+        SelectingWithBox { oldModel } ->
+            oldModel.image
+
+        DeselectingWithBox { oldModel } ->
+            oldModel.image
+getEdges : NewModel -> List (List Edge)
+getEdges model =
+    case model of
+        Identity { oldModel } ->
+            oldModel.edges
+
+        Moving { oldModel } ->
+            oldModel.edges
+
+        SelectingWithBox { oldModel } ->
+            oldModel.edges
+
+        DeselectingWithBox { oldModel } ->
+            oldModel.edges
+
+
 viewDiv : NewModel -> List (Html Msg)
 viewDiv model =
+    let
+        image = getImage model
+        edges = getEdges model
+        clipPaths = lazyclipPathDefs image edges
+        
+    in
     case model of
         Moving { selected, unSelected, current, start } ->
             let
@@ -207,12 +243,6 @@ viewDiv model =
 
                 oldModel =
                     toOldModel model
-
-                edges =
-                    oldModel.edges
-
-                image =
-                    oldModel.image
 
                 visibleGroups =
                     oldModel.visibleGroups
@@ -236,7 +266,7 @@ viewDiv model =
                 (selected
                     |> renderPieces image
                 )
-            , lazyclipPathDefs image edges
+            , clipPaths
             ]
 
         SelectingWithBox _ ->
