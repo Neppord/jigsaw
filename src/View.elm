@@ -1,6 +1,5 @@
 module View exposing (view)
 
-import Debug
 import Edge exposing (Edge)
 import Html exposing (Attribute, Html)
 import Html.Attributes exposing (height, style, width)
