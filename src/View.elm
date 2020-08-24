@@ -185,8 +185,11 @@ shadow color =
                 ++ ")"
         ]
 
+
 keyedDiv : List (Attribute msg) -> List ( String, Html msg ) -> Html msg
-keyedDiv = Html.Keyed.node "div"
+keyedDiv =
+    Html.Keyed.node "div"
+
 
 viewDiv : NewModel -> List (Html Msg)
 viewDiv model =
@@ -214,36 +217,25 @@ viewDiv model =
                 visibleGroups =
                     oldModel.visibleGroups
 
-                pieceGroupDiv : PieceGroup -> List ( String, Html msg )
-                pieceGroupDiv pg =
-                    let
-                        render pid =
-                            ( "piece-" ++ String.fromInt pid
-                            , lazyPieceDiv image pg pg.zlevel pid
-                            )
-                    in
-                    List.map render pg.members
-
-                renderPieces pieces =
-                    pieces
-                        |> List.filter
-                            (\pieceGroup ->
-                                Set.member
-                                    pieceGroup.visibilityGroup
-                                    visibleGroups
-                            )
-                        |> List.map pieceGroupDiv
-                        |> List.concat
+                isVisible pieceGroup =
+                    Set.member
+                        pieceGroup.visibilityGroup
+                        visibleGroups
             in
             [ keyedDiv
                 []
-                (renderPieces unSelected)
+                (unSelected
+                    |> List.filter isVisible
+                    |> renderPieces image
+                )
             , keyedDiv
                 [ Html.Attributes.style
                     "transform"
                     ("translate(" ++ left ++ "," ++ top ++ ")")
                 ]
-                (renderPieces selected)
+                (selected
+                    |> renderPieces image
+                )
             , lazyclipPathDefs image edges
             ]
 
@@ -257,26 +249,34 @@ viewDiv model =
             oldViewDiv oldModel
 
 
-oldViewDiv : Model -> List (Html Msg)
-oldViewDiv model =
+renderPieces : JigsawImage -> List PieceGroup -> List ( String, Html msg )
+renderPieces image visiblePieces =
     let
         pieceGroupDiv : PieceGroup -> List ( String, Html msg )
         pieceGroupDiv pg =
             let
                 render pid =
                     ( "piece-" ++ String.fromInt pid
-                    , lazyPieceDiv model.image pg pg.zlevel pid
+                    , lazyPieceDiv image pg pg.zlevel pid
                     )
             in
             List.map render pg.members
+    in
+    visiblePieces
+        |> List.map pieceGroupDiv
+        |> List.concat
+
+
+oldViewDiv : Model -> List (Html Msg)
+oldViewDiv model =
+    let
 
         viewPieces =
             model.pieceGroups
                 |> Dict.values
                 |> List.filter
                     (\pieceGroup -> Set.member pieceGroup.visibilityGroup model.visibleGroups)
-                |> List.map pieceGroupDiv
-                |> List.concat
+                |> renderPieces model.image
     in
     [ keyedDiv
         []
