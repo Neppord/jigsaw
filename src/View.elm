@@ -135,10 +135,10 @@ pieceDiv image pg zIndex pid =
         |> List.singleton
         |> shadow color
 
+
 renderPiece : JigsawImage -> PieceGroup -> Int -> Int -> Html msg
 renderPiece image pg zIndex pid =
     let
-    
         offset =
             pieceIdToOffset image pid
 
@@ -175,6 +175,7 @@ renderPiece image pg zIndex pid =
         ]
         []
 
+
 shadow : String -> List (Html msg) -> Html msg
 shadow color =
     Html.div
@@ -190,13 +191,15 @@ viewDiv model =
     case model of
         Moving { selected, unSelected, current, start } ->
             let
-                offset = Point.sub current start
-       
+                offset =
+                    Point.sub current start
+
                 top =
                     String.fromInt offset.y ++ "px"
 
                 left =
-                    String.fromInt offset.x ++ "px"         
+                    String.fromInt offset.x ++ "px"
+
                 oldModel =
                     toOldModel model
 
@@ -222,12 +225,13 @@ viewDiv model =
                 renderPieces pieces =
                     pieces
                         |> List.filter
-                            (\pieceGroup -> Set.member pieceGroup.visibilityGroup visibleGroups)
+                            (\pieceGroup ->
+                                Set.member
+                                    pieceGroup.visibilityGroup
+                                    visibleGroups
+                            )
                         |> List.map pieceGroupDiv
                         |> List.concat
-
-                clipPathDefs =
-                    lazyclipPathDefs image edges
             in
             [ Html.Keyed.node
                 "div"
@@ -235,12 +239,12 @@ viewDiv model =
                 (renderPieces unSelected)
             , Html.Keyed.node
                 "div"
-                [ Html.Attributes.style "transform" ("translate(" ++ left ++ "," ++ top ++ ")")
+                [ Html.Attributes.style
+                    "transform"
+                    ("translate(" ++ left ++ "," ++ top ++ ")")
                 ]
                 (renderPieces selected)
-            , Svg.svg
-                []
-                [ clipPathDefs ]
+            , lazyclipPathDefs image edges
             ]
 
         SelectingWithBox _ ->
@@ -248,7 +252,6 @@ viewDiv model =
 
         DeselectingWithBox _ ->
             oldViewDiv (toOldModel model)
-
 
         Identity { oldModel } ->
             oldViewDiv oldModel
@@ -274,23 +277,24 @@ oldViewDiv model =
                     (\pieceGroup -> Set.member pieceGroup.visibilityGroup model.visibleGroups)
                 |> List.map pieceGroupDiv
                 |> List.concat
-
-        clipPathDefs =
-            lazyclipPathDefs model.image model.edges
     in
     [ Html.Keyed.node
         "div"
         []
         viewPieces
-    , Svg.svg
-        []
-        [ clipPathDefs ]
+    , lazyclipPathDefs model.image model.edges
     ]
 
 
-lazyclipPathDefs : JigsawImage -> List (List Edge) -> Svg.Svg msg
+lazyclipPathDefs : JigsawImage -> List (List Edge) -> Html msg
 lazyclipPathDefs =
-    Svg.Lazy.lazy2 (\image edges -> Svg.defs [] (definePieceClipPaths image edges))
+    Svg.Lazy.lazy2
+        (\image edges ->
+            definePieceClipPaths image edges
+                |> Svg.defs []
+                |> List.singleton
+                |> Svg.svg []
+        )
 
 
 definePieceClipPaths : JigsawImage -> List (List Edge) -> List (Svg msg)
