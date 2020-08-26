@@ -43,47 +43,52 @@ main =
 -- SUBSCRIPTIONS
 
 
-keyDecoder : Bool -> String -> Msg
-keyDecoder isDown key =
+identifierToKey : String -> Model.Key
+identifierToKey key =
     case key of
         "0" ->
-            KeyChanged isDown (Number 0)
+            Number 0
 
         "1" ->
-            KeyChanged isDown (Number 1)
+            Number 1
 
         "2" ->
-            KeyChanged isDown (Number 2)
+            Number 2
 
         "3" ->
-            KeyChanged isDown (Number 3)
+            Number 3
 
         "4" ->
-            KeyChanged isDown (Number 4)
+            Number 4
 
         "5" ->
-            KeyChanged isDown (Number 5)
+            Number 5
 
         "6" ->
-            KeyChanged isDown (Number 6)
+            Number 6
 
         "7" ->
-            KeyChanged isDown (Number 7)
+            Number 7
 
         "8" ->
-            KeyChanged isDown (Number 8)
+            Number 8
 
         "9" ->
-            KeyChanged isDown (Number 9)
+            Number 9
 
         "Control" ->
-            KeyChanged isDown Control
+            Control
 
         "Shift" ->
-            KeyChanged isDown Shift
+            Shift
 
         _ ->
-            KeyChanged isDown Other
+            Other
+
+
+keyDecoder : Bool -> String -> Msg
+keyDecoder isDown key =
+            KeyChanged isDown (identifierToKey key)
 
 
 subscriptions : NewModel -> Sub Msg
