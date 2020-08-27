@@ -27,6 +27,7 @@ import Point exposing (Point)
 import Set as S
 import Util exposing (takeFirst)
 import View exposing (view)
+import Decode exposing (pageCoordinates)
 
 
 main : Program () NewModel Msg
@@ -99,21 +100,16 @@ subscriptions newModel =
 
         trackMouseMovement =
             if model.cursor /= Nothing then
-                Browser.Events.onMouseMove <|
-                    Json.Decode.map2 (\x y -> MouseMove (Point x y))
-                        (Json.Decode.field "pageX" Json.Decode.int)
-                        (Json.Decode.field "pageY" Json.Decode.int)
+                Decode.pageCoordinates
+                    |> Json.Decode.map MouseMove
+                    |> Browser.Events.onMouseMove
 
             else
                 Sub.none
 
         trackMouseDown =
-            Browser.Events.onMouseDown <|
-                Json.Decode.map4 (\x y shift ctrl -> MouseDown (Point x y) { shift = shift, ctrl = ctrl })
-                    (Json.Decode.field "pageX" Json.Decode.int)
-                    (Json.Decode.field "pageY" Json.Decode.int)
-                    (Json.Decode.field "shiftKey" Json.Decode.bool)
-                    (Json.Decode.field "ctrlKey" Json.Decode.bool)
+            Json.Decode.map2 MouseDown Decode.pageCoordinates Decode.keyboard
+                |> Browser.Events.onMouseDown
 
         trackMouseUp =
             Browser.Events.onMouseUp (Json.Decode.succeed MouseUp)
