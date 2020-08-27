@@ -2,6 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Browser.Events
+import Decode exposing (pageCoordinates)
 import Dict as D
 import JigsawImage exposing (isPieceGroupInsideBox, isPointInsidePieceGroup)
 import Json.Decode
@@ -27,7 +28,6 @@ import Point exposing (Point)
 import Set as S
 import Util exposing (takeFirst)
 import View exposing (view)
-import Decode exposing (pageCoordinates)
 
 
 main : Program () NewModel Msg
@@ -42,56 +42,6 @@ main =
 
 
 -- SUBSCRIPTIONS
-
-
-identifierToKey : String -> Model.Key
-identifierToKey key =
-    case key of
-        "0" ->
-            Number 0
-
-        "1" ->
-            Number 1
-
-        "2" ->
-            Number 2
-
-        "3" ->
-            Number 3
-
-        "4" ->
-            Number 4
-
-        "5" ->
-            Number 5
-
-        "6" ->
-            Number 6
-
-        "7" ->
-            Number 7
-
-        "8" ->
-            Number 8
-
-        "9" ->
-            Number 9
-
-        "Control" ->
-            Control
-
-        "Shift" ->
-            Shift
-
-        _ ->
-            Other
-
-
-keyDecoder : Bool -> String -> Msg
-keyDecoder isDown key =
-            KeyChanged isDown (identifierToKey key)
-
-
 subscriptions : NewModel -> Sub Msg
 subscriptions newModel =
     let
@@ -118,16 +68,12 @@ subscriptions newModel =
         [ trackMouseMovement
         , trackMouseDown
         , trackMouseUp
-        , Browser.Events.onKeyDown
-            (Json.Decode.map
-                (keyDecoder True)
-                (Json.Decode.field "key" Json.Decode.string)
-            )
-        , Browser.Events.onKeyUp
-            (Json.Decode.map
-                (keyDecoder False)
-                (Json.Decode.field "key" Json.Decode.string)
-            )
+        , Decode.key
+            |> Json.Decode.map (KeyChanged True)
+            |> Browser.Events.onKeyDown
+        , Decode.key
+            |> Json.Decode.map (KeyChanged False)
+            |> Browser.Events.onKeyUp
         ]
 
 
