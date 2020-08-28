@@ -55,8 +55,6 @@ type alias Model =
     , pieceGroups : Dict.Dict Int PieceGroup
     , selected : Selected
     , image : JigsawImage
-    , width : Int
-    , height : Int
     , snapDistance : Float
     , selectionBox : SelectionBox
     , seed : Random.Seed
@@ -318,8 +316,6 @@ resetModel image seed =
         , pieceGroups = createPieceGroups image positions
         , selected = NullSelection
         , image = image
-        , width = w
-        , height = h
         , snapDistance = 30.0
         , selectionBox = NullBox
         , seed = seed2
