@@ -20,6 +20,7 @@ import Model
         , boxBottomRight
         , boxTopLeft
         , defaultPieceGroup
+        , getImage
         , init
         , toNewModel
         , toOldModel
@@ -29,7 +30,6 @@ import Point exposing (Point)
 import Set as S
 import Util exposing (takeFirst)
 import View exposing (view)
-import Model exposing (getImage)
 
 
 main : Program () NewModel Msg
