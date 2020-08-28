@@ -4,6 +4,7 @@ import Browser
 import Browser.Events
 import Decode exposing (pageCoordinates)
 import Dict as D
+import Drag
 import JigsawImage exposing (isPieceGroupInsideBox, isPointInsidePieceGroup)
 import Json.Decode
 import List
@@ -19,8 +20,6 @@ import Model
         , boxBottomRight
         , boxTopLeft
         , defaultPieceGroup
-        , dragTo
-        , getStartFromDrag
         , init
         , toNewModel
         , toOldModel
@@ -238,7 +237,12 @@ updateMoveMouse : Point -> NewModel -> ( NewModel, Cmd Msg )
 updateMoveMouse newPos model =
     ( case model of
         Model.Moving data ->
-            Model.Moving { data | drag = data.drag |> dragTo newPos }
+            Model.Moving
+                { data
+                    | drag =
+                        data.drag
+                            |> Drag.to newPos
+                }
 
         Model.SelectingWithBox data ->
             let
@@ -246,14 +250,14 @@ updateMoveMouse newPos model =
                     data.oldModel
 
                 box =
-                    { staticCorner = data.drag |> getStartFromDrag
+                    { staticCorner = data.drag |> Drag.getStart
                     , movingCorner = newPos
                     , selectedIds = S.empty
                     }
             in
             Model.SelectingWithBox
                 { data
-                    | drag = data.drag |> dragTo newPos
+                    | drag = data.drag |> Drag.to newPos
                     , within =
                         oldModel.pieceGroups
                             |> D.values
@@ -268,7 +272,8 @@ updateMoveMouse newPos model =
                 }
 
         Model.DeselectingWithBox data ->
-            Model.DeselectingWithBox { data | drag = data.drag |> dragTo newPos }
+            Model.DeselectingWithBox
+                { data | drag = data.drag |> Drag.to newPos }
 
         Model.Identity data ->
             Model.Identity data

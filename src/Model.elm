@@ -1,13 +1,12 @@
 module Model exposing
     ( Box
-    , Drag(..)
     , Key(..)
     , Keyboard
     , Model
     , Msg(..)
     , NewModel(..)
     , Selected(..)
-    , SelectionBox(..), getCurrentFromDrag, getStartFromDrag, dragTo, startDrag, dragOffset
+    , SelectionBox(..)
     , boxBottomRight
     , boxTopLeft
     , defaultPieceGroup
@@ -34,6 +33,7 @@ import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
 import Random
 import Set as S exposing (Set)
+import Drag exposing (Drag)
 
 
 type Msg
@@ -64,26 +64,6 @@ type alias Model =
     , visibleGroups : S.Set Int
     , keyboard : Keyboard
     }
-
-
-type Drag
-    = Drag
-        { start : Point
-        , current : Point
-        }
-
-
-startDrag : Point -> Drag
-startDrag p =
-    Drag { start = p, current = p }
-
-
-dragOffset : Drag -> Point
-dragOffset (Drag { start, current }) =
-    Point.sub current start
-
-dragTo : Point -> Drag -> Drag
-dragTo to (Drag {start}) = Drag {start = start, current = to}
 
 type NewModel
     = Identity
@@ -124,7 +104,7 @@ toNewModel oldModel =
         ( Just current, NullBox ) ->
             Moving
                 { oldModel = oldModel
-                , drag = startDrag current
+                , drag = Drag.from current
                 , selected = selected
                 , unSelected = unSelected
                 }
@@ -156,10 +136,8 @@ toNewModel oldModel =
             SelectingWithBox
                 { oldModel = oldModel
                 , drag =
-                    Drag
-                        { start = box.staticCorner
-                        , current = box.movingCorner
-                        }
+                    Drag.from box.staticCorner
+                        |> Drag.to box.movingCorner
                 , alreadySelected = alreadySelected
                 , within = within
                 , unSelected = notSelected
@@ -192,10 +170,8 @@ toNewModel oldModel =
             DeselectingWithBox
                 { oldModel = oldModel
                 , drag =
-                    Drag
-                        { start = box.staticCorner
-                        , current = box.movingCorner
-                        }
+                    Drag.from box.staticCorner
+                        |> Drag.to box.movingCorner
                 , alreadySelected = alreadySelected
                 , within = within
                 , unSelected = notSelected
@@ -209,14 +185,10 @@ toNewModel oldModel =
                 }
 
 
-getCurrentFromDrag : Drag -> Point
-getCurrentFromDrag (Drag { current }) =
-    current
 
 
-getStartFromDrag : Drag -> Point
-getStartFromDrag (Drag { start }) =
-    start
+
+
 
 
 toOldModel : NewModel -> Model
@@ -229,11 +201,11 @@ toOldModel newModel =
             { oldModel
                 | pieceGroups =
                     selected
-                        |> List.map (PieceGroup.move (dragOffset drag))
+                        |> List.map (PieceGroup.move (Drag.distance drag))
                         |> List.append unSelected
                         |> List.map (\pg -> ( pg.id, pg ))
                         |> Dict.fromList
-                , cursor = Just <| getCurrentFromDrag drag
+                , cursor = Just <| Drag.getCurrent drag
             }
 
         SelectingWithBox { oldModel, drag, alreadySelected, within } ->
@@ -260,8 +232,8 @@ toOldModel newModel =
                             )
 
                 box =
-                    { staticCorner = getStartFromDrag drag
-                    , movingCorner = getCurrentFromDrag drag
+                    { staticCorner = Drag.getStart drag
+                    , movingCorner = Drag.getCurrent drag
                     , selectedIds = alreadySelectedIds
                     }
             in
@@ -294,8 +266,8 @@ toOldModel newModel =
                             )
 
                 box =
-                    { staticCorner = getStartFromDrag drag
-                    , movingCorner = getCurrentFromDrag drag
+                    { staticCorner = Drag.getStart drag
+                    , movingCorner = Drag.getCurrent drag
                     , selectedIds = alreadySelectedIds
                     }
             in

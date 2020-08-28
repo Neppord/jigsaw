@@ -9,11 +9,9 @@ import Html.Lazy
 import JigsawImage exposing (JigsawImage, pieceIdToOffset)
 import Model
     exposing
-        ( Drag(..)
-        , Msg(..)
+        ( Msg(..)
         , NewModel(..)
         , SelectionBox(..)
-        , dragOffset
         , getEdges
         , getImage
         , getVisibilityGroups
@@ -25,6 +23,7 @@ import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Lazy
 import SvgUtil
+import Drag
 
 
 view : NewModel -> Html Msg
@@ -71,13 +70,6 @@ turnOffTheBloodyImageDragging =
 viewSelectionBox : NewModel -> Html msg
 viewSelectionBox model =
     let
-        getDimentions (Drag { start, current }) =
-            { x = min start.x current.x
-            , y = min start.y current.y
-            , w = abs (start.x - current.x)
-            , h = abs (start.y - current.y)
-            }
-
         box x y w h color =
             Html.div
                 ([ style "width" <| String.fromInt w ++ "px"
@@ -96,14 +88,14 @@ viewSelectionBox model =
         SelectingWithBox { drag } ->
             let
                 { x, y, w, h } =
-                    getDimentions drag
+                    Drag.getDimensions drag
             in
             box x y w h "rgba(0,0,255,0.2)"
 
         DeselectingWithBox { drag } ->
             let
                 { x, y, w, h } =
-                    getDimentions drag
+                    Drag.getDimensions drag
             in
             box x y w h "rgba(0,255,0,0.2)"
 
@@ -216,7 +208,7 @@ viewDiv model =
         Moving { selected, unSelected, drag } ->
             let
                 { x, y } =
-                    dragOffset drag
+                    Drag.distance drag
             in
             [ keyedDiv
                 []
