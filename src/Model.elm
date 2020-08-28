@@ -1,12 +1,13 @@
 module Model exposing
     ( Box
+    , Drag(..)
     , Key(..)
     , Keyboard
     , Model
     , Msg(..)
     , NewModel(..)
     , Selected(..)
-    , SelectionBox(..)
+    , SelectionBox(..), getCurrentFromDrag, getStartFromDrag, dragTo, startDrag, dragOffset
     , boxBottomRight
     , boxTopLeft
     , defaultPieceGroup
@@ -65,6 +66,25 @@ type alias Model =
     }
 
 
+type Drag
+    = Drag
+        { start : Point
+        , current : Point
+        }
+
+
+startDrag : Point -> Drag
+startDrag p =
+    Drag { start = p, current = p }
+
+
+dragOffset : Drag -> Point
+dragOffset (Drag { start, current }) =
+    Point.sub current start
+
+dragTo : Point -> Drag -> Drag
+dragTo to (Drag {start}) = Drag {start = start, current = to}
+
 type NewModel
     = Identity
         { oldModel : Model
@@ -73,23 +93,20 @@ type NewModel
         }
     | Moving
         { oldModel : Model
-        , start : Point
-        , current : Point
+        , drag : Drag
         , selected : List PieceGroup
         , unSelected : List PieceGroup
         }
     | SelectingWithBox
         { oldModel : Model
-        , start : Point
-        , current : Point
+        , drag : Drag
         , within : List PieceGroup
         , alreadySelected : List PieceGroup
         , unSelected : List PieceGroup
         }
     | DeselectingWithBox
         { oldModel : Model
-        , start : Point
-        , current : Point
+        , drag : Drag
         , within : List PieceGroup
         , alreadySelected : List PieceGroup
         , unSelected : List PieceGroup
@@ -107,8 +124,7 @@ toNewModel oldModel =
         ( Just current, NullBox ) ->
             Moving
                 { oldModel = oldModel
-                , start = current
-                , current = current
+                , drag = startDrag current
                 , selected = selected
                 , unSelected = unSelected
                 }
@@ -139,8 +155,11 @@ toNewModel oldModel =
             in
             SelectingWithBox
                 { oldModel = oldModel
-                , start = box.staticCorner
-                , current = box.movingCorner
+                , drag =
+                    Drag
+                        { start = box.staticCorner
+                        , current = box.movingCorner
+                        }
                 , alreadySelected = alreadySelected
                 , within = within
                 , unSelected = notSelected
@@ -172,8 +191,11 @@ toNewModel oldModel =
             in
             DeselectingWithBox
                 { oldModel = oldModel
-                , start = box.staticCorner
-                , current = box.movingCorner
+                , drag =
+                    Drag
+                        { start = box.staticCorner
+                        , current = box.movingCorner
+                        }
                 , alreadySelected = alreadySelected
                 , within = within
                 , unSelected = notSelected
@@ -187,24 +209,34 @@ toNewModel oldModel =
                 }
 
 
+getCurrentFromDrag : Drag -> Point
+getCurrentFromDrag (Drag { current }) =
+    current
+
+
+getStartFromDrag : Drag -> Point
+getStartFromDrag (Drag { start }) =
+    start
+
+
 toOldModel : NewModel -> Model
 toOldModel newModel =
     case newModel of
         Identity { oldModel } ->
             oldModel
 
-        Moving { oldModel, start, current, selected, unSelected } ->
+        Moving { oldModel, drag, selected, unSelected } ->
             { oldModel
                 | pieceGroups =
                     selected
-                        |> List.map (PieceGroup.move (Point.sub current start))
+                        |> List.map (PieceGroup.move (dragOffset drag))
                         |> List.append unSelected
                         |> List.map (\pg -> ( pg.id, pg ))
                         |> Dict.fromList
-                , cursor = Just current
+                , cursor = Just <| getCurrentFromDrag drag
             }
 
-        SelectingWithBox { oldModel, start, current, alreadySelected, within } ->
+        SelectingWithBox { oldModel, drag, alreadySelected, within } ->
             let
                 withinIds =
                     within
@@ -228,8 +260,8 @@ toOldModel newModel =
                             )
 
                 box =
-                    { staticCorner = start
-                    , movingCorner = current
+                    { staticCorner = getStartFromDrag drag
+                    , movingCorner = getCurrentFromDrag drag
                     , selectedIds = alreadySelectedIds
                     }
             in
@@ -238,7 +270,7 @@ toOldModel newModel =
                 , pieceGroups = updatedPieceGroups
             }
 
-        DeselectingWithBox { oldModel, start, current, alreadySelected, within } ->
+        DeselectingWithBox { oldModel, drag, alreadySelected, within } ->
             let
                 withinIds =
                     within
@@ -262,8 +294,8 @@ toOldModel newModel =
                             )
 
                 box =
-                    { staticCorner = start
-                    , movingCorner = current
+                    { staticCorner = getStartFromDrag drag
+                    , movingCorner = getCurrentFromDrag drag
                     , selectedIds = alreadySelectedIds
                     }
             in

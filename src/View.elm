@@ -9,9 +9,11 @@ import Html.Lazy
 import JigsawImage exposing (JigsawImage, pieceIdToOffset)
 import Model
     exposing
-        ( Msg(..)
+        ( Drag(..)
+        , Msg(..)
         , NewModel(..)
         , SelectionBox(..)
+        , dragOffset
         , getEdges
         , getImage
         , getVisibilityGroups
@@ -69,7 +71,7 @@ turnOffTheBloodyImageDragging =
 viewSelectionBox : NewModel -> Html msg
 viewSelectionBox model =
     let
-        getDimentions { start, current } =
+        getDimentions (Drag { start, current }) =
             { x = min start.x current.x
             , y = min start.y current.y
             , w = abs (start.x - current.x)
@@ -91,17 +93,17 @@ viewSelectionBox model =
                 []
     in
     case model of
-        SelectingWithBox data ->
+        SelectingWithBox { drag } ->
             let
                 { x, y, w, h } =
-                    getDimentions data
+                    getDimentions drag
             in
             box x y w h "rgba(0,0,255,0.2)"
 
-        DeselectingWithBox data ->
+        DeselectingWithBox { drag } ->
             let
                 { x, y, w, h } =
-                    getDimentions data
+                    getDimentions drag
             in
             box x y w h "rgba(0,255,0,0.2)"
 
@@ -211,10 +213,10 @@ viewDiv model =
             shadowWithColor "red"
     in
     case model of
-        Moving { selected, unSelected, current, start } ->
+        Moving { selected, unSelected, drag } ->
             let
                 { x, y } =
-                    Point.sub current start
+                    dragOffset drag
             in
             [ keyedDiv
                 []

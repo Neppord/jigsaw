@@ -19,6 +19,8 @@ import Model
         , boxBottomRight
         , boxTopLeft
         , defaultPieceGroup
+        , dragTo
+        , getStartFromDrag
         , init
         , toNewModel
         , toOldModel
@@ -42,6 +44,8 @@ main =
 
 
 -- SUBSCRIPTIONS
+
+
 subscriptions : NewModel -> Sub Msg
 subscriptions newModel =
     let
@@ -234,7 +238,7 @@ updateMoveMouse : Point -> NewModel -> ( NewModel, Cmd Msg )
 updateMoveMouse newPos model =
     ( case model of
         Model.Moving data ->
-            Model.Moving { data | current = newPos }
+            Model.Moving { data | drag = data.drag |> dragTo newPos }
 
         Model.SelectingWithBox data ->
             let
@@ -242,14 +246,14 @@ updateMoveMouse newPos model =
                     data.oldModel
 
                 box =
-                    { staticCorner = data.start
+                    { staticCorner = data.drag |> getStartFromDrag
                     , movingCorner = newPos
                     , selectedIds = S.empty
                     }
             in
             Model.SelectingWithBox
                 { data
-                    | current = newPos
+                    | drag = data.drag |> dragTo newPos
                     , within =
                         oldModel.pieceGroups
                             |> D.values
@@ -264,7 +268,7 @@ updateMoveMouse newPos model =
                 }
 
         Model.DeselectingWithBox data ->
-            Model.DeselectingWithBox { data | current = newPos }
+            Model.DeselectingWithBox { data | drag = data.drag |> dragTo newPos }
 
         Model.Identity data ->
             Model.Identity data
