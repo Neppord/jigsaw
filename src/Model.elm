@@ -437,14 +437,14 @@ getEdges model =
 getImage : NewModel -> JigsawImage
 getImage model =
     case model of
-        Identity { oldModel } ->
-            oldModel.image
+        Identity { configuration } ->
+            configuration.image
 
-        Moving { oldModel } ->
-            oldModel.image
+        Moving { configuration } ->
+            configuration.image
 
-        SelectingWithBox { oldModel } ->
-            oldModel.image
+        SelectingWithBox { configuration } ->
+            configuration.image
 
-        DeselectingWithBox { oldModel } ->
-            oldModel.image
+        DeselectingWithBox { configuration } ->
+            configuration.image

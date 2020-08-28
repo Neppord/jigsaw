@@ -29,6 +29,7 @@ import Point exposing (Point)
 import Set as S
 import Util exposing (takeFirst)
 import View exposing (view)
+import Model exposing (getImage)
 
 
 main : Program () NewModel Msg
@@ -93,7 +94,7 @@ update msg newModel =
 
         Scramble ->
             ( Model.resetModel
-                (toOldModel newModel).image
+                (getImage newModel)
                 (toOldModel newModel).seed
             , Cmd.none
             )
