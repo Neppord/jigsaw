@@ -20,6 +20,7 @@ module Model exposing
     )
 
 import Dict
+import Drag exposing (Drag)
 import Edge exposing (Edge, generateEdgePoints)
 import JigsawImage
     exposing
@@ -33,7 +34,6 @@ import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
 import Random
 import Set as S exposing (Set)
-import Drag exposing (Drag)
 
 
 type Msg
@@ -50,33 +50,53 @@ type alias Keyboard =
     }
 
 
-type alias Model =
-    { cursor : Maybe Point
-    , pieceGroups : Dict.Dict Int PieceGroup
-    , selected : Selected
+type alias Configuration =
+    { snapDistance : Float
     , image : JigsawImage
-    , snapDistance : Float
-    , selectionBox : SelectionBox
-    , seed : Random.Seed
-    , edges : List (List Edge)
-    , visibleGroups : S.Set Int
-    , keyboard : Keyboard
     }
+
+
+type alias Model =
+    InnerModel Configuration
+
+
+type alias InnerModel a =
+    { a
+        | cursor : Maybe Point
+        , pieceGroups : Dict.Dict Int PieceGroup
+        , selected : Selected
+        , selectionBox : SelectionBox
+        , seed : Random.Seed
+        , edges : List (List Edge)
+        , visibleGroups : S.Set Int
+        , keyboard : Keyboard
+    }
+
+
+toConfiguration : Model -> Configuration
+toConfiguration oldModel =
+    { image = oldModel.image
+    , snapDistance = oldModel.snapDistance
+    }
+
 
 type NewModel
     = Identity
         { oldModel : Model
+        , configuration : Configuration
         , selected : List PieceGroup
         , unSelected : List PieceGroup
         }
     | Moving
         { oldModel : Model
+        , configuration : Configuration
         , drag : Drag
         , selected : List PieceGroup
         , unSelected : List PieceGroup
         }
     | SelectingWithBox
         { oldModel : Model
+        , configuration : Configuration
         , drag : Drag
         , within : List PieceGroup
         , alreadySelected : List PieceGroup
@@ -84,6 +104,7 @@ type NewModel
         }
     | DeselectingWithBox
         { oldModel : Model
+        , configuration : Configuration
         , drag : Drag
         , within : List PieceGroup
         , alreadySelected : List PieceGroup
@@ -102,6 +123,7 @@ toNewModel oldModel =
         ( Just current, NullBox ) ->
             Moving
                 { oldModel = oldModel
+                , configuration = toConfiguration oldModel
                 , drag = Drag.from current
                 , selected = selected
                 , unSelected = unSelected
@@ -133,6 +155,7 @@ toNewModel oldModel =
             in
             SelectingWithBox
                 { oldModel = oldModel
+                , configuration = toConfiguration oldModel
                 , drag =
                     Drag.from box.staticCorner
                         |> Drag.to box.movingCorner
@@ -167,6 +190,7 @@ toNewModel oldModel =
             in
             DeselectingWithBox
                 { oldModel = oldModel
+                , configuration = toConfiguration oldModel
                 , drag =
                     Drag.from box.staticCorner
                         |> Drag.to box.movingCorner
@@ -178,15 +202,10 @@ toNewModel oldModel =
         ( _, _ ) ->
             Identity
                 { oldModel = oldModel
+                , configuration = toConfiguration oldModel
                 , selected = selected
                 , unSelected = unSelected
                 }
-
-
-
-
-
-
 
 
 toOldModel : NewModel -> Model
