@@ -6,7 +6,7 @@ module Model exposing
     , Msg(..)
     , NewModel(..)
     , Selected(..)
-    , SelectionBox(..)
+    , SelectionBox(..), OldModel
     , boxBottomRight
     , boxTopLeft
     , defaultPieceGroup
@@ -33,6 +33,7 @@ import List
 import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
 import Random
+import Seeded exposing (Seeded(..))
 import Set as S exposing (Set)
 
 
@@ -57,6 +58,10 @@ type alias Configuration =
 
 
 type alias Model =
+    Seeded OldModel
+
+
+type alias OldModel =
     InnerModel Configuration
 
 
@@ -66,14 +71,13 @@ type alias InnerModel a =
         , pieceGroups : Dict.Dict Int PieceGroup
         , selected : Selected
         , selectionBox : SelectionBox
-        , seed : Random.Seed
         , edges : List (List Edge)
         , visibleGroups : S.Set Int
         , keyboard : Keyboard
     }
 
 
-toConfiguration : Model -> Configuration
+toConfiguration : OldModel -> Configuration
 toConfiguration oldModel =
     { image = oldModel.image
     , snapDistance = oldModel.snapDistance
@@ -82,20 +86,20 @@ toConfiguration oldModel =
 
 type NewModel
     = Identity
-        { oldModel : Model
+        { oldModel : OldModel
         , configuration : Configuration
         , selected : List PieceGroup
         , unSelected : List PieceGroup
         }
     | Moving
-        { oldModel : Model
+        { oldModel : OldModel
         , configuration : Configuration
         , drag : Drag
         , selected : List PieceGroup
         , unSelected : List PieceGroup
         }
     | SelectingWithBox
-        { oldModel : Model
+        { oldModel : OldModel
         , configuration : Configuration
         , drag : Drag
         , within : List PieceGroup
@@ -103,7 +107,7 @@ type NewModel
         , unSelected : List PieceGroup
         }
     | DeselectingWithBox
-        { oldModel : Model
+        { oldModel : OldModel
         , configuration : Configuration
         , drag : Drag
         , within : List PieceGroup
@@ -112,189 +116,193 @@ type NewModel
         }
 
 
-toNewModel : Model -> NewModel
-toNewModel oldModel =
-    let
-        ( selected, unSelected ) =
-            Dict.partition (always .isSelected) oldModel.pieceGroups
-                |> Tuple.mapBoth Dict.values Dict.values
-    in
-    case ( oldModel.cursor, oldModel.selectionBox ) of
-        ( Just current, NullBox ) ->
-            Moving
-                { oldModel = oldModel
-                , configuration = toConfiguration oldModel
-                , drag = Drag.from current
-                , selected = selected
-                , unSelected = unSelected
-                }
-
-        ( Just _, Normal box ) ->
+toNewModel : Model -> Seeded NewModel
+toNewModel =
+    Seeded.map <|
+        \oldModel ->
             let
-                within =
-                    oldModel.pieceGroups
-                        |> Dict.values
-                        |> List.filter
-                            (\pg -> S.member pg.visibilityGroup oldModel.visibleGroups)
-                        |> List.filter
-                            (isPieceGroupInsideBox
-                                oldModel.image
-                                (boxTopLeft box)
-                                (boxBottomRight box)
-                            )
-
-                alreadySelected =
-                    oldModel.pieceGroups
-                        |> Dict.values
-                        |> List.filter (\pg -> S.member pg.id box.selectedIds)
-
-                notSelected =
-                    oldModel.pieceGroups
-                        |> Dict.values
-                        |> List.filter (\pg -> not <| S.member pg.id box.selectedIds)
+                ( selected, unSelected ) =
+                    Dict.partition (always .isSelected) oldModel.pieceGroups
+                        |> Tuple.mapBoth Dict.values Dict.values
             in
-            SelectingWithBox
-                { oldModel = oldModel
-                , configuration = toConfiguration oldModel
-                , drag =
-                    Drag.from box.staticCorner
-                        |> Drag.to box.movingCorner
-                , alreadySelected = alreadySelected
-                , within = within
-                , unSelected = notSelected
-                }
+            case ( oldModel.cursor, oldModel.selectionBox ) of
+                ( Just current, NullBox ) ->
+                    Moving
+                        { oldModel = oldModel
+                        , configuration = toConfiguration oldModel
+                        , drag = Drag.from current
+                        , selected = selected
+                        , unSelected = unSelected
+                        }
 
-        ( Just _, Inverted box ) ->
-            let
-                within =
-                    oldModel.pieceGroups
-                        |> Dict.values
-                        |> List.filter
-                            (\pg -> S.member pg.visibilityGroup oldModel.visibleGroups)
-                        |> List.filter
-                            (isPieceGroupInsideBox
-                                oldModel.image
-                                (boxTopLeft box)
-                                (boxBottomRight box)
-                            )
+                ( Just _, Normal box ) ->
+                    let
+                        within =
+                            oldModel.pieceGroups
+                                |> Dict.values
+                                |> List.filter
+                                    (\pg -> S.member pg.visibilityGroup oldModel.visibleGroups)
+                                |> List.filter
+                                    (isPieceGroupInsideBox
+                                        oldModel.image
+                                        (boxTopLeft box)
+                                        (boxBottomRight box)
+                                    )
 
-                alreadySelected =
-                    oldModel.pieceGroups
-                        |> Dict.values
-                        |> List.filter (\pg -> S.member pg.id box.selectedIds)
+                        alreadySelected =
+                            oldModel.pieceGroups
+                                |> Dict.values
+                                |> List.filter (\pg -> S.member pg.id box.selectedIds)
 
-                notSelected =
-                    oldModel.pieceGroups
-                        |> Dict.values
-                        |> List.filter (\pg -> not <| S.member pg.id box.selectedIds)
-            in
-            DeselectingWithBox
-                { oldModel = oldModel
-                , configuration = toConfiguration oldModel
-                , drag =
-                    Drag.from box.staticCorner
-                        |> Drag.to box.movingCorner
-                , alreadySelected = alreadySelected
-                , within = within
-                , unSelected = notSelected
-                }
+                        notSelected =
+                            oldModel.pieceGroups
+                                |> Dict.values
+                                |> List.filter (\pg -> not <| S.member pg.id box.selectedIds)
+                    in
+                    SelectingWithBox
+                        { oldModel = oldModel
+                        , configuration = toConfiguration oldModel
+                        , drag =
+                            Drag.from box.staticCorner
+                                |> Drag.to box.movingCorner
+                        , alreadySelected = alreadySelected
+                        , within = within
+                        , unSelected = notSelected
+                        }
 
-        ( _, _ ) ->
-            Identity
-                { oldModel = oldModel
-                , configuration = toConfiguration oldModel
-                , selected = selected
-                , unSelected = unSelected
-                }
+                ( Just _, Inverted box ) ->
+                    let
+                        within =
+                            oldModel.pieceGroups
+                                |> Dict.values
+                                |> List.filter
+                                    (\pg -> S.member pg.visibilityGroup oldModel.visibleGroups)
+                                |> List.filter
+                                    (isPieceGroupInsideBox
+                                        oldModel.image
+                                        (boxTopLeft box)
+                                        (boxBottomRight box)
+                                    )
+
+                        alreadySelected =
+                            oldModel.pieceGroups
+                                |> Dict.values
+                                |> List.filter (\pg -> S.member pg.id box.selectedIds)
+
+                        notSelected =
+                            oldModel.pieceGroups
+                                |> Dict.values
+                                |> List.filter (\pg -> not <| S.member pg.id box.selectedIds)
+                    in
+                    DeselectingWithBox
+                        { oldModel = oldModel
+                        , configuration = toConfiguration oldModel
+                        , drag =
+                            Drag.from box.staticCorner
+                                |> Drag.to box.movingCorner
+                        , alreadySelected = alreadySelected
+                        , within = within
+                        , unSelected = notSelected
+                        }
+
+                ( _, _ ) ->
+                    Identity
+                        { oldModel = oldModel
+                        , configuration = toConfiguration oldModel
+                        , selected = selected
+                        , unSelected = unSelected
+                        }
 
 
-toOldModel : NewModel -> Model
-toOldModel newModel =
-    case newModel of
-        Identity { oldModel } ->
-            oldModel
+toOldModel : Seeded NewModel -> Model
+toOldModel =
+    Seeded.map <|
+        \newModel ->
+            case newModel of
+                Identity { oldModel } ->
+                    oldModel
 
-        Moving { oldModel, drag, selected, unSelected } ->
-            { oldModel
-                | pieceGroups =
-                    selected
-                        |> List.map (PieceGroup.move (Drag.distance drag))
-                        |> List.append unSelected
-                        |> List.map (\pg -> ( pg.id, pg ))
-                        |> Dict.fromList
-                , cursor = Just <| Drag.getCurrent drag
-            }
-
-        SelectingWithBox { oldModel, drag, alreadySelected, within } ->
-            let
-                withinIds =
-                    within
-                        |> List.map .id
-                        |> S.fromList
-
-                alreadySelectedIds =
-                    alreadySelected
-                        |> List.map .id
-                        |> S.fromList
-
-                updatedPieceGroups =
-                    oldModel.pieceGroups
-                        |> Dict.map
-                            (\id pg ->
-                                { pg
-                                    | isSelected =
-                                        S.member id alreadySelectedIds
-                                            || S.member id withinIds
-                                }
-                            )
-
-                box =
-                    { staticCorner = Drag.getStart drag
-                    , movingCorner = Drag.getCurrent drag
-                    , selectedIds = alreadySelectedIds
+                Moving { oldModel, drag, selected, unSelected } ->
+                    { oldModel
+                        | pieceGroups =
+                            selected
+                                |> List.map (PieceGroup.move (Drag.distance drag))
+                                |> List.append unSelected
+                                |> List.map (\pg -> ( pg.id, pg ))
+                                |> Dict.fromList
+                        , cursor = Just <| Drag.getCurrent drag
                     }
-            in
-            { oldModel
-                | selectionBox = Normal box
-                , pieceGroups = updatedPieceGroups
-            }
 
-        DeselectingWithBox { oldModel, drag, alreadySelected, within } ->
-            let
-                withinIds =
-                    within
-                        |> List.map .id
-                        |> S.fromList
+                SelectingWithBox { oldModel, drag, alreadySelected, within } ->
+                    let
+                        withinIds =
+                            within
+                                |> List.map .id
+                                |> S.fromList
 
-                alreadySelectedIds =
-                    alreadySelected
-                        |> List.map .id
-                        |> S.fromList
+                        alreadySelectedIds =
+                            alreadySelected
+                                |> List.map .id
+                                |> S.fromList
 
-                updatedPieceGroups =
-                    oldModel.pieceGroups
-                        |> Dict.map
-                            (\id pg ->
-                                { pg
-                                    | isSelected =
-                                        S.member id alreadySelectedIds
-                                            && not (S.member id withinIds)
-                                }
-                            )
+                        updatedPieceGroups =
+                            oldModel.pieceGroups
+                                |> Dict.map
+                                    (\id pg ->
+                                        { pg
+                                            | isSelected =
+                                                S.member id alreadySelectedIds
+                                                    || S.member id withinIds
+                                        }
+                                    )
 
-                box =
-                    { staticCorner = Drag.getStart drag
-                    , movingCorner = Drag.getCurrent drag
-                    , selectedIds = alreadySelectedIds
+                        box =
+                            { staticCorner = Drag.getStart drag
+                            , movingCorner = Drag.getCurrent drag
+                            , selectedIds = alreadySelectedIds
+                            }
+                    in
+                    { oldModel
+                        | selectionBox = Normal box
+                        , pieceGroups = updatedPieceGroups
                     }
-            in
-            { oldModel
-                | selectionBox = Inverted box
-                , pieceGroups = updatedPieceGroups
-            }
+
+                DeselectingWithBox { oldModel, drag, alreadySelected, within } ->
+                    let
+                        withinIds =
+                            within
+                                |> List.map .id
+                                |> S.fromList
+
+                        alreadySelectedIds =
+                            alreadySelected
+                                |> List.map .id
+                                |> S.fromList
+
+                        updatedPieceGroups =
+                            oldModel.pieceGroups
+                                |> Dict.map
+                                    (\id pg ->
+                                        { pg
+                                            | isSelected =
+                                                S.member id alreadySelectedIds
+                                                    && not (S.member id withinIds)
+                                        }
+                                    )
+
+                        box =
+                            { staticCorner = Drag.getStart drag
+                            , movingCorner = Drag.getCurrent drag
+                            , selectedIds = alreadySelectedIds
+                            }
+                    in
+                    { oldModel
+                        | selectionBox = Inverted box
+                        , pieceGroups = updatedPieceGroups
+                    }
 
 
-init : () -> ( NewModel, Cmd Msg )
+init : () -> ( Seeded NewModel, Cmd Msg )
 init () =
     let
         image =
@@ -312,7 +320,7 @@ init () =
     ( model, Cmd.none )
 
 
-resetModel : JigsawImage -> Random.Seed -> NewModel
+resetModel : JigsawImage -> Random.Seed -> Seeded NewModel
 resetModel image seed =
     let
         ( w, h ) =
@@ -330,20 +338,20 @@ resetModel image seed =
         ( edgePoints, seed2 ) =
             Random.step (generateEdgePoints numberOfEdges) seed1
     in
-    toNewModel
         { cursor = Nothing
         , pieceGroups = createPieceGroups image positions
         , selected = NullSelection
         , image = image
         , snapDistance = 30.0
         , selectionBox = NullBox
-        , seed = seed2
         , edges =
             List.range 0 (image.xpieces * image.ypieces - 1)
                 |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id edgePoints)
         , visibleGroups = S.fromList [ -1 ]
         , keyboard = { shift = False, ctrl = False }
         }
+        |> Seeded seed2
+        |> toNewModel
 
 
 type SelectionBox

@@ -15,6 +15,7 @@ import Model
         , Model
         , Msg(..)
         , NewModel(..)
+        , OldModel
         , Selected(..)
         , SelectionBox(..)
         , boxBottomRight
@@ -27,17 +28,18 @@ import Model
         )
 import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
+import Seeded exposing (Seeded(..))
 import Set as S
 import Util exposing (takeFirst)
 import View exposing (view)
 
 
-main : Program () NewModel Msg
+main : Program () (Seeded NewModel) Msg
 main =
     Browser.element
         { init = init
         , update = update
-        , view = view
+        , view = Seeded.unwrap >> view
         , subscriptions = subscriptions
         }
 
@@ -46,10 +48,10 @@ main =
 -- SUBSCRIPTIONS
 
 
-subscriptions : NewModel -> Sub Msg
+subscriptions : Seeded NewModel -> Sub Msg
 subscriptions newModel =
     let
-        model =
+        (Seeded _ model) =
             toOldModel newModel
 
         trackMouseMovement =
@@ -85,30 +87,29 @@ subscriptions newModel =
 -- UPDATE
 
 
-update : Msg -> NewModel -> ( NewModel, Cmd Msg )
-update msg newModel =
+update : Msg -> Seeded NewModel -> ( Seeded NewModel, Cmd Msg )
+update msg (Seeded seed newModel) =
     case msg of
         KeyChanged isDown key ->
-            updateKeyChange isDown key (toOldModel newModel)
+            updateKeyChange isDown key (toOldModel (Seeded seed newModel))
                 |> Tuple.mapFirst toNewModel
 
         Scramble ->
-            ( Model.resetModel
-                (getImage newModel)
-                (toOldModel newModel).seed
+            ( Model.resetModel (getImage newModel) seed
             , Cmd.none
             )
 
         MouseDown coordinate keyboard ->
-            updateMouseDown coordinate keyboard (toOldModel newModel)
+            updateMouseDown coordinate keyboard (toOldModel (Seeded seed newModel))
                 |> Tuple.mapFirst toNewModel
 
         MouseUp ->
-            updateMouseUp (toOldModel newModel)
+            updateMouseUp (toOldModel (Seeded seed newModel))
                 |> Tuple.mapFirst toNewModel
 
         MouseMove newPos ->
             updateMoveMouse newPos newModel
+                |> Tuple.mapFirst (Seeded seed)
 
 
 
@@ -125,7 +126,7 @@ sToggle a set =
 
 
 updateKeyChange : Bool -> Key -> Model -> ( Model, Cmd msg )
-updateKeyChange isDown key model =
+updateKeyChange isDown key (Seeded seed model) =
     let
         assignVisibilityGroup visibilityGroup _ pg =
             if pg.isSelected && pg.visibilityGroup /= visibilityGroup then
@@ -142,6 +143,7 @@ updateKeyChange isDown key model =
             case ( model.keyboard.ctrl, isDown ) of
                 ( True, True ) ->
                     ( { model | pieceGroups = newPieceGroups x }
+                        |> Seeded seed
                     , Cmd.none
                     )
 
@@ -149,32 +151,45 @@ updateKeyChange isDown key model =
                     ( { model
                         | visibleGroups = sToggle x model.visibleGroups
                       }
+                        |> Seeded seed
                     , Cmd.none
                     )
 
                 ( _, False ) ->
-                    ( model, Cmd.none )
+                    ( model
+                        |> Seeded seed
+                    , Cmd.none
+                    )
 
         Control ->
             let
                 newKeyboard keyboard =
                     { keyboard | ctrl = isDown }
             in
-            ( { model | keyboard = newKeyboard model.keyboard }, Cmd.none )
+            ( { model | keyboard = newKeyboard model.keyboard }
+                |> Seeded seed
+            , Cmd.none
+            )
 
         Shift ->
             let
                 newKeyboard keyboard =
                     { keyboard | shift = isDown }
             in
-            ( { model | keyboard = newKeyboard model.keyboard }, Cmd.none )
+            ( { model | keyboard = newKeyboard model.keyboard }
+                |> Seeded seed
+            , Cmd.none
+            )
 
         Other ->
-            ( model, Cmd.none )
+            ( model
+                |> Seeded seed
+            , Cmd.none
+            )
 
 
 updateMouseDown : Point -> Keyboard -> Model -> ( Model, Cmd Msg )
-updateMouseDown coordinate keyboard model =
+updateMouseDown coordinate keyboard (Seeded seed model) =
     let
         clickedPieceGroup =
             D.values model.pieceGroups
@@ -193,12 +208,15 @@ updateMouseDown coordinate keyboard model =
             else
                 selectPieceGroup model clickedPieceGroup.id coordinate keyboard
     in
-    ( newModel, Cmd.none )
+    ( newModel
+        |> Seeded seed
+    , Cmd.none
+    )
 
 
 updateMouseUp : Model -> ( Model, Cmd Msg )
-updateMouseUp model =
-    ( case model.selectionBox of
+updateMouseUp (Seeded seed model) =
+    ( (case model.selectionBox of
         Normal _ ->
             { model
                 | selectionBox = NullBox
@@ -230,6 +248,8 @@ updateMouseUp model =
                                 |> Maybe.withDefault defaultPieceGroup
                                 |> snapToNeighbour model
                     }
+      )
+        |> Seeded seed
     , Cmd.none
     )
 
@@ -282,7 +302,7 @@ updateMoveMouse newPos model =
     )
 
 
-selectPieceGroup : Model -> Int -> Point -> Keyboard -> Model
+selectPieceGroup : OldModel -> Int -> Point -> Keyboard -> OldModel
 selectPieceGroup model id coordinate keyboard =
     let
         clickedPieceGroup =
@@ -327,7 +347,7 @@ selectPieceGroup model id coordinate keyboard =
     }
 
 
-startSelectionBox : Model -> Point -> Keyboard -> Model
+startSelectionBox : OldModel -> Point -> Keyboard -> OldModel
 startSelectionBox model coordinate keyboard =
     let
         ids =
@@ -371,7 +391,7 @@ startSelectionBox model coordinate keyboard =
         }
 
 
-snapToNeighbour : Model -> PieceGroup -> D.Dict Int PieceGroup
+snapToNeighbour : OldModel -> PieceGroup -> D.Dict Int PieceGroup
 snapToNeighbour model selected =
     let
         neighbourFromId : Int -> PieceGroup
