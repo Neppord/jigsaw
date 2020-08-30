@@ -312,11 +312,13 @@ init () =
             , ypieces = 4
             , scale = 1.0
             }
-
-        model =
-            resetModel image (Random.initialSeed 0)
+            
     in
-    ( model, Cmd.none )
+    ( image
+        |> Seeded (Random.initialSeed 0)
+        |> Seeded.map generateNewModel
+        |> Seeded.step
+    , Cmd.none )
 
 
 buildModel :
