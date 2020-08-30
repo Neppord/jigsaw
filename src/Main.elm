@@ -32,6 +32,7 @@ import Seeded exposing (Seeded(..))
 import Set as S
 import Util exposing (takeFirst)
 import View exposing (view)
+import Model exposing (generateNewModel)
 
 
 main : Program () (Seeded NewModel) Msg
@@ -88,14 +89,21 @@ subscriptions newModel =
 
 
 update : Msg -> Seeded NewModel -> ( Seeded NewModel, Cmd Msg )
-update msg (Seeded seed newModel) =
+update msg seededModel =
+    let
+        (Seeded seed newModel) = seededModel
+    in
     case msg of
         KeyChanged isDown key ->
             updateKeyChange isDown key (toOldModel (Seeded seed newModel))
                 |> Tuple.mapFirst (Seeded.map toNewModel)
 
         Scramble ->
-            ( Model.resetModel (getImage newModel) seed
+            (
+                seededModel
+                    |> Seeded.map getImage
+                    |> Seeded.map generateNewModel
+                    |> Seeded.step
             , Cmd.none
             )
 

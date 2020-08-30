@@ -7,7 +7,7 @@ module Model exposing
     , NewModel(..)
     , OldModel
     , Selected(..)
-    , SelectionBox(..)
+    , SelectionBox(..), generateNewModel
     , boxBottomRight
     , boxTopLeft
     , defaultPieceGroup
