@@ -92,7 +92,7 @@ update msg (Seeded seed newModel) =
     case msg of
         KeyChanged isDown key ->
             updateKeyChange isDown key (toOldModel (Seeded seed newModel))
-                |> Tuple.mapFirst toNewModel
+                |> Tuple.mapFirst (Seeded.map toNewModel)
 
         Scramble ->
             ( Model.resetModel (getImage newModel) seed
@@ -101,11 +101,11 @@ update msg (Seeded seed newModel) =
 
         MouseDown coordinate keyboard ->
             updateMouseDown coordinate keyboard (toOldModel (Seeded seed newModel))
-                |> Tuple.mapFirst toNewModel
+                |> Tuple.mapFirst (Seeded.map toNewModel)
 
         MouseUp ->
             updateMouseUp (toOldModel (Seeded seed newModel))
-                |> Tuple.mapFirst toNewModel
+                |> Tuple.mapFirst (Seeded.map toNewModel)
 
         MouseMove newPos ->
             updateMoveMouse newPos newModel
