@@ -332,27 +332,33 @@ resetModel image seed =
         generatePieceGroups =
             generatePositions
                 |> Random.map (createPieceGroups image)
+        
+        generateEdges =
+            Random.map
+                (\eps -> List.range 0 (image.xpieces * image.ypieces - 1)
+                    |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id eps))
+                (generateEdgePoints numberOfEdges)
 
-        (pieceGroups, seed1) =
-            Random.step generatePieceGroups seed
-
-        ( edgePoints, seed2 ) =
-            Random.step (generateEdgePoints numberOfEdges) seed1
+        
+        buildModel pieceGroups edges =
+            { cursor = Nothing
+            , pieceGroups = pieceGroups
+            , selected = NullSelection
+            , image = image
+            , snapDistance = 30.0
+            , selectionBox = NullBox
+            , edges = edges
+            , visibleGroups = S.fromList [ -1 ]
+            , keyboard = { shift = False, ctrl = False }
+            }
+        
+        generateModel =
+            Random.map2 buildModel generatePieceGroups generateEdges
 
     in
-        { cursor = Nothing
-        , pieceGroups = pieceGroups
-        , selected = NullSelection
-        , image = image
-        , snapDistance = 30.0
-        , selectionBox = NullBox
-        , edges =
-            List.range 0 (image.xpieces * image.ypieces - 1)
-                |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id edgePoints)
-        , visibleGroups = S.fromList [ -1 ]
-        , keyboard = { shift = False, ctrl = False }
-        }
-        |> Seeded seed2
+    generateModel
+        |> Seeded seed
+        |> Seeded.step
         |> toNewModel
 
 
