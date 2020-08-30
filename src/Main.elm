@@ -12,7 +12,6 @@ import Model
     exposing
         ( Key(..)
         , Keyboard
-        , Model
         , Msg(..)
         , NewModel(..)
         , OldModel
