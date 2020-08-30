@@ -93,10 +93,13 @@ update msg seededModel =
     let
         (Seeded seed newModel) =
             seededModel
+
+        oldModel =
+            toOldModel seededModel
     in
     case msg of
         KeyChanged isDown key ->
-            updateKeyChange isDown key (toOldModel (Seeded seed newModel))
+            updateKeyChange isDown key oldModel
                 |> Tuple.mapFirst (Seeded.map toNewModel)
 
         Scramble ->
@@ -108,11 +111,11 @@ update msg seededModel =
             )
 
         MouseDown coordinate keyboard ->
-            updateMouseDown coordinate keyboard (toOldModel (Seeded seed newModel))
+            updateMouseDown coordinate keyboard oldModel
                 |> Tuple.mapFirst (Seeded.map toNewModel)
 
         MouseUp ->
-            updateMouseUp (toOldModel (Seeded seed newModel))
+            updateMouseUp oldModel
                 |> Tuple.mapFirst (Seeded.map toNewModel)
 
         MouseMove newPos ->
