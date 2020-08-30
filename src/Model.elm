@@ -5,8 +5,9 @@ module Model exposing
     , Model
     , Msg(..)
     , NewModel(..)
+    , OldModel
     , Selected(..)
-    , SelectionBox(..), OldModel
+    , SelectionBox(..)
     , boxBottomRight
     , boxTopLeft
     , defaultPieceGroup
@@ -320,43 +321,51 @@ init () =
     ( model, Cmd.none )
 
 
-resetModel : JigsawImage -> Random.Seed -> Seeded NewModel
-resetModel image seed =
+buildModel :
+    JigsawImage
+    -> Dict.Dict Int PieceGroup
+    -> List (List Edge)
+    -> OldModel
+buildModel image pieceGroups edges =
+    { cursor = Nothing
+    , selected = NullSelection
+    , snapDistance = 30.0
+    , selectionBox = NullBox
+    , visibleGroups = S.fromList [ -1 ]
+    , keyboard = { shift = False, ctrl = False }
+    , image = image
+    , edges = edges
+    , pieceGroups = pieceGroups
+    }
+
+
+generateModel : JigsawImage -> Random.Generator OldModel
+generateModel image =
     let
         numberOfEdges =
             2 * image.xpieces * image.ypieces - image.xpieces - image.ypieces
 
         generatePositions =
             shufflePiecePositions image.width image.height image
-        
+
         generatePieceGroups =
             generatePositions
                 |> Random.map (createPieceGroups image)
-        
+
         generateEdges =
             Random.map
-                (\eps -> List.range 0 (image.xpieces * image.ypieces - 1)
-                    |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id eps))
+                (\eps ->
+                    List.range 0 (image.xpieces * image.ypieces - 1)
+                        |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id eps)
+                )
                 (generateEdgePoints numberOfEdges)
-
-        
-        buildModel pieceGroups edges =
-            { cursor = Nothing
-            , pieceGroups = pieceGroups
-            , selected = NullSelection
-            , image = image
-            , snapDistance = 30.0
-            , selectionBox = NullBox
-            , edges = edges
-            , visibleGroups = S.fromList [ -1 ]
-            , keyboard = { shift = False, ctrl = False }
-            }
-        
-        generateModel =
-            Random.map2 buildModel generatePieceGroups generateEdges
-
     in
-    generateModel
+    Random.map2 (buildModel image) generatePieceGroups generateEdges
+
+
+resetModel : JigsawImage -> Random.Seed -> Seeded NewModel
+resetModel image seed =
+    generateModel image
         |> Seeded seed
         |> Seeded.step
         |> toNewModel
