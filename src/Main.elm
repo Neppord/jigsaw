@@ -40,7 +40,7 @@ main =
         { init = init
         , update = update
         , view = Seeded.unwrap >> view
-        , subscriptions = subscriptions
+        , subscriptions = Seeded.unwrap >> subscriptions
         }
 
 
@@ -48,10 +48,10 @@ main =
 -- SUBSCRIPTIONS
 
 
-subscriptions : Seeded NewModel -> Sub Msg
+subscriptions : NewModel -> Sub Msg
 subscriptions newModel =
     let
-        (Seeded _ model) =
+        model =
             toOldModel newModel
 
         trackMouseMovement =
@@ -91,7 +91,8 @@ update : Msg -> Seeded NewModel -> ( Seeded NewModel, Cmd Msg )
 update msg seededModel =
     let
         oldModel =
-            toOldModel seededModel
+            seededModel
+                |> Seeded.map toOldModel
     in
     case msg of
         Scramble ->
