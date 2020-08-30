@@ -326,16 +326,22 @@ resetModel image seed =
         numberOfEdges =
             2 * image.xpieces * image.ypieces - image.xpieces - image.ypieces
 
-        ( positions, seed1 ) =
-            Random.step 
-                (shufflePiecePositions image.width image.height image)
-                seed
+        generatePositions =
+            shufflePiecePositions image.width image.height image
+        
+        generatePieceGroups =
+            generatePositions
+                |> Random.map (createPieceGroups image)
+
+        (pieceGroups, seed1) =
+            Random.step generatePieceGroups seed
 
         ( edgePoints, seed2 ) =
             Random.step (generateEdgePoints numberOfEdges) seed1
+
     in
         { cursor = Nothing
-        , pieceGroups = createPieceGroups image positions
+        , pieceGroups = pieceGroups
         , selected = NullSelection
         , image = image
         , snapDistance = 30.0
