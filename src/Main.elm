@@ -21,6 +21,7 @@ import Model
         , boxBottomRight
         , boxTopLeft
         , defaultPieceGroup
+        , generateNewModel
         , getImage
         , init
         , toNewModel
@@ -32,7 +33,6 @@ import Seeded exposing (Seeded(..))
 import Set as S
 import Util exposing (takeFirst)
 import View exposing (view)
-import Model exposing (generateNewModel)
 
 
 main : Program () (Seeded NewModel) Msg
@@ -91,7 +91,8 @@ subscriptions newModel =
 update : Msg -> Seeded NewModel -> ( Seeded NewModel, Cmd Msg )
 update msg seededModel =
     let
-        (Seeded seed newModel) = seededModel
+        (Seeded seed newModel) =
+            seededModel
     in
     case msg of
         KeyChanged isDown key ->
@@ -99,11 +100,10 @@ update msg seededModel =
                 |> Tuple.mapFirst (Seeded.map toNewModel)
 
         Scramble ->
-            (
-                seededModel
-                    |> Seeded.map getImage
-                    |> Seeded.map generateNewModel
-                    |> Seeded.step
+            ( seededModel
+                |> Seeded.map getImage
+                |> Seeded.map generateNewModel
+                |> Seeded.step
             , Cmd.none
             )
 

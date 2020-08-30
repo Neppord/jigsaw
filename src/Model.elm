@@ -7,15 +7,15 @@ module Model exposing
     , NewModel(..)
     , OldModel
     , Selected(..)
-    , SelectionBox(..), generateNewModel
+    , SelectionBox(..)
     , boxBottomRight
     , boxTopLeft
     , defaultPieceGroup
+    , generateNewModel
     , getEdges
     , getImage
     , getVisibilityGroups
     , init
-    , resetModel
     , toNewModel
     , toOldModel
     )
@@ -312,13 +312,13 @@ init () =
             , ypieces = 4
             , scale = 1.0
             }
-            
     in
     ( image
         |> Seeded (Random.initialSeed 0)
         |> Seeded.map generateNewModel
         |> Seeded.step
-    , Cmd.none )
+    , Cmd.none
+    )
 
 
 buildModel :
@@ -367,13 +367,6 @@ generateNewModel : JigsawImage -> Random.Generator NewModel
 generateNewModel image =
     generateModel image
         |> Random.map toNewModel
-
-
-resetModel : JigsawImage -> Random.Seed -> Seeded NewModel
-resetModel image seed =
-    generateNewModel image
-        |> Seeded seed
-        |> Seeded.step
 
 
 type SelectionBox
