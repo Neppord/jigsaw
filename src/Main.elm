@@ -47,41 +47,52 @@ main =
 
 -- SUBSCRIPTIONS
 
+trackMouseMovement : Sub Msg
+trackMouseMovement =
+    Decode.pageCoordinates
+        |> Json.Decode.map MouseMove
+        |> Browser.Events.onMouseMove
+
+
+trackMouseDown : Sub Msg
+trackMouseDown =
+    Json.Decode.map2 MouseDown Decode.pageCoordinates Decode.keyboard
+        |> Browser.Events.onMouseDown
+
+
+trackMouseUp : Sub Msg
+trackMouseUp =
+    Browser.Events.onMouseUp (Json.Decode.succeed MouseUp)
+
+
+keyDown : Sub Msg
+keyDown =
+    Decode.key
+        |> Json.Decode.map (KeyChanged True)
+        |> Browser.Events.onKeyDown
+
+
+keyUp : Sub Msg
+keyUp =
+    Decode.key
+        |> Json.Decode.map (KeyChanged False)
+        |> Browser.Events.onKeyUp
+
 
 subscriptions : NewModel -> Sub Msg
 subscriptions newModel =
-    let
-        model =
-            toOldModel newModel
+    case newModel of
+        Moving _ ->
+            Sub.batch [ trackMouseMovement, trackMouseUp, keyUp, keyDown ]
 
-        trackMouseMovement =
-            if model.cursor /= Nothing then
-                Decode.pageCoordinates
-                    |> Json.Decode.map MouseMove
-                    |> Browser.Events.onMouseMove
+        SelectingWithBox _ ->
+            Sub.batch [ trackMouseMovement, trackMouseUp, keyUp, keyDown ]
 
-            else
-                Sub.none
+        DeselectingWithBox _ ->
+            Sub.batch [ trackMouseMovement, trackMouseUp, keyUp, keyDown ]
 
-        trackMouseDown =
-            Json.Decode.map2 MouseDown Decode.pageCoordinates Decode.keyboard
-                |> Browser.Events.onMouseDown
-
-        trackMouseUp =
-            Browser.Events.onMouseUp (Json.Decode.succeed MouseUp)
-    in
-    Sub.batch
-        [ trackMouseMovement
-        , trackMouseDown
-        , trackMouseUp
-        , Decode.key
-            |> Json.Decode.map (KeyChanged True)
-            |> Browser.Events.onKeyDown
-        , Decode.key
-            |> Json.Decode.map (KeyChanged False)
-            |> Browser.Events.onKeyUp
-        ]
-
+        Identity _ ->
+            Sub.batch [ trackMouseDown, keyUp, keyDown ]
 
 
 -- UPDATE
