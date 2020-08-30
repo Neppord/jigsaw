@@ -1,8 +1,9 @@
 module Decode exposing (key, keyboard, pageCoordinates)
 
 import Json.Decode exposing (Decoder, bool, field, int, map, map2, string)
-import Model exposing (Key(..), Keyboard)
+import Model exposing (Key(..))
 import Point exposing (Point)
+import Keyboard exposing (Keyboard)
 
 
 pageCoordinates : Decoder Point
@@ -21,50 +22,50 @@ keyboard =
         (field "ctrlKey" bool)
 
 
-identifierToKey : String -> Model.Key
+identifierToKey : String -> Maybe Model.Key
 identifierToKey identifier =
     case identifier of
         "0" ->
-            Number 0
+            Just <| Number 0
 
         "1" ->
-            Number 1
+            Just <| Number 1
 
         "2" ->
-            Number 2
+            Just <| Number 2
 
         "3" ->
-            Number 3
+            Just <| Number 3
 
         "4" ->
-            Number 4
+            Just <| Number 4
 
         "5" ->
-            Number 5
+            Just <| Number 5
 
         "6" ->
-            Number 6
+            Just <| Number 6
 
         "7" ->
-            Number 7
+            Just <| Number 7
 
         "8" ->
-            Number 8
+            Just <| Number 8
 
         "9" ->
-            Number 9
+            Just <| Number 9
 
         "Control" ->
-            Control
+            Just <| Control
 
         "Shift" ->
-            Shift
+            Just <| Shift
 
         _ ->
-            Other
+            Nothing
 
 
-key : Decoder Key
+key : Decoder (Maybe Key)
 key =
     field "key" string
         |> map identifierToKey

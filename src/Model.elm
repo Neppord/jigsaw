@@ -1,7 +1,6 @@
 module Model exposing
     ( Box
     , Key(..)
-    , Keyboard
     , Model
     , Msg(..)
     , NewModel(..)
@@ -36,6 +35,7 @@ import Point exposing (Point)
 import Random
 import Seeded exposing (Seeded(..))
 import Set as S exposing (Set)
+import Keyboard exposing (Keyboard)
 
 
 type Msg
@@ -43,13 +43,7 @@ type Msg
     | MouseMove Point
     | MouseUp
     | Scramble
-    | KeyChanged Bool Key
-
-
-type alias Keyboard =
-    { shift : Bool
-    , ctrl : Bool
-    }
+    | KeyChanged Bool (Maybe Key)
 
 
 type alias Configuration =
@@ -390,7 +384,6 @@ type Key
     = Number Int
     | Control
     | Shift
-    | Other
 
 
 boxTopLeft : Box -> Point

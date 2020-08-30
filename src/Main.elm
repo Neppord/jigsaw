@@ -11,7 +11,6 @@ import List
 import Model
     exposing
         ( Key(..)
-        , Keyboard
         , Msg(..)
         , NewModel(..)
         , OldModel
@@ -32,6 +31,7 @@ import Seeded exposing (Seeded(..))
 import Set as S
 import Util exposing (takeFirst)
 import View exposing (view)
+import Keyboard exposing (Keyboard)
 
 
 main : Program () (Seeded NewModel) Msg
@@ -151,7 +151,7 @@ sToggle a set =
         S.insert a set
 
 
-updateKeyChange : Bool -> Key -> OldModel -> ( OldModel, Cmd msg )
+updateKeyChange : Bool -> Maybe Key -> OldModel -> ( OldModel, Cmd msg )
 updateKeyChange isDown key model =
     let
         assignVisibilityGroup visibilityGroup _ pg =
@@ -165,7 +165,7 @@ updateKeyChange isDown key model =
             D.map (assignVisibilityGroup visibilityGroup) model.pieceGroups
     in
     case key of
-        Number x ->
+        Just (Number x) ->
             case ( model.keyboard.ctrl, isDown ) of
                 ( True, True ) ->
                     ( { model | pieceGroups = newPieceGroups x }
@@ -184,7 +184,7 @@ updateKeyChange isDown key model =
                     , Cmd.none
                     )
 
-        Control ->
+        Just Control ->
             let
                 newKeyboard keyboard =
                     { keyboard | ctrl = isDown }
@@ -193,7 +193,7 @@ updateKeyChange isDown key model =
             , Cmd.none
             )
 
-        Shift ->
+        Just Shift ->
             let
                 newKeyboard keyboard =
                     { keyboard | shift = isDown }
@@ -202,7 +202,7 @@ updateKeyChange isDown key model =
             , Cmd.none
             )
 
-        Other ->
+        Nothing ->
             ( model
             , Cmd.none
             )
