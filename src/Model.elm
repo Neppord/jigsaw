@@ -323,17 +323,13 @@ init () =
 resetModel : JigsawImage -> Random.Seed -> Seeded NewModel
 resetModel image seed =
     let
-        ( w, h ) =
-            ( image.width, image.height )
-
-        ( nx, ny ) =
-            ( image.xpieces, image.ypieces )
-
         numberOfEdges =
-            2 * nx * ny - nx - ny
+            2 * image.xpieces * image.ypieces - image.xpieces - image.ypieces
 
         ( positions, seed1 ) =
-            Random.step (shufflePiecePositions w h image) seed
+            Random.step 
+                (shufflePiecePositions image.width image.height image)
+                seed
 
         ( edgePoints, seed2 ) =
             Random.step (generateEdgePoints numberOfEdges) seed1
