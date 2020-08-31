@@ -216,6 +216,7 @@ viewDiv model =
                 [ style
                     "transform"
                     ("translate(" ++ (x |> px) ++ "," ++ (y |> px) ++ ")")
+                , style "will-change"  "transform"
                 ]
 
             _ ->
