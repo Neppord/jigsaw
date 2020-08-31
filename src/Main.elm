@@ -13,8 +13,6 @@ import Model
         ( Key(..)
         , Msg(..)
         , NewModel
-        , Selected(..)
-        , SelectionBox(..)
         , defaultPieceGroup
         , generateModel
         , getImage

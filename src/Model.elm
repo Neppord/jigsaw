@@ -1,12 +1,7 @@
 module Model exposing
-    ( Box
-    , Key(..)
+    ( Key(..)
     , Msg(..)
-    , NewModel
-    , Selected(..)
-    , SelectionBox(..), generateModel
-    , boxBottomRight
-    , boxTopLeft
+    , NewModel, generateModel
     , defaultPieceGroup
     , getEdges
     , getImage
@@ -118,43 +113,8 @@ generateModel image =
     Random.map2 (buildModel image) generatePieceGroups generateEdges
 
 
-type SelectionBox
-    = Normal Box
-    | Inverted Box
-    | NullBox
-
-
-type alias Box =
-    { staticCorner : Point
-    , movingCorner : Point
-    , selectedIds : S.Set Int
-    }
-
-
-type Selected
-    = Multiple
-    | Single Int
-    | NullSelection
-
-
 type Key
     = Number Int
-
-
-boxTopLeft : Box -> Point
-boxTopLeft box =
-    Point
-        (min box.staticCorner.x box.movingCorner.x)
-        (min box.staticCorner.y box.movingCorner.y)
-
-
-boxBottomRight : Box -> Point
-boxBottomRight box =
-    Point
-        (max box.staticCorner.x box.movingCorner.x)
-        (max box.staticCorner.y box.movingCorner.y)
-
-
 
 -- Until I figure out how to handle index out of bounds
 -- exceptions more elegantly

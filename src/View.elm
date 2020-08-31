@@ -12,7 +12,6 @@ import Model
     exposing
         ( Msg(..)
         , NewModel
-        , SelectionBox(..)
         , getEdges
         , getImage
         , getVisibilityGroups
