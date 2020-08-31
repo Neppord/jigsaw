@@ -82,34 +82,30 @@ subscriptions newModel =
 
 update : Msg -> Seeded NewModel -> ( Seeded NewModel, Cmd Msg )
 update msg seededModel =
-    case msg of
+    (case msg of
         Scramble ->
-            ( seededModel
+            seededModel
                 |> Seeded.map (.configuration >> .image)
                 |> Seeded.map generateModel
                 |> Seeded.step
-            , Cmd.none
-            )
 
         KeyDown keyboard key ->
             seededModel
                 |> Seeded.map (updateKeyChange keyboard key)
-                |> Seeded.embed
 
         MouseDown coordinate keyboard ->
             seededModel
                 |> Seeded.map (updateMouseDown coordinate keyboard)
-                |> Seeded.embed
 
         MouseUp ->
             seededModel
                 |> Seeded.map updateMouseUp
-                |> Seeded.embed
 
         MouseMove newPos ->
             seededModel
                 |> Seeded.map (updateMoveMouse newPos)
-                |> Seeded.embed
+    , Cmd.none
+    )
 
 
 
@@ -125,33 +121,27 @@ sToggle a set =
         S.insert a set
 
 
-updateKeyChange : Keyboard -> Maybe Key -> NewModel -> ( NewModel, Cmd msg )
+updateKeyChange : Keyboard -> Maybe Key -> NewModel -> NewModel
 updateKeyChange keyboard key model =
     case key of
         Just (Number x) ->
             if keyboard.ctrl then
-                ( { model
+                { model
                     | selected =
                         model.selected
                             |> List.map (\pg -> { pg | visibilityGroup = x })
                   }
-                , Cmd.none
-                )
 
             else
-                ( { model
+                { model
                     | visibleGroups = sToggle x model.visibleGroups
                   }
-                , Cmd.none
-                )
 
         _ ->
-            ( model
-            , Cmd.none
-            )
+            model
 
 
-updateMouseDown : Point -> Keyboard -> NewModel -> ( NewModel, Cmd Msg )
+updateMouseDown : Point -> Keyboard -> NewModel -> NewModel
 updateMouseDown coordinate keyboard model =
     let
         { selected, unSelected, visibleGroups } =
@@ -180,7 +170,7 @@ updateMouseDown coordinate keyboard model =
             else
                 UI.Replace
     in
-    ( { model
+    { model
         | ui =
             if clickedOnBackground then
                 UI.Boxing mode (Drag.from coordinate)
@@ -188,17 +178,15 @@ updateMouseDown coordinate keyboard model =
             else
                 UI.Moving UI.Snap (Drag.from coordinate)
       }
-    , Cmd.none
-    )
 
 
-updateMouseUp : NewModel -> ( NewModel, Cmd Msg )
+updateMouseUp : NewModel -> NewModel
 updateMouseUp model =
     let
         { selected, unSelected } =
             model
     in
-    ( case model.ui of
+    case model.ui of
         UI.Boxing mode drag ->
             let
                 { x, y, w, h } =
@@ -257,13 +245,11 @@ updateMouseUp model =
 
         _ ->
             model
-    , Cmd.none
-    )
 
 
-updateMoveMouse : Point -> NewModel -> ( NewModel, Cmd Msg )
+updateMoveMouse : Point -> NewModel -> NewModel
 updateMoveMouse newPos model =
-    ( case model.ui of
+    case model.ui of
         UI.Moving mode drag ->
             { model
                 | ui =
@@ -282,8 +268,6 @@ updateMoveMouse newPos model =
 
         _ ->
             model
-    , Cmd.none
-    )
 
 
 
