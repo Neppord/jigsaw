@@ -4,9 +4,6 @@ module Model exposing
     , NewModel
     , defaultPieceGroup
     , generateModel
-    , getEdges
-    , getImage
-    , getVisibilityGroups
     , init
     )
 
@@ -132,18 +129,3 @@ defaultPieceGroup =
     , members = []
     , visibilityGroup = -1
     }
-
-
-getVisibilityGroups : NewModel -> Set Int
-getVisibilityGroups =
-    .visibleGroups
-
-
-getEdges : NewModel -> List (List Edge)
-getEdges =
-    .edges
-
-
-getImage : NewModel -> JigsawImage
-getImage =
-    .configuration >> .image

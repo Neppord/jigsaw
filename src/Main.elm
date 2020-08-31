@@ -15,7 +15,6 @@ import Model
         , NewModel
         , defaultPieceGroup
         , generateModel
-        , getImage
         , init
         )
 import PieceGroup
@@ -86,7 +85,7 @@ update msg seededModel =
     case msg of
         Scramble ->
             ( seededModel
-                |> Seeded.map getImage
+                |> Seeded.map (.configuration >> .image)
                 |> Seeded.map generateModel
                 |> Seeded.step
             , Cmd.none

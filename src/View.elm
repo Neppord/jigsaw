@@ -12,9 +12,6 @@ import Model
     exposing
         ( Msg(..)
         , NewModel
-        , getEdges
-        , getImage
-        , getVisibilityGroups
         )
 import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
@@ -30,7 +27,7 @@ view : NewModel -> Html Msg
 view model =
     let
         image =
-            getImage model
+            model.configuration.image
     in
     Html.div
         turnOffTheBloodyImageDragging
@@ -175,27 +172,16 @@ px int =
 
 viewClipPath : NewModel -> Html Msg
 viewClipPath model =
-    let
-        image =
-            getImage model
-
-        edges =
-            getEdges model
-    in
-    lazyclipPathDefs image edges
+    lazyclipPathDefs model.configuration.image model.edges
 
 
 viewDiv : NewModel -> List (Html Msg)
 viewDiv model =
     let
-        { selected, unSelected } =
+        { selected, unSelected, visibleGroups } =
             model
+        image = model.configuration.image
 
-        image =
-            getImage model
-
-        visibleGroups =
-            getVisibilityGroups model
 
         isVisible pieceGroup =
             Set.member
