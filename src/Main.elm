@@ -168,11 +168,13 @@ updateMouseUp model =
                 { image } =
                     model.configuration
 
-                isWithin =
+                isWithin pg =
+                    Set.member pg.visibilityGroup model.visibleGroups &&
                     isPieceGroupInsideBox
                         image
                         (Point x y)
                         (Point (x + w) (y + h))
+                        pg
             in
             case mode of
                 UI.Add ->
