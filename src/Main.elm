@@ -1,11 +1,8 @@
 module Main exposing (main)
 
 import Browser
-import Browser.Events
-import Decode exposing (keyboard, pageCoordinates)
 import Drag
 import JigsawImage exposing (isPieceGroupInsideBox, isPointInsidePieceGroup)
-import Json.Decode
 import Keyboard exposing (Keyboard)
 import List
 import Model
@@ -23,6 +20,7 @@ import Seeded exposing (Seeded(..))
 import Set as S
 import UI
 import View exposing (view)
+import Subscription exposing (subscriptions)
 
 
 main : Program () (Seeded NewModel) Msg
@@ -34,55 +32,11 @@ main =
         , subscriptions = Seeded.unwrap >> subscriptions
         }
 
-
-
--- SUBSCRIPTIONS
-
-
-trackMouseMovement : Sub Msg
-trackMouseMovement =
-    Decode.pageCoordinates
-        |> Json.Decode.map MouseMove
-        |> Browser.Events.onMouseMove
-
-
-trackMouseDown : Sub Msg
-trackMouseDown =
-    Json.Decode.map2 MouseDown Decode.pageCoordinates Decode.keyboard
-        |> Browser.Events.onMouseDown
-
-
-trackMouseUp : Sub Msg
-trackMouseUp =
-    Browser.Events.onMouseUp (Json.Decode.succeed MouseUp)
-
-
-keyDown : Sub Msg
-keyDown =
-    Json.Decode.map2 KeyDown Decode.keyboard Decode.key
-        |> Browser.Events.onKeyDown
-
-
-subscriptions : NewModel -> Sub Msg
-subscriptions newModel =
-    case newModel.ui of
-        UI.Moving _ _ ->
-            Sub.batch [ trackMouseMovement, trackMouseUp ]
-
-        UI.Boxing _ _ ->
-            Sub.batch [ trackMouseMovement, trackMouseUp ]
-
-        _ ->
-            Sub.batch [ trackMouseDown, keyDown ]
-
-
-
 -- UPDATE
-
 
 update : Msg -> Seeded NewModel -> ( Seeded NewModel, Cmd Msg )
 update msg seededModel =
-    (case msg of
+    ( case msg of
         Scramble ->
             seededModel
                 |> Seeded.map (.configuration >> .image)
@@ -130,12 +84,12 @@ updateKeyChange keyboard key model =
                     | selected =
                         model.selected
                             |> List.map (\pg -> { pg | visibilityGroup = x })
-                  }
+                }
 
             else
                 { model
                     | visibleGroups = sToggle x model.visibleGroups
-                  }
+                }
 
         _ ->
             model
@@ -177,7 +131,7 @@ updateMouseDown coordinate keyboard model =
 
             else
                 UI.Moving UI.Snap (Drag.from coordinate)
-      }
+    }
 
 
 updateMouseUp : NewModel -> NewModel
