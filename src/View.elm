@@ -219,7 +219,9 @@ viewDiv model =
                 ]
 
             _ ->
-                []
+                [style
+                    "transform"
+                    ("translate(" ++ (0 |> px) ++ "," ++ (0 |> px) ++ ")")]
         )
         (selected
             |> renderPieces image
