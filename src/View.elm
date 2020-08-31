@@ -1,5 +1,6 @@
 module View exposing (view)
 
+import Drag
 import Edge exposing (Edge)
 import Html exposing (Attribute, Html)
 import Html.Attributes exposing (height, style, width)
@@ -10,7 +11,7 @@ import JigsawImage exposing (JigsawImage, pieceIdToOffset)
 import Model
     exposing
         ( Msg(..)
-        , NewModel(..)
+        , NewModel
         , SelectionBox(..)
         , getEdges
         , getImage
@@ -23,7 +24,7 @@ import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Lazy
 import SvgUtil
-import Drag
+import UI
 
 
 view : NewModel -> Html Msg
@@ -84,20 +85,26 @@ viewSelectionBox model =
                 )
                 []
     in
-    case model of
-        SelectingWithBox { drag } ->
+    case model.ui of
+        UI.Boxing mode drag ->
             let
                 { x, y, w, h } =
                     Drag.getDimensions drag
             in
-            box x y w h "rgba(0,0,255,0.2)"
+            box x
+                y
+                w
+                h
+                (case mode of
+                    UI.Replace ->
+                        "rgba(0,0,255,0.2)"
 
-        DeselectingWithBox { drag } ->
-            let
-                { x, y, w, h } =
-                    Drag.getDimensions drag
-            in
-            box x y w h "rgba(0,255,0,0.2)"
+                    UI.Add ->
+                        "rgba(0,0,255,0.2)"
+
+                    UI.Remove ->
+                        "rgba(0,255,0,0.2)"
+                )
 
         _ ->
             box -10 -10 0 0 "rgba(0,255,0,0.2)"
@@ -182,6 +189,9 @@ viewClipPath model =
 viewDiv : NewModel -> List (Html Msg)
 viewDiv model =
     let
+        { selected, unSelected } =
+            model
+
         image =
             getImage model
 
@@ -204,77 +214,33 @@ viewDiv model =
         shadowRed =
             shadowWithColor "red"
     in
-    case model of
-        Moving { selected, unSelected, drag } ->
-            let
-                { x, y } =
-                    Drag.distance drag
-            in
-            [ keyedDiv
-                []
-                (unSelected
-                    |> List.filter isVisible
-                    |> renderPieces image
-                    |> shadowBlack
-                )
-            , keyedDiv
+    [ keyedDiv
+        []
+        (unSelected
+            |> List.filter isVisible
+            |> renderPieces image
+            |> shadowBlack
+        )
+    , keyedDiv
+        (case model.ui of
+            UI.Moving _ drag ->
+                let
+                    { x, y } =
+                        Drag.distance drag
+                in
                 [ style
                     "transform"
                     ("translate(" ++ (x |> px) ++ "," ++ (y |> px) ++ ")")
                 ]
-                (selected
-                    |> renderPieces image
-                    |> shadowRed
-                )
-            ]
 
-        SelectingWithBox { unSelected, alreadySelected, within } ->
-            [ keyedDiv []
-                (unSelected
-                    |> List.filter isVisible
-                    |> List.filter (\x -> not <| List.member x within)
-                    |> renderPieces image
-                    |> shadowBlack
-                )
-            , keyedDiv []
-                (alreadySelected
-                    |> List.filter (\x -> not <| List.member x within)
-                    |> List.append within
-                    |> renderPieces image
-                    |> shadowRed
-                )
-            ]
-
-        DeselectingWithBox { unSelected, alreadySelected, within } ->
-            [ keyedDiv []
-                (unSelected
-                    |> List.filter isVisible
-                    |> List.filter (\x -> not <| List.member x within)
-                    |> List.append within
-                    |> renderPieces image
-                    |> shadowBlack
-                )
-            , keyedDiv []
-                (alreadySelected
-                    |> List.filter (\x -> not <| List.member x within)
-                    |> renderPieces image
-                    |> shadowRed
-                )
-            ]
-
-        Identity { unSelected, selected } ->
-            [ keyedDiv []
-                (unSelected
-                    |> List.filter isVisible
-                    |> renderPieces image
-                    |> shadowBlack
-                )
-            , keyedDiv []
-                (selected
-                    |> renderPieces image
-                    |> shadowRed
-                )
-            ]
+            _ ->
+                []
+        )
+        (selected
+            |> renderPieces image
+            |> shadowRed
+        )
+    ]
 
 
 renderPieces : JigsawImage -> List PieceGroup -> List ( String, Html msg )

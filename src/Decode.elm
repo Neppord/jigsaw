@@ -55,12 +55,6 @@ identifierToKey identifier =
         "9" ->
             Just <| Number 9
 
-        "Control" ->
-            Just <| Control
-
-        "Shift" ->
-            Just <| Shift
-
         _ ->
             Nothing
 
