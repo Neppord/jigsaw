@@ -1,8 +1,9 @@
 module Model exposing
     ( Key(..)
     , Msg(..)
-    , NewModel, generateModel
+    , NewModel
     , defaultPieceGroup
+    , generateModel
     , getEdges
     , getImage
     , getVisibilityGroups
@@ -85,7 +86,7 @@ buildModel image pieceGroups edges =
     , edges = edges
     , selected = []
     , unSelected = Dict.values pieceGroups
-    ,ui = WaitingForInput
+    , ui = WaitingForInput
     }
 
 
@@ -115,6 +116,8 @@ generateModel image =
 
 type Key
     = Number Int
+
+
 
 -- Until I figure out how to handle index out of bounds
 -- exceptions more elegantly

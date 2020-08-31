@@ -134,7 +134,7 @@ updateKeyChange keyboard key model =
                 ( { model
                     | selected =
                         model.selected
-                            |> List.map (\pg -> {pg | visibilityGroup = x})
+                            |> List.map (\pg -> { pg | visibilityGroup = x })
                   }
                 , Cmd.none
                 )
