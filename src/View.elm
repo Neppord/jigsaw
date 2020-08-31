@@ -76,6 +76,10 @@ viewSelectionBox model =
                  , style "top" <| String.fromInt y ++ "px"
                  , style "left" <| String.fromInt x ++ "px"
                  , style "position" "absolute"
+                 , style "will-change" "width"
+                 , style "will-change" "height"
+                 , style "will-change" "top"
+                 , style "will-change" "left"
                  ]
                     ++ turnOffTheBloodyImageDragging
                 )
