@@ -1,17 +1,18 @@
-module PieceGroup exposing (PieceGroup, move, distance, merge)
+module PieceGroup exposing (PieceGroup, distance, merge, move, shouldBeMerged)
 
 import Point exposing (Point)
-import Set as S
+import Set exposing (Set)
 
 
 type alias PieceGroup =
     { id : Int
     , members : List Int
-    , neighbours : S.Set Int
+    , neighbours : Set Int
     , position : Point
     , isSelected : Bool
     , visibilityGroup : Int
     }
+
 
 merge : PieceGroup -> PieceGroup -> PieceGroup
 merge a b =
@@ -20,7 +21,7 @@ merge a b =
             b.members ++ a.members
 
         newNeighbours =
-            S.diff (S.union b.neighbours a.neighbours) (S.fromList newMembers)
+            Set.diff (Set.union b.neighbours a.neighbours) (Set.fromList newMembers)
     in
     { b
         | isSelected = False
@@ -29,9 +30,19 @@ merge a b =
     }
 
 
+shouldBeMerged : Float -> PieceGroup -> PieceGroup -> Bool
+shouldBeMerged snapDistance one other =
+    distance other one
+        < snapDistance
+        && (Set.size <| Set.intersect (Set.fromList other.members) one.neighbours)
+        > 0
+
+
 distance : PieceGroup -> PieceGroup -> Float
 distance from to =
     Point.dist from.position to.position
 
+
 move : Point -> PieceGroup -> PieceGroup
-move offset pg = {pg | position = Point.add offset pg.position}
+move offset pg =
+    { pg | position = Point.add offset pg.position }

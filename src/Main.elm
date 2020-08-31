@@ -16,7 +16,7 @@ import Model
 import PieceGroup
 import Point exposing (Point)
 import Seeded exposing (Seeded(..))
-import Set as S
+import Set exposing (Set)
 import Subscription exposing (subscriptions)
 import UI
 import View exposing (view)
@@ -68,13 +68,13 @@ update msg seededModel =
 {- this could be replaced from Set.Extra -}
 
 
-sToggle : comparable -> S.Set comparable -> S.Set comparable
+sToggle : comparable -> Set comparable -> Set comparable
 sToggle a set =
-    if S.member a set then
-        S.remove a set
+    if Set.member a set then
+        Set.remove a set
 
     else
-        S.insert a set
+        Set.insert a set
 
 
 updateKeyChange : Keyboard -> Maybe Key -> NewModel -> NewModel
@@ -209,12 +209,34 @@ updateMouseUp model =
                     }
 
         UI.Moving _ drag ->
-            { model
-                | ui = UI.WaitingForInput
-                , selected =
-                    selected
-                        |> List.map (PieceGroup.move (Drag.distance drag))
-            }
+            let
+                move =
+                    PieceGroup.move (Drag.distance drag)
+            in
+            case selected of
+                pg :: [] ->
+                    let
+                        moved =
+                            move pg
+
+                        ( toMerge, newUnSelected ) =
+                            List.partition
+                                (PieceGroup.shouldBeMerged model.configuration.snapDistance moved)
+                                model.unSelected
+                    in
+                    { model
+                        | ui = UI.WaitingForInput
+                        , selected = [ List.foldl PieceGroup.merge moved toMerge ]
+                        , unSelected = newUnSelected
+                    }
+
+                _ ->
+                    { model
+                        | ui = UI.WaitingForInput
+                        , selected =
+                            selected
+                                |> List.map move
+                    }
 
         _ ->
             model
