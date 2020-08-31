@@ -10,7 +10,6 @@ import Model
         ( Key(..)
         , Msg(..)
         , NewModel
-        , defaultPieceGroup
         , generateModel
         , init
         )
@@ -18,9 +17,9 @@ import PieceGroup
 import Point exposing (Point)
 import Seeded exposing (Seeded(..))
 import Set as S
+import Subscription exposing (subscriptions)
 import UI
 import View exposing (view)
-import Subscription exposing (subscriptions)
 
 
 main : Program () (Seeded NewModel) Msg
@@ -32,7 +31,10 @@ main =
         , subscriptions = Seeded.unwrap >> subscriptions
         }
 
+
+
 -- UPDATE
+
 
 update : Msg -> Seeded NewModel -> ( Seeded NewModel, Cmd Msg )
 update msg seededModel =
@@ -109,10 +111,6 @@ updateMouseDown coordinate keyboard model =
                 |> List.filter (isPointInsidePieceGroup visibleGroups image coordinate)
                 |> List.reverse
                 |> List.head
-                |> Maybe.withDefault defaultPieceGroup
-
-        clickedOnBackground =
-            clickedPieceGroup.id == -10
 
         mode =
             if keyboard.shift then
@@ -124,14 +122,35 @@ updateMouseDown coordinate keyboard model =
             else
                 UI.Replace
     in
-    { model
-        | ui =
-            if clickedOnBackground then
-                UI.Boxing mode (Drag.from coordinate)
+    case clickedPieceGroup of
+        Nothing ->
+            { model | ui = UI.Boxing mode (Drag.from coordinate) }
+
+        Just pg ->
+            let
+                ui =
+                    UI.Moving UI.Snap (Drag.from coordinate)
+            in
+            if List.member pg selected then
+                { model | ui = ui }
+
+            else if keyboard.shift then
+                { model
+                    | ui = ui
+                    , selected = pg :: model.selected
+                    , unSelected =
+                        model.unSelected
+                            |> List.filter ((/=) pg)
+                }
 
             else
-                UI.Moving UI.Snap (Drag.from coordinate)
-    }
+                { model
+                    | ui = ui
+                    , selected = [ pg ]
+                    , unSelected =
+                        (model.selected ++ model.unSelected)
+                            |> List.filter ((/=) pg)
+                }
 
 
 updateMouseUp : NewModel -> NewModel
