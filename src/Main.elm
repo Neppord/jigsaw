@@ -107,7 +107,7 @@ updateMouseDown coordinate keyboard model =
             model.configuration
 
         clickedPieceGroup =
-            (selected ++ unSelected)
+            (unSelected ++ selected)
                 |> List.filter (isPointInsidePieceGroup visibleGroups image coordinate)
                 |> List.reverse
                 |> List.head
