@@ -31,6 +31,7 @@ type Msg
     | MouseUp
     | Scramble
     | KeyDown Keyboard (Maybe Key)
+    | ChangeImageUrl String
 
 
 type alias Configuration =

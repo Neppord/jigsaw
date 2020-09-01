@@ -49,6 +49,11 @@ view model =
             [ Html.button
                 [ Html.Events.onClick Scramble ]
                 [ Html.text "scramble" ]
+            ,Html.input 
+                [ Html.Attributes.placeholder "Image Url"
+                , Html.Attributes.value model.configuration.image.path
+                , Html.Events.onInput ChangeImageUrl ]
+                []
             ]
         ]
 

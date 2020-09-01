@@ -60,6 +60,19 @@ update msg seededModel =
         MouseMove newPos ->
             seededModel
                 |> Seeded.map (updateMoveMouse newPos)
+
+        ChangeImageUrl url ->
+            let
+                updateModel model =
+                    { model | configuration = updateConfiduration model.configuration }
+                updateConfiduration configuration =
+                    { configuration | image = updateImage configuration.image }
+                    
+                updateImage image =
+                    { image | path = url }
+            in
+            seededModel
+                |> Seeded.map updateModel
     , Cmd.none
     )
 
@@ -84,7 +97,7 @@ updateKeyChange keyboard key model =
             if keyboard.ctrl then
                 { model
                     | selected = []
-                    , unSelected = 
+                    , unSelected =
                         model.selected
                             |> List.map (\pg -> { pg | visibilityGroup = x })
                             |> List.append model.unSelected
@@ -171,12 +184,12 @@ updateMouseUp model =
                     model.configuration
 
                 isWithin pg =
-                    Set.member pg.visibilityGroup model.visibleGroups &&
-                    isPieceGroupInsideBox
-                        image
-                        (Point x y)
-                        (Point (x + w) (y + h))
-                        pg
+                    Set.member pg.visibilityGroup model.visibleGroups
+                        && isPieceGroupInsideBox
+                            image
+                            (Point x y)
+                            (Point (x + w) (y + h))
+                            pg
             in
             case mode of
                 UI.Add ->
