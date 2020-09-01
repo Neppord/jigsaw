@@ -4,3 +4,7 @@ elm-stuff
 repl-temp-*
 # pycharm generated files
 .idea*
+# Node modules
+/node_modules
+# npm lock file
+package-lock.json
