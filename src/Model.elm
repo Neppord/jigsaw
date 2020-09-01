@@ -52,13 +52,30 @@ type alias NewModel =
 init : () -> ( Seeded NewModel, Cmd Msg )
 init () =
     let
+        scale =
+            1.0
+
+        ( width, height ) =
+            ( 533, 538 )
+
+        ( xpieces, ypieces ) =
+            ( 4, 4 )
+
+        pieceWidth =
+            floor <| scale * (toFloat width / xpieces)
+
+        pieceHeight =
+            floor <| scale * (toFloat height / ypieces)
+
         image =
             { path = "../resources/kitten.png"
-            , width = 533
-            , height = 538
-            , xpieces = 4
-            , ypieces = 4
-            , scale = 1.0
+            , width = width
+            , height = height
+            , xpieces = xpieces
+            , ypieces = ypieces
+            , scale = scale
+            , pieceWidth = pieceWidth
+            , pieceHeight = pieceHeight
             }
     in
     ( image

@@ -14,6 +14,8 @@ type alias JigsawImage =
     , xpieces : Int
     , ypieces : Int
     , scale : Float
+    , pieceWidth : Int
+    , pieceHeight : Int
     }
 
 
@@ -96,16 +98,9 @@ createPieceGroups image points =
 
 pieceIdToOffset : JigsawImage -> Int -> Point
 pieceIdToOffset image id =
-    let
-        pieceWidth =
-            floor <| image.scale * toFloat (image.width // image.xpieces)
-
-        pieceHeight =
-            floor <| image.scale * toFloat (image.height // image.ypieces)
-    in
     Point.dot
         (pieceIdToPoint id image.xpieces)
-        (Point pieceWidth pieceHeight)
+        (Point image.pieceWidth image.pieceHeight)
 
 
 isPieceInsideBox : JigsawImage -> Point -> Point -> Point -> Int -> Bool
@@ -137,17 +132,12 @@ isPieceGroupInsideBox image boxTL boxBR pieceGroup =
 isPointInsidePiece : JigsawImage -> Point -> Point -> Int -> Bool
 isPointInsidePiece image point pos id =
     let
-        pieceWidth =
-            floor <| image.scale * toFloat (image.width // image.xpieces)
-
-        pieceHeight =
-            floor <| image.scale * toFloat (image.height // image.ypieces)
 
         pieceTL =
             Point.add pos <| pieceIdToOffset image id
 
         pieceBR =
-            Point.add pieceTL <| Point pieceWidth pieceHeight
+            Point.add pieceTL <| Point image.pieceWidth image.pieceHeight
     in
     (pieceTL.x <= point.x)
         && (pieceTL.y <= point.y)
