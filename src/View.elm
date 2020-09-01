@@ -122,10 +122,10 @@ pieceDiv image pg pid =
             pieceIdToOffset image pid
 
         w =
-            floor <| image.scale * toFloat (2 * image.width // image.xpieces)
+            image.pieceWidth * 2
 
         h =
-            floor <| image.scale * toFloat (2 * image.height // image.ypieces)
+           image.pieceHeight * 2
 
         top =
             String.fromInt (pg.position.y + offset.y - h // 4) ++ "px"

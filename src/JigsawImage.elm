@@ -106,17 +106,12 @@ pieceIdToOffset image id =
 isPieceInsideBox : JigsawImage -> Point -> Point -> Point -> Int -> Bool
 isPieceInsideBox image pos boxTL boxBR id =
     let
-        pieceWidth =
-            floor <| image.scale * toFloat (image.width // image.xpieces)
-
-        pieceHeight =
-            floor <| image.scale * toFloat (image.height // image.ypieces)
 
         pieceTL =
             Point.add pos <| pieceIdToOffset image id
 
         pieceBR =
-            Point.add pieceTL <| Point pieceWidth pieceHeight
+            Point.add pieceTL <| Point image.pieceWidth image.pieceHeight
     in
     (pieceTL.x <= boxBR.x)
         && (pieceTL.y <= boxBR.y)
