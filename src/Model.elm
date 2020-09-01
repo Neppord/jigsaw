@@ -68,7 +68,7 @@ init () =
             floor <| scale * (toFloat height / ypieces)
 
         image =
-            { path = "../resources/kitten.png"
+            { path = "kitten.png"
             , width = width
             , height = height
             , xpieces = xpieces
