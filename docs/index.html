@@ -5295,7 +5295,7 @@ var $author$project$Model$buildModel = F3(
 			aU: edges,
 			i: _List_Nil,
 			k: $author$project$UI$WaitingForInput,
-			p: $elm$core$Dict$values(pieceGroups),
+			l: $elm$core$Dict$values(pieceGroups),
 			aq: $elm$core$Set$fromList(
 				_List_fromArray(
 					[-1]))
@@ -6441,6 +6441,14 @@ var $author$project$Seeded$unwrap = function (_v0) {
 	var a = _v0.b;
 	return a;
 };
+var $elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
+		}
+	});
 var $elm$core$Dict$get = F2(
 	function (targetKey, dict) {
 		get:
@@ -6864,14 +6872,18 @@ var $author$project$Main$updateKeyChange = F3(
 			return keyboard.bY ? _Utils_update(
 				model,
 				{
-					i: A2(
-						$elm$core$List$map,
-						function (pg) {
-							return _Utils_update(
-								pg,
-								{bL: x});
-						},
-						model.i)
+					i: _List_Nil,
+					l: A2(
+						$elm$core$List$append,
+						model.l,
+						A2(
+							$elm$core$List$map,
+							function (pg) {
+								return _Utils_update(
+									pg,
+									{bL: x});
+							},
+							model.i))
 				}) : _Utils_update(
 				model,
 				{
@@ -6972,7 +6984,7 @@ var $author$project$Main$updateMouseDown = F3(
 		var mode = keyboard.cw ? 1 : (keyboard.bY ? 2 : 0);
 		var _v0 = model;
 		var selected = _v0.i;
-		var unSelected = _v0.p;
+		var unSelected = _v0.l;
 		var visibleGroups = _v0.aq;
 		var _v1 = model.ac;
 		var image = _v1.au;
@@ -7004,20 +7016,20 @@ var $author$project$Main$updateMouseDown = F3(
 				{
 					i: A2($elm$core$List$cons, pg, model.i),
 					k: ui,
-					p: A2(
+					l: A2(
 						$elm$core$List$filter,
 						$elm$core$Basics$neq(pg),
-						model.p)
+						model.l)
 				}) : _Utils_update(
 				model,
 				{
 					i: _List_fromArray(
 						[pg]),
 					k: ui,
-					p: A2(
+					l: A2(
 						$elm$core$List$filter,
 						$elm$core$Basics$neq(pg),
-						_Utils_ap(model.i, model.p))
+						_Utils_ap(model.i, model.l))
 				}));
 		}
 	});
@@ -7183,7 +7195,7 @@ var $author$project$PieceGroup$shouldBeMerged = F3(
 var $author$project$Main$updateMouseUp = function (model) {
 	var _v0 = model;
 	var selected = _v0.i;
-	var unSelected = _v0.p;
+	var unSelected = _v0.l;
 	var _v1 = model.k;
 	switch (_v1.$) {
 		case 1:
@@ -7214,7 +7226,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 						{
 							i: _Utils_ap(selected, within),
 							k: $author$project$UI$WaitingForInput,
-							p: outside
+							l: outside
 						});
 				case 2:
 					var _v6 = A2($elm$core$List$partition, isWithin, selected);
@@ -7225,7 +7237,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 						{
 							i: outside,
 							k: $author$project$UI$WaitingForInput,
-							p: _Utils_ap(unSelected, within)
+							l: _Utils_ap(unSelected, within)
 						});
 				default:
 					var _v7 = A2(
@@ -7236,7 +7248,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 					var outside = _v7.b;
 					return _Utils_update(
 						model,
-						{i: within, k: $author$project$UI$WaitingForInput, p: outside});
+						{i: within, k: $author$project$UI$WaitingForInput, l: outside});
 			}
 		case 0:
 			var drag = _v1.b;
@@ -7248,7 +7260,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 				var _v9 = A2(
 					$elm$core$List$partition,
 					A2($author$project$PieceGroup$shouldBeMerged, model.ac.cx, moved),
-					model.p);
+					model.l);
 				var toMerge = _v9.a;
 				var newUnSelected = _v9.b;
 				return _Utils_update(
@@ -7259,7 +7271,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 								A3($elm$core$List$foldl, $author$project$PieceGroup$merge, moved, toMerge)
 							]),
 						k: $author$project$UI$WaitingForInput,
-						p: newUnSelected
+						l: newUnSelected
 					});
 			} else {
 				return _Utils_update(
@@ -7551,14 +7563,6 @@ var $elm$core$Tuple$mapSecond = F2(
 var $author$project$View$px = function (_int) {
 	return $elm$core$String$fromInt(_int) + 'px';
 };
-var $elm$core$List$append = F2(
-	function (xs, ys) {
-		if (!ys.b) {
-			return xs;
-		} else {
-			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
-		}
-	});
 var $elm$core$List$concat = function (lists) {
 	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
 };
@@ -7644,7 +7648,7 @@ var $author$project$View$viewDiv = function (model) {
 	var image = model.ac.au;
 	var _v0 = model;
 	var selected = _v0.i;
-	var unSelected = _v0.p;
+	var unSelected = _v0.l;
 	var visibleGroups = _v0.aq;
 	var isVisible = function (pieceGroup) {
 		return A2($elm$core$Set$member, pieceGroup.bL, visibleGroups);

@@ -83,9 +83,11 @@ updateKeyChange keyboard key model =
         Just (Number x) ->
             if keyboard.ctrl then
                 { model
-                    | selected =
+                    | selected = []
+                    , unSelected = 
                         model.selected
                             |> List.map (\pg -> { pg | visibilityGroup = x })
+                            |> List.append model.unSelected
                 }
 
             else
