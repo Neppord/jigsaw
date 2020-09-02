@@ -45,4 +45,23 @@ tests =
                     |> KDDict.remove (KDDict.key 1)
                     |> KDDict.toList
                     |> equal [(KDDict.key 2, 2)]
+        ,test "insert" <|
+            \_ ->
+                KDDict.empty
+                    |> KDDict.insert (KDDict.key 2) 1
+                    |> KDDict.toList
+                    |> equal [(KDDict.key 2, 1)]
+        ,test "merge" <|
+            \_ ->
+            let
+                a =
+                    KDDict.empty
+                        |> KDDict.insert (KDDict.key 1) 1
+                b =
+                    KDDict.empty
+                        |> KDDict.insert (KDDict.key 2) 2
+            in
+                KDDict.merge a b
+                    |> KDDict.toList
+                    |> equal [(KDDict.key 1, 1), (KDDict.key 2, 2)]
         ]

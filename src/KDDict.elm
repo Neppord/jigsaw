@@ -1,4 +1,4 @@
-module KDDict exposing (KDDict, Key(..), toList, remove, findAll, fromList, fromListBy, get, key)
+module KDDict exposing (KDDict, Key(..), empty, findAll, fromList, fromListBy, get, insert, key, merge, remove, toList)
 
 
 type KDDict comparable v
@@ -25,6 +25,11 @@ getIndex index (Key head rest) =
             |> List.drop (index - 1 |> modBy (List.length rest))
             |> List.head
             |> Maybe.withDefault head
+
+
+empty : KDDict comparable v
+empty =
+    Empty
 
 
 fromList : List ( Key comparable, v ) -> KDDict comparable v
@@ -149,5 +154,44 @@ remove query dict =
                         Node index (remove query smaller) ( key_, value ) larger
 
                     GT ->
-                        
                         Node index smaller ( key_, value ) (remove query larger)
+
+
+insert : Key comparable -> v -> KDDict comparable v -> KDDict comparable v
+insert =
+    insert_ 0
+
+
+insert_ : Int -> Key comparable -> v -> KDDict comparable v -> KDDict comparable v
+insert_ i key_ value dict =
+    case dict of
+        Empty ->
+            Node i Empty ( key_, value ) Empty
+
+        Node _ s ( k, v ) l ->
+            if getIndex i key_ < getIndex i k then
+                Node i (insert_ (i + 1) key_ value s) ( k, v ) l
+
+            else
+                Node i s ( k, v ) (insert_ (i + 1) key_ value l)
+
+
+merge : KDDict comparable v -> KDDict comparable v -> KDDict comparable v
+merge d1 d2 =
+    case ( d1, d2 ) of
+        ( Empty, _ ) ->
+            d2
+
+        ( _, Empty ) ->
+            d1
+
+        ( Node i s1 ( k1, v1 ) l1, Node _ s2 ( k2, v2 ) l2 ) ->
+            case compare (getIndex i k1) (getIndex i k2) of
+                EQ ->
+                    Node i (merge s1 s2) ( k1, v1 ) (insert_ (i + 1) k2 v2 (merge l1 l2))
+
+                LT ->
+                    toList d1 ++ toList d2 |> fromList
+
+                GT ->
+                    toList d1 ++ toList d2 |> fromList
