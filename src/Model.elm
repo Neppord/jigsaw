@@ -15,7 +15,7 @@ import JigsawImage
         )
 import Keyboard exposing (Keyboard)
 import List
-import PieceGroup exposing (PieceGroup)
+import PieceGroup exposing (PieceGroup, genIds)
 import Point exposing (Point)
 import Random
 import Seeded exposing (Seeded(..))
@@ -116,7 +116,7 @@ generateModel image =
         generateEdges =
             Random.map
                 (\eps ->
-                    List.range 0 (image.xpieces * image.ypieces - 1)
+                    PieceGroup.genIds image.xpieces image.ypieces
                         |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id eps)
                 )
                 (generateEdgePoints numberOfEdges)

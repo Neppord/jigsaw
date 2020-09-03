@@ -2,7 +2,7 @@ module Edge exposing
     ( Bezier(..)
     , Edge(..)
     , EdgePoints
-    , Orientation(..)
+    , Orientation(..), toId
     , cords
     , generateEdgePoints
     , getEdge
@@ -13,6 +13,8 @@ module Edge exposing
 import Array
 import Point exposing (Point)
 import Random
+import PieceGroup exposing (PieceGroup)
+import Random exposing (int)
 
 
 rApply : Random.Generator (a -> b) -> Random.Generator a -> Random.Generator b
@@ -147,10 +149,13 @@ cords width index =
     , index // width
     )
 
+toId : Int -> Int -> PieceGroup.ID -> Int
+toId w h (x, y) = x + y * w
 
-indexOf : Orientation -> Int -> Int -> Int -> Int
-indexOf orientation width height id =
+indexOf : Orientation -> Int -> Int -> PieceGroup.ID -> Int
+indexOf orientation width height (x, y) =
     let
+        id = toId width height (x, y)
         nv =
             (width - 1) * height
 
@@ -187,7 +192,7 @@ indexOf orientation width height id =
                 id - (id // width)
 
 
-getEdge : Orientation -> Int -> Int -> Int -> Array.Array EdgePoints -> Edge
+getEdge : Orientation -> Int -> Int -> PieceGroup.ID -> Array.Array EdgePoints -> Edge
 getEdge orientation nx ny id edgePoints =
     let
         index =
@@ -200,7 +205,7 @@ getEdge orientation nx ny id edgePoints =
     makeEdge orientation points
 
 
-pieceEdges : Int -> Int -> Int -> Array.Array EdgePoints -> List Edge
+pieceEdges : Int -> Int -> PieceGroup.ID -> Array.Array EdgePoints -> List Edge
 pieceEdges nx ny id edgePoints =
     [ North, East, South, West ]
         |> List.map (\orientation -> getEdge orientation nx ny id edgePoints)

@@ -1,14 +1,18 @@
-module PieceGroup exposing (PieceGroup, createPieceGroup, createPieceGroups, deselect, distance, isPieceGroupInsideBox, isPointInsidePieceGroup, merge, move, select, shouldBeMerged)
+module PieceGroup exposing (ID, PieceGroup, createPieceGroup, createPieceGroups, deselect, distance, genIds, isPieceGroupInsideBox, isPointInsidePieceGroup, merge, move, select, shouldBeMerged)
 
 import JigsawImage exposing (JigsawImage)
 import Point exposing (Point)
 import Set exposing (Set)
 
 
+type alias ID =
+    ( Int, Int )
+
+
 type alias PieceGroup =
-    { id : Int
-    , members : List Int
-    , neighbours : Set Int
+    { id : ID
+    , members : List ID
+    , neighbours : Set ID
     , position : Point
     , isSelected : Bool
     , visibilityGroup : Int
@@ -59,35 +63,13 @@ deselect x =
     { x | isSelected = False }
 
 
-createPieceGroup : JigsawImage -> Int -> Point -> PieceGroup
+createPieceGroup : JigsawImage -> ID -> Point -> PieceGroup
 createPieceGroup image id pos =
-    let
-        isRealNeighbour i x =
-            x
-                >= 0
-                && x
-                < (image.xpieces * image.ypieces)
-                && Point.taxiDist
-                    (JigsawImage.pieceIdToPoint i image.xpieces)
-                    (JigsawImage.pieceIdToPoint x image.xpieces)
-                == 1
-
-        possibleNeighbours i =
-            [ i - image.xpieces, i - 1, i + 1, i + image.xpieces ]
-
-        neighbours =
-            possibleNeighbours id
-                |> Set.fromList
-                |> Set.filter (isRealNeighbour id)
-
-        position =
-            Point.sub pos (JigsawImage.pieceIdToOffset image id)
-    in
-    { position = position
+    { position = Point.sub pos (JigsawImage.pieceIdToOffset image id)
     , isSelected = False
     , id = id
     , members = [ id ]
-    , neighbours = neighbours
+    , neighbours = neighbours id
     , visibilityGroup = -1
     }
 
@@ -109,8 +91,9 @@ createPieceGroups image points =
         numberOfPieces =
             image.xpieces * image.ypieces
 
+        ids : List ID
         ids =
-            List.range 0 (numberOfPieces - 1)
+            genIds image.xpieces image.ypieces
 
         positions =
             if List.length points < numberOfPieces then
@@ -120,3 +103,23 @@ createPieceGroups image points =
                 points
     in
     List.map2 (createPieceGroup image) ids positions
+
+
+neighbours : ID -> Set ID
+neighbours ( x, y ) =
+    Set.fromList
+        [ ( x - 1, y )
+        , ( x, y - 1 )
+        , ( x + 1, y )
+        , ( x, y + 1 )
+        ]
+
+
+genIds : Int -> Int -> List ID
+genIds w h =
+    List.range 0 (w - 1)
+        |> List.concatMap
+            (\x ->
+                List.range 0 (h - 1)
+                    |> List.map (Tuple.pair x)
+            )

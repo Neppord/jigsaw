@@ -57,7 +57,7 @@ modifySelected f (DB { selected, unSelected }) =
         }
 
 
-modify : Int -> (PieceGroup -> PieceGroup) -> DB -> DB
+modify : PieceGroup.ID -> (PieceGroup -> PieceGroup) -> DB -> DB
 modify id action (DB { selected, unSelected }) =
     let
         ( s, u ) =

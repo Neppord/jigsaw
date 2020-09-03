@@ -117,12 +117,12 @@ viewSelectionBox model =
             box -10 -10 0 0 "rgba(0,255,0,0.2)"
 
 
-lazyPieceDiv : JigsawImage -> PieceGroup -> Int -> Html msg
+lazyPieceDiv : JigsawImage -> PieceGroup -> PieceGroup.ID -> Html msg
 lazyPieceDiv =
     Html.Lazy.lazy3 pieceDiv
 
 
-pieceDiv : JigsawImage -> PieceGroup -> Int -> Html msg
+pieceDiv : JigsawImage -> PieceGroup -> PieceGroup.ID -> Html msg
 pieceDiv image pg pid =
     let
         offset =
@@ -255,9 +255,9 @@ renderPieces image visiblePieces =
         pieceGroupDiv : PieceGroup -> List ( String, Html msg )
         pieceGroupDiv pg =
             let
-                render pid =
-                    ( "piece-" ++ String.fromInt pid
-                    , lazyPieceDiv image pg pid
+                render (x, y) =
+                    ( "piece-" ++ String.fromInt x ++ "-" ++ String.fromInt y
+                    , lazyPieceDiv image pg (x, y)
                     )
             in
             List.map render pg.members
@@ -280,17 +280,17 @@ lazyclipPathDefs =
 
 definePieceClipPaths : JigsawImage -> List (List Edge) -> List (Svg msg)
 definePieceClipPaths image edges =
-    List.map2 (piecePath image) edges (List.range 0 (image.xpieces * image.ypieces - 1))
+    List.map2 (piecePath image) edges (PieceGroup.genIds image.xpieces image.ypieces)
 
 
-piecePath : JigsawImage -> List Edge -> Int -> Svg msg
+piecePath : JigsawImage -> List Edge -> PieceGroup.ID -> Svg msg
 piecePath image edges id =
     let
         w =
-            image.scale * toFloat (image.width // image.xpieces)
+            image.scale * toFloat image.pieceWidth
 
         h =
-            image.scale * toFloat (image.height // image.ypieces)
+            image.scale * toFloat image.pieceHeight
 
         offset =
             Point (floor (w / 2)) (floor (h / 2))
@@ -314,11 +314,11 @@ piecePath image edges id =
         ]
 
 
-pieceClipId : Int -> String
-pieceClipId id =
-    "piece-" ++ String.fromInt id ++ "-clip"
+pieceClipId : PieceGroup.ID -> String
+pieceClipId (x, y) =
+    "piece-" ++ String.fromInt x  ++ "-" ++ String.fromInt y ++ "-clip"
 
 
-clipPathRef : Int -> String
+clipPathRef : PieceGroup.ID -> String
 clipPathRef id =
     "url(#" ++ pieceClipId id ++ ")"

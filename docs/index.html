@@ -2674,8 +2674,8 @@ var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
 		z: func(record.z),
-		aH: record.aH,
-		aE: record.aE
+		aG: record.aG,
+		aD: record.aD
 	}
 });
 
@@ -2944,10 +2944,10 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 
 		var value = result.a;
 		var message = !tag ? value : tag < 3 ? value.a : value.z;
-		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.aH;
+		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.aG;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
-			(tag == 2 ? value.b : tag == 3 && value.aE) && event.preventDefault(),
+			(tag == 2 ? value.b : tag == 3 && value.aD) && event.preventDefault(),
 			eventNode
 		);
 		var tagger;
@@ -3937,7 +3937,7 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 		impl.cG,
 		impl.cB,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.aG && impl.aG(sendToApp)
+			var divertHrefToApp = impl.aF && impl.aF(sendToApp)
 			var view = impl.cH;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
@@ -4012,7 +4012,7 @@ function _Browser_application(impl)
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		aG: function(sendToApp)
+		aF: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -5320,124 +5320,83 @@ var $author$project$Model$buildModel = F3(
 					[-1]))
 		};
 	});
-var $elm$core$Dict$foldl = F3(
-	function (func, acc, dict) {
-		foldl:
-		while (true) {
-			if (dict.$ === -2) {
-				return acc;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var $temp$func = func,
-					$temp$acc = A3(
-					func,
-					key,
-					value,
-					A3($elm$core$Dict$foldl, func, acc, left)),
-					$temp$dict = right;
-				func = $temp$func;
-				acc = $temp$acc;
-				dict = $temp$dict;
-				continue foldl;
-			}
-		}
-	});
-var $elm$core$Dict$filter = F2(
-	function (isGood, dict) {
-		return A3(
-			$elm$core$Dict$foldl,
-			F3(
-				function (k, v, d) {
-					return A2(isGood, k, v) ? A3($elm$core$Dict$insert, k, v, d) : d;
-				}),
-			$elm$core$Dict$empty,
-			dict);
-	});
-var $elm$core$Set$filter = F2(
-	function (isGood, _v0) {
-		var dict = _v0;
-		return A2(
-			$elm$core$Dict$filter,
-			F2(
-				function (key, _v1) {
-					return isGood(key);
-				}),
-			dict);
-	});
-var $elm$core$Basics$ge = _Utils_ge;
+var $author$project$PieceGroup$neighbours = function (_v0) {
+	var x = _v0.a;
+	var y = _v0.b;
+	return $elm$core$Set$fromList(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(x - 1, y),
+				_Utils_Tuple2(x, y - 1),
+				_Utils_Tuple2(x + 1, y),
+				_Utils_Tuple2(x, y + 1)
+			]));
+};
 var $author$project$Point$Point = F2(
 	function (x, y) {
 		return {ab: x, ac: y};
 	});
-var $author$project$Point$dot = F2(
-	function (a, b) {
-		return A2($author$project$Point$Point, a.ab * b.ab, a.ac * b.ac);
-	});
-var $elm$core$Basics$modBy = _Basics_modBy;
-var $author$project$JigsawImage$pieceIdToPoint = F2(
-	function (id, xpieces) {
-		return A2(
-			$author$project$Point$Point,
-			A2($elm$core$Basics$modBy, xpieces, id),
-			(id / xpieces) | 0);
-	});
 var $author$project$JigsawImage$pieceIdToOffset = F2(
-	function (image, id) {
-		return A2(
-			$author$project$Point$dot,
-			A2($author$project$JigsawImage$pieceIdToPoint, id, image.av),
-			A2($author$project$Point$Point, image.aq, image.ap));
+	function (image, _v0) {
+		var x = _v0.a;
+		var y = _v0.b;
+		return A2($author$project$Point$Point, x * image.aq, y * image.ap);
 	});
 var $author$project$Point$sub = F2(
 	function (a, b) {
 		return A2($author$project$Point$Point, a.ab - b.ab, a.ac - b.ac);
 	});
-var $elm$core$Basics$abs = function (n) {
-	return (n < 0) ? (-n) : n;
-};
-var $author$project$Point$taxiDist = F2(
-	function (a, b) {
-		return $elm$core$Basics$abs(b.ab - a.ab) + $elm$core$Basics$abs(b.ac - a.ac);
-	});
 var $author$project$PieceGroup$createPieceGroup = F3(
 	function (image, id, pos) {
-		var possibleNeighbours = function (i) {
-			return _List_fromArray(
-				[i - image.av, i - 1, i + 1, i + image.av]);
-		};
-		var position = A2(
-			$author$project$Point$sub,
-			pos,
-			A2($author$project$JigsawImage$pieceIdToOffset, image, id));
-		var isRealNeighbour = F2(
-			function (i, x) {
-				return (x >= 0) && ((_Utils_cmp(x, image.av * image.aM) < 0) && (A2(
-					$author$project$Point$taxiDist,
-					A2($author$project$JigsawImage$pieceIdToPoint, i, image.av),
-					A2($author$project$JigsawImage$pieceIdToPoint, x, image.av)) === 1));
-			});
-		var neighbours = A2(
-			$elm$core$Set$filter,
-			isRealNeighbour(id),
-			$elm$core$Set$fromList(
-				possibleNeighbours(id)));
 		return {
 			b9: id,
 			J: false,
 			y: _List_fromArray(
 				[id]),
-			K: neighbours,
-			B: position,
+			K: $author$project$PieceGroup$neighbours(id),
+			B: A2(
+				$author$project$Point$sub,
+				pos,
+				A2($author$project$JigsawImage$pieceIdToOffset, image, id)),
 			bO: -1
 		};
 	});
+var $elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
+		}
+	});
+var $elm$core$List$concat = function (lists) {
+	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
+};
+var $elm$core$List$concatMap = F2(
+	function (f, list) {
+		return $elm$core$List$concat(
+			A2($elm$core$List$map, f, list));
+	});
+var $elm$core$Tuple$pair = F2(
+	function (a, b) {
+		return _Utils_Tuple2(a, b);
+	});
+var $author$project$PieceGroup$genIds = F2(
+	function (w, h) {
+		return A2(
+			$elm$core$List$concatMap,
+			function (x) {
+				return A2(
+					$elm$core$List$map,
+					$elm$core$Tuple$pair(x),
+					A2($elm$core$List$range, 0, h - 1));
+			},
+			A2($elm$core$List$range, 0, w - 1));
+	});
 var $author$project$PieceGroup$createPieceGroups = F2(
 	function (image, points) {
-		var numberOfPieces = image.av * image.aM;
-		var ids = A2($elm$core$List$range, 0, numberOfPieces - 1);
+		var numberOfPieces = image.aL * image.aM;
+		var ids = A2($author$project$PieceGroup$genIds, image.aL, image.aM);
 		var positions = (_Utils_cmp(
 			$elm$core$List$length(points),
 			numberOfPieces) < 0) ? A2(
@@ -5472,6 +5431,10 @@ var $author$project$Edge$defaultPoints = _List_fromArray(
 		A2($author$project$Point$Point, 150, 20),
 		A2($author$project$Point$Point, 200, 0)
 	]);
+var $author$project$Point$dot = F2(
+	function (a, b) {
+		return A2($author$project$Point$Point, a.ab * b.ab, a.ac * b.ac);
+	});
 var $elm$random$Random$map = F2(
 	function (func, _v0) {
 		var genA = _v0;
@@ -5486,6 +5449,9 @@ var $elm$random$Random$map = F2(
 	});
 var $elm$random$Random$addOne = function (value) {
 	return _Utils_Tuple2(1, value);
+};
+var $elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
 };
 var $elm$core$Bitwise$and = _Bitwise_and;
 var $elm$random$Random$Seed = F2(
@@ -5762,6 +5728,7 @@ var $author$project$Edge$North = 0;
 var $author$project$Edge$South = 2;
 var $author$project$Edge$West = 3;
 var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
+var $elm$core$Basics$ge = _Utils_ge;
 var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
 var $elm$core$Array$getHelp = F3(
 	function (shift, index, tree) {
@@ -5800,10 +5767,24 @@ var $elm$core$Array$get = F2(
 			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
 			A3($elm$core$Array$getHelp, startShift, index, tree)));
 	});
+var $elm$core$Basics$modBy = _Basics_modBy;
+var $author$project$Edge$toId = F3(
+	function (w, h, _v0) {
+		var x = _v0.a;
+		var y = _v0.b;
+		return x + (y * w);
+	});
 var $author$project$Edge$indexOf = F4(
-	function (orientation, width, height, id) {
+	function (orientation, width, height, _v0) {
+		var x = _v0.a;
+		var y = _v0.b;
 		var nv = (width - 1) * height;
 		var numberOfPieces = width * height;
+		var id = A3(
+			$author$project$Edge$toId,
+			width,
+			height,
+			_Utils_Tuple2(x, y));
 		switch (orientation) {
 			case 0:
 				return (_Utils_cmp(id, width) < 0) ? (-1) : ((id - width) + nv);
@@ -6009,12 +5990,12 @@ var $author$project$JigsawImage$shufflePiecePositions = F3(
 		var ymin = 0;
 		var ymax = h - ((image.a3 / image.aM) | 0);
 		var xmin = 0;
-		var xmax = w - ((image.bP / image.av) | 0);
-		var n = image.av * image.aM;
+		var xmax = w - ((image.bP / image.aL) | 0);
+		var n = image.aL * image.aM;
 		return A5($author$project$Point$randomPoints, n, xmin, xmax, ymin, ymax);
 	});
 var $author$project$Model$generateModel = function (image) {
-	var numberOfEdges = (((2 * image.av) * image.aM) - image.av) - image.aM;
+	var numberOfEdges = (((2 * image.aL) * image.aM) - image.aL) - image.aM;
 	var generatePositions = A3($author$project$JigsawImage$shufflePiecePositions, image.bP, image.a3, image);
 	var generatePieceGroups = A2(
 		$elm$random$Random$map,
@@ -6026,9 +6007,9 @@ var $author$project$Model$generateModel = function (image) {
 			return A2(
 				$elm$core$List$map,
 				function (id) {
-					return A4($author$project$Edge$pieceEdges, image.av, image.aM, id, eps);
+					return A4($author$project$Edge$pieceEdges, image.aL, image.aM, id, eps);
 				},
-				A2($elm$core$List$range, 0, (image.av * image.aM) - 1));
+				A2($author$project$PieceGroup$genIds, image.aL, image.aM));
 		},
 		$author$project$Edge$generateEdgePoints(numberOfEdges));
 	return A3(
@@ -6080,7 +6061,7 @@ var $author$project$Model$init = function (_v0) {
 	var height = _v2.b;
 	var pieceHeight = $elm$core$Basics$floor(scale * (height / ypieces));
 	var pieceWidth = $elm$core$Basics$floor(scale * (width / xpieces));
-	var image = {a3: height, cr: 'kitten.png', ap: pieceHeight, aq: pieceWidth, cv: scale, bP: width, av: xpieces, aM: ypieces};
+	var image = {a3: height, cr: 'kitten.png', ap: pieceHeight, aq: pieceWidth, cv: scale, bP: width, aL: xpieces, aM: ypieces};
 	return _Utils_Tuple2(
 		$author$project$Seeded$step(
 			A2(
@@ -6180,6 +6161,31 @@ var $elm$core$Dict$fromList = function (assocs) {
 		assocs);
 };
 var $elm$core$Process$kill = _Scheduler_kill;
+var $elm$core$Dict$foldl = F3(
+	function (func, acc, dict) {
+		foldl:
+		while (true) {
+			if (dict.$ === -2) {
+				return acc;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var $temp$func = func,
+					$temp$acc = A3(
+					func,
+					key,
+					value,
+					A3($elm$core$Dict$foldl, func, acc, left)),
+					$temp$dict = right;
+				func = $temp$func;
+				acc = $temp$acc;
+				dict = $temp$dict;
+				continue foldl;
+			}
+		}
+	});
 var $elm$core$Dict$merge = F6(
 	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
 		var stepState = F3(
@@ -7266,6 +7272,17 @@ var $author$project$PieceGroup$distance = F2(
 	function (from, to) {
 		return A2($author$project$Point$dist, from.B, to.B);
 	});
+var $elm$core$Dict$filter = F2(
+	function (isGood, dict) {
+		return A3(
+			$elm$core$Dict$foldl,
+			F3(
+				function (k, v, d) {
+					return A2(isGood, k, v) ? A3($elm$core$Dict$insert, k, v, d) : d;
+				}),
+			$elm$core$Dict$empty,
+			dict);
+	});
 var $elm$core$Dict$intersect = F2(
 	function (t1, t2) {
 		return A2(
@@ -7587,8 +7604,10 @@ var $elm$svg$Svg$Attributes$d = _VirtualDom_attribute('d');
 var $elm$core$String$fromFloat = _String_fromNumber;
 var $elm$svg$Svg$Attributes$id = _VirtualDom_attribute('id');
 var $elm$svg$Svg$path = $elm$svg$Svg$trustedNode('path');
-var $author$project$View$pieceClipId = function (id) {
-	return 'piece-' + ($elm$core$String$fromInt(id) + '-clip');
+var $author$project$View$pieceClipId = function (_v0) {
+	var x = _v0.a;
+	var y = _v0.b;
+	return 'piece-' + ($elm$core$String$fromInt(x) + ('-' + ($elm$core$String$fromInt(y) + '-clip')));
 };
 var $elm$core$String$concat = function (strings) {
 	return A2($elm$core$String$join, '', strings);
@@ -7650,8 +7669,8 @@ var $author$project$SvgUtil$pieceToSvg = function (edges) {
 var $elm$svg$Svg$Attributes$transform = _VirtualDom_attribute('transform');
 var $author$project$View$piecePath = F3(
 	function (image, edges, id) {
-		var w = image.cv * ((image.bP / image.av) | 0);
-		var h = image.cv * ((image.a3 / image.aM) | 0);
+		var w = image.cv * image.aq;
+		var h = image.cv * image.ap;
 		var offset = A2(
 			$author$project$Point$Point,
 			$elm$core$Basics$floor(w / 2),
@@ -7685,7 +7704,7 @@ var $author$project$View$definePieceClipPaths = F2(
 			$elm$core$List$map2,
 			$author$project$View$piecePath(image),
 			edges,
-			A2($elm$core$List$range, 0, (image.av * image.aM) - 1));
+			A2($author$project$PieceGroup$genIds, image.aL, image.aM));
 	});
 var $elm$svg$Svg$defs = $elm$svg$Svg$trustedNode('defs');
 var $elm$html$Html$Attributes$height = function (n) {
@@ -7747,17 +7766,6 @@ var $elm$core$Tuple$mapSecond = F2(
 var $author$project$View$px = function (_int) {
 	return $elm$core$String$fromInt(_int) + 'px';
 };
-var $elm$core$List$append = F2(
-	function (xs, ys) {
-		if (!ys.b) {
-			return xs;
-		} else {
-			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
-		}
-	});
-var $elm$core$List$concat = function (lists) {
-	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
-};
 var $elm$virtual_dom$VirtualDom$lazy3 = _VirtualDom_lazy3;
 var $elm$html$Html$Lazy$lazy3 = $elm$virtual_dom$VirtualDom$lazy3;
 var $author$project$View$clipPathRef = function (id) {
@@ -7806,10 +7814,16 @@ var $author$project$View$lazyPieceDiv = $elm$html$Html$Lazy$lazy3($author$projec
 var $author$project$View$renderPieces = F2(
 	function (image, visiblePieces) {
 		var pieceGroupDiv = function (pg) {
-			var render = function (pid) {
+			var render = function (_v0) {
+				var x = _v0.a;
+				var y = _v0.b;
 				return _Utils_Tuple2(
-					'piece-' + $elm$core$String$fromInt(pid),
-					A3($author$project$View$lazyPieceDiv, image, pg, pid));
+					'piece-' + ($elm$core$String$fromInt(x) + ('-' + $elm$core$String$fromInt(y))),
+					A3(
+						$author$project$View$lazyPieceDiv,
+						image,
+						pg,
+						_Utils_Tuple2(x, y)));
 			};
 			return A2($elm$core$List$map, render, pg.y);
 		};
