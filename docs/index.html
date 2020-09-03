@@ -1872,8 +1872,8 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 		flagDecoder,
 		args,
 		impl.cb,
-		impl.cG,
-		impl.cB,
+		impl.cF,
+		impl.cA,
 		function() { return function() {} }
 	);
 });
@@ -3898,10 +3898,10 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 		flagDecoder,
 		args,
 		impl.cb,
-		impl.cG,
-		impl.cB,
+		impl.cF,
+		impl.cA,
 		function(sendToApp, initialModel) {
-			var view = impl.cH;
+			var view = impl.cG;
 			/**/
 			var domNode = args['node'];
 			//*/
@@ -3934,11 +3934,11 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 		flagDecoder,
 		args,
 		impl.cb,
-		impl.cG,
-		impl.cB,
+		impl.cF,
+		impl.cA,
 		function(sendToApp, initialModel) {
 			var divertHrefToApp = impl.aF && impl.aF(sendToApp)
-			var view = impl.cH;
+			var view = impl.cG;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
 			var currNode = _VirtualDom_virtualize(bodyNode);
@@ -3951,7 +3951,7 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
 				_VirtualDom_divertHrefToApp = 0;
-				(title !== doc.cF) && (_VirtualDom_doc.title = title = doc.cF);
+				(title !== doc.cE) && (_VirtualDom_doc.title = title = doc.cE);
 			});
 		}
 	);
@@ -4042,9 +4042,9 @@ function _Browser_application(impl)
 		{
 			return A3(impl.cb, flags, _Browser_getUrl(), key);
 		},
-		cH: impl.cH,
 		cG: impl.cG,
-		cB: impl.cB
+		cF: impl.cF,
+		cA: impl.cA
 	});
 }
 
@@ -5311,7 +5311,7 @@ var $elm$core$Basics$negate = function (n) {
 var $author$project$Model$buildModel = F3(
 	function (image, pieceGroups, edges) {
 		return {
-			H: {T: image, cy: 30.0},
+			H: {T: image, cx: 30.0},
 			g: $author$project$DB$makeDb(pieceGroups),
 			aX: edges,
 			q: $author$project$UI$WaitingForInput,
@@ -6052,16 +6052,15 @@ var $author$project$Seeded$step = function (_v0) {
 	return A2($author$project$Seeded$Seeded, nextSeed, a);
 };
 var $author$project$Model$init = function (_v0) {
-	var scale = 1.0;
 	var _v1 = _Utils_Tuple2(20, 20);
 	var xpieces = _v1.a;
 	var ypieces = _v1.b;
 	var _v2 = _Utils_Tuple2(533, 538);
 	var width = _v2.a;
 	var height = _v2.b;
-	var pieceHeight = $elm$core$Basics$floor(scale * (height / ypieces));
-	var pieceWidth = $elm$core$Basics$floor(scale * (width / xpieces));
-	var image = {a3: height, cr: 'kitten.png', ap: pieceHeight, aq: pieceWidth, cv: scale, bP: width, aL: xpieces, aM: ypieces};
+	var pieceHeight = (height / ypieces) | 0;
+	var pieceWidth = (width / xpieces) | 0;
+	var image = {a3: height, cr: 'kitten.png', ap: pieceHeight, aq: pieceWidth, bP: width, aL: xpieces, aM: ypieces};
 	return _Utils_Tuple2(
 		$author$project$Seeded$step(
 			A2(
@@ -6113,7 +6112,7 @@ var $author$project$Decode$key = A2(
 	A2($elm$json$Json$Decode$field, 'key', $elm$json$Json$Decode$string));
 var $author$project$Keyboard$Keyboard = F2(
 	function (shift, ctrl) {
-		return {b$: ctrl, cx: shift};
+		return {b$: ctrl, cw: shift};
 	});
 var $elm$json$Json$Decode$bool = _Json_decodeBool;
 var $author$project$Decode$keyboard = A3(
@@ -7029,7 +7028,7 @@ var $author$project$PieceGroup$select = function (x) {
 };
 var $author$project$Main$updateMouseDown = F3(
 	function (coordinate, keyboard, model) {
-		var mode = keyboard.cx ? 1 : (keyboard.b$ ? 2 : 0);
+		var mode = keyboard.cw ? 1 : (keyboard.b$ ? 2 : 0);
 		var _v0 = model;
 		var db = _v0.g;
 		var visibleGroups = _v0.au;
@@ -7058,7 +7057,7 @@ var $author$project$Main$updateMouseDown = F3(
 				$author$project$Drag$from(coordinate));
 			return pg.J ? _Utils_update(
 				model,
-				{q: ui}) : (keyboard.cx ? _Utils_update(
+				{q: ui}) : (keyboard.cw ? _Utils_update(
 				model,
 				{
 					g: A3($author$project$DB$modify, pg.b9, $author$project$PieceGroup$select, model.g),
@@ -7154,7 +7153,7 @@ var $author$project$Drag$getDimensions = function (_v0) {
 	var current = _v0.R;
 	return {
 		b7: $elm$core$Basics$abs(start.ac - current.ac),
-		cI: $elm$core$Basics$abs(start.ab - current.ab),
+		cH: $elm$core$Basics$abs(start.ab - current.ab),
 		ab: A2($elm$core$Basics$min, start.ab, current.ab),
 		ac: A2($elm$core$Basics$min, start.ac, current.ac)
 	};
@@ -7344,7 +7343,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 			var _v2 = $author$project$Drag$getDimensions(drag);
 			var x = _v2.ab;
 			var y = _v2.ac;
-			var w = _v2.cI;
+			var w = _v2.cH;
 			var h = _v2.b7;
 			var bottomRight = A2($author$project$Point$Point, x + w, y + h);
 			var topLeft = A2($author$project$Point$Point, x, y);
@@ -7391,7 +7390,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 				var pg = _v4.a;
 				var moved = move(pg);
 				var shouldBeMerged = function (x) {
-					return A3($author$project$PieceGroup$shouldBeMerged, model.H.cy, moved, x) || _Utils_eq(x.b9, pg.b9);
+					return A3($author$project$PieceGroup$shouldBeMerged, model.H.cx, moved, x) || _Utils_eq(x.b9, pg.b9);
 				};
 				return _Utils_update(
 					model,
@@ -7669,8 +7668,8 @@ var $author$project$SvgUtil$pieceToSvg = function (edges) {
 var $elm$svg$Svg$Attributes$transform = _VirtualDom_attribute('transform');
 var $author$project$View$piecePath = F3(
 	function (image, edges, id) {
-		var w = image.cv * image.aq;
-		var h = image.cv * image.ap;
+		var w = image.aq;
+		var h = image.ap;
 		var offset = A2(
 			$author$project$Point$Point,
 			$elm$core$Basics$floor(w / 2),
@@ -7798,9 +7797,7 @@ var $author$project$View$pieceDiv = F3(
 					A2(
 					$elm$html$Html$Attributes$style,
 					'background-size',
-					$elm$core$String$fromInt(
-						$elm$core$Basics$floor(image.cv * image.bP)) + ('px ' + ($elm$core$String$fromInt(
-						$elm$core$Basics$floor(image.cv * image.a3)) + 'px'))),
+					$elm$core$String$fromInt(image.bP) + ('px ' + ($elm$core$String$fromInt(image.a3) + 'px'))),
 					A2(
 					$elm$html$Html$Attributes$style,
 					'background-position',
@@ -7946,7 +7943,7 @@ var $author$project$View$viewSelectionBox = function (model) {
 		var _v1 = $author$project$Drag$getDimensions(drag);
 		var x = _v1.ab;
 		var y = _v1.ac;
-		var w = _v1.cI;
+		var w = _v1.cH;
 		var h = _v1.b7;
 		return A5(
 			box,
@@ -8029,9 +8026,9 @@ var $author$project$View$view = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{
 		cb: $author$project$Model$init,
-		cB: A2($elm$core$Basics$composeR, $author$project$Seeded$unwrap, $author$project$Subscription$subscriptions),
-		cG: $author$project$Main$update,
-		cH: A2($elm$core$Basics$composeR, $author$project$Seeded$unwrap, $author$project$View$view)
+		cA: A2($elm$core$Basics$composeR, $author$project$Seeded$unwrap, $author$project$Subscription$subscriptions),
+		cF: $author$project$Main$update,
+		cG: A2($elm$core$Basics$composeR, $author$project$Seeded$unwrap, $author$project$View$view)
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	$elm$json$Json$Decode$succeed(0))(0)}});}(this));

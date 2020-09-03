@@ -1,5 +1,6 @@
 module View exposing (view)
 
+import DB
 import Drag
 import Edge exposing (Edge)
 import Html exposing (Attribute, Html)
@@ -21,7 +22,6 @@ import Svg.Attributes
 import Svg.Lazy
 import SvgUtil
 import UI
-import DB
 
 
 view : NewModel -> Html Msg
@@ -146,9 +146,9 @@ pieceDiv image pg pid =
         , style "clipPath" <| clipPathRef pid
         , style "background-image" <| "url('" ++ image.path ++ "')"
         , style "background-size" <|
-            String.fromInt (floor <| image.scale * toFloat image.width)
+            String.fromInt image.width
                 ++ "px "
-                ++ String.fromInt (floor <| image.scale * toFloat image.height)
+                ++ String.fromInt image.height
                 ++ "px"
         , style "background-position" <|
             String.fromInt (w // 4 - offset.x)
@@ -255,9 +255,9 @@ renderPieces image visiblePieces =
         pieceGroupDiv : PieceGroup -> List ( String, Html msg )
         pieceGroupDiv pg =
             let
-                render (x, y) =
+                render ( x, y ) =
                     ( "piece-" ++ String.fromInt x ++ "-" ++ String.fromInt y
-                    , lazyPieceDiv image pg (x, y)
+                    , lazyPieceDiv image pg ( x, y )
                     )
             in
             List.map render pg.members
@@ -287,10 +287,10 @@ piecePath : JigsawImage -> List Edge -> PieceGroup.ID -> Svg msg
 piecePath image edges id =
     let
         w =
-            image.scale * toFloat image.pieceWidth
+            toFloat image.pieceWidth
 
         h =
-            image.scale * toFloat image.pieceHeight
+            toFloat image.pieceHeight
 
         offset =
             Point (floor (w / 2)) (floor (h / 2))
@@ -315,8 +315,8 @@ piecePath image edges id =
 
 
 pieceClipId : PieceGroup.ID -> String
-pieceClipId (x, y) =
-    "piece-" ++ String.fromInt x  ++ "-" ++ String.fromInt y ++ "-clip"
+pieceClipId ( x, y ) =
+    "piece-" ++ String.fromInt x ++ "-" ++ String.fromInt y ++ "-clip"
 
 
 clipPathRef : PieceGroup.ID -> String

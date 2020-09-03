@@ -17,7 +17,6 @@ type alias JigsawImage =
     , height : Int
     , xpieces : Int
     , ypieces : Int
-    , scale : Float
     , pieceWidth : Int
     , pieceHeight : Int
     }
