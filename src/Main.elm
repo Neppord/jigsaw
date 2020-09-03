@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Browser
+import DB
 import Drag
 import JigsawImage exposing (isPieceGroupInsideBox, isPointInsidePieceGroup)
 import Keyboard exposing (Keyboard)
@@ -65,9 +66,10 @@ update msg seededModel =
             let
                 updateModel model =
                     { model | configuration = updateConfiduration model.configuration }
+
                 updateConfiduration configuration =
                     { configuration | image = updateImage configuration.image }
-                    
+
                 updateImage image =
                     { image | path = url }
             in
@@ -96,11 +98,15 @@ updateKeyChange keyboard key model =
         Just (Number x) ->
             if keyboard.ctrl then
                 { model
-                    | selected = []
-                    , unSelected =
-                        model.selected
-                            |> List.map (\pg -> { pg | visibilityGroup = x })
-                            |> List.append model.unSelected
+                    | db =
+                        model.db
+                            |> DB.modifySelected
+                                (\pg ->
+                                    { pg
+                                        | visibilityGroup = x
+                                        , isSelected = True
+                                    }
+                                )
                 }
 
             else
@@ -115,8 +121,11 @@ updateKeyChange keyboard key model =
 updateMouseDown : Point -> Keyboard -> NewModel -> NewModel
 updateMouseDown coordinate keyboard model =
     let
-        { selected, unSelected, visibleGroups } =
+        { db, visibleGroups } =
             model
+
+        ( selected, unSelected ) =
+            ( DB.getSelected db, DB.getUnSelected db )
 
         { image } =
             model.configuration
@@ -152,27 +161,25 @@ updateMouseDown coordinate keyboard model =
             else if keyboard.shift then
                 { model
                     | ui = ui
-                    , selected = pg :: model.selected
-                    , unSelected =
-                        model.unSelected
-                            |> List.filter ((/=) pg)
+                    , db = model.db |> DB.modify pg.id PieceGroup.select
                 }
 
             else
                 { model
                     | ui = ui
-                    , selected = [ pg ]
-                    , unSelected =
-                        (model.selected ++ model.unSelected)
-                            |> List.filter ((/=) pg)
+                    , db =
+                        model.db
+                            |> DB.modifySelected PieceGroup.deselect
+                            |> DB.modify pg.id PieceGroup.select
                 }
 
 
 updateMouseUp : NewModel -> NewModel
 updateMouseUp model =
     let
-        { selected, unSelected } =
-            model
+        selected =
+            model.db
+                |> DB.getSelected
     in
     case model.ui of
         UI.Boxing mode drag ->
@@ -193,36 +200,38 @@ updateMouseUp model =
             in
             case mode of
                 UI.Add ->
-                    let
-                        ( within, outside ) =
-                            List.partition isWithin unSelected
-                    in
                     { model
                         | ui = UI.WaitingForInput
-                        , selected = selected ++ within
-                        , unSelected = outside
+                        , db =
+                            model.db
+                                |> DB.modifyBy
+                                    (\pg -> isWithin pg || pg.isSelected)
+                                    PieceGroup.select
                     }
 
                 UI.Remove ->
-                    let
-                        ( within, outside ) =
-                            List.partition isWithin selected
-                    in
                     { model
                         | ui = UI.WaitingForInput
-                        , selected = outside
-                        , unSelected = unSelected ++ within
+                        , db =
+                            model.db
+                                |> DB.modifyBy
+                                    (\pg -> isWithin pg || not pg.isSelected)
+                                    PieceGroup.deselect
                     }
 
                 UI.Replace ->
-                    let
-                        ( within, outside ) =
-                            List.partition isWithin (selected ++ unSelected)
-                    in
                     { model
                         | ui = UI.WaitingForInput
-                        , selected = within
-                        , unSelected = outside
+                        , db =
+                            model.db
+                                |> DB.map
+                                    (\pg ->
+                                        if pg |> isWithin then
+                                            PieceGroup.select pg
+
+                                        else
+                                            PieceGroup.deselect pg
+                                    )
                     }
 
         UI.Moving _ drag ->
@@ -236,23 +245,25 @@ updateMouseUp model =
                         moved =
                             move pg
 
-                        ( toMerge, newUnSelected ) =
-                            List.partition
-                                (PieceGroup.shouldBeMerged model.configuration.snapDistance moved)
-                                model.unSelected
+                        shouldBeMerged x =
+                            PieceGroup.shouldBeMerged model.configuration.snapDistance moved x
+                                || x.id
+                                == pg.id
                     in
                     { model
                         | ui = UI.WaitingForInput
-                        , selected = [ List.foldl PieceGroup.merge moved toMerge ]
-                        , unSelected = newUnSelected
+                        , db =
+                            model.db
+                                |> DB.modify pg.id move
+                                |> DB.aggregateBy
+                                    shouldBeMerged
+                                    PieceGroup.merge
                     }
 
                 _ ->
                     { model
                         | ui = UI.WaitingForInput
-                        , selected =
-                            selected
-                                |> List.map move
+                        , db = DB.modifySelected move model.db
                     }
 
         _ ->

@@ -1,4 +1,4 @@
-module PieceGroup exposing (PieceGroup, distance, merge, move, shouldBeMerged)
+module PieceGroup exposing (PieceGroup, deselect, select, distance, merge, move, shouldBeMerged)
 
 import Point exposing (Point)
 import Set exposing (Set)
@@ -46,3 +46,8 @@ distance from to =
 move : Point -> PieceGroup -> PieceGroup
 move offset pg =
     { pg | position = Point.add offset pg.position }
+
+select : PieceGroup -> PieceGroup
+select x = {x | isSelected = True}
+deselect : PieceGroup -> PieceGroup
+deselect x = {x | isSelected = False}

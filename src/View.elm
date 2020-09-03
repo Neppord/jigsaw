@@ -21,6 +21,7 @@ import Svg.Attributes
 import Svg.Lazy
 import SvgUtil
 import UI
+import DB
 
 
 view : NewModel -> Html Msg
@@ -49,10 +50,11 @@ view model =
             [ Html.button
                 [ Html.Events.onClick Scramble ]
                 [ Html.text "scramble" ]
-            ,Html.input 
+            , Html.input
                 [ Html.Attributes.placeholder "Image Url"
                 , Html.Attributes.value model.configuration.image.path
-                , Html.Events.onInput ChangeImageUrl ]
+                , Html.Events.onInput ChangeImageUrl
+                ]
                 []
             ]
         ]
@@ -130,7 +132,7 @@ pieceDiv image pg pid =
             image.pieceWidth * 2
 
         h =
-           image.pieceHeight * 2
+            image.pieceHeight * 2
 
         top =
             String.fromInt (pg.position.y + offset.y - h // 4) ++ "px"
@@ -187,10 +189,16 @@ viewClipPath model =
 viewDiv : NewModel -> List (Html Msg)
 viewDiv model =
     let
-        { selected, unSelected, visibleGroups } =
+        { db, visibleGroups } =
             model
-        image = model.configuration.image
 
+        ( selected, unSelected ) =
+            ( DB.getSelected db
+            , DB.getUnSelected db
+            )
+
+        image =
+            model.configuration.image
 
         isVisible pieceGroup =
             Set.member
@@ -225,13 +233,14 @@ viewDiv model =
                 [ style
                     "transform"
                     ("translate(" ++ (x |> px) ++ "," ++ (y |> px) ++ ")")
-                , style "will-change"  "transform"
+                , style "will-change" "transform"
                 ]
 
             _ ->
-                [style
+                [ style
                     "transform"
-                    ("translate(" ++ (0 |> px) ++ "," ++ (0 |> px) ++ ")")]
+                    ("translate(" ++ (0 |> px) ++ "," ++ (0 |> px) ++ ")")
+                ]
         )
         (selected
             |> renderPieces image

@@ -23,6 +23,7 @@ import Random
 import Seeded exposing (Seeded(..))
 import Set as S exposing (Set)
 import UI exposing (UI(..))
+import DB exposing (DB)
 
 
 type Msg
@@ -44,8 +45,7 @@ type alias NewModel =
     { visibleGroups : Set Int
     , edges : List (List Edge)
     , configuration : Configuration
-    , selected : List PieceGroup
-    , unSelected : List PieceGroup
+    , db : DB
     , ui : UI
     }
 
@@ -99,8 +99,7 @@ buildModel image pieceGroups edges =
         }
     , visibleGroups = S.fromList [ -1 ]
     , edges = edges
-    , selected = []
-    , unSelected = Dict.values pieceGroups
+    , db = DB.makeDb <| Dict.values pieceGroups
     , ui = WaitingForInput
     }
 
