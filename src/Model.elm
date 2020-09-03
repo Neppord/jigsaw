@@ -54,7 +54,7 @@ init () =
             ( 533, 538 )
 
         ( xpieces, ypieces ) =
-            ( 20, 20 )
+            ( 4, 4 )
 
         pieceWidth =
              width // xpieces

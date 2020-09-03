@@ -1,4 +1,4 @@
-module KDDict exposing (KDDict, Key(..), empty, findAll, fromList, fromListBy, get, insert, key, merge, remove, toList)
+module KDDict exposing (KDDict, Key(..), addAxis, empty, findAll, fromList, fromListBy, get, insert, key, merge, remove, toList)
 
 
 type KDDict comparable v
@@ -13,6 +13,11 @@ type Key a
 key : a -> Key a
 key a =
     Key a []
+
+
+addAxis : a -> Key a -> Key a
+addAxis a (Key head tail) =
+    Key a (head :: tail)
 
 
 getIndex : Int -> Key a -> a
