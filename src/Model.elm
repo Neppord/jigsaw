@@ -2,11 +2,11 @@ module Model exposing
     ( Key(..)
     , Msg(..)
     , NewModel
-    , defaultPieceGroup
     , generateModel
     , init
     )
 
+import DB exposing (DB)
 import Edge exposing (Edge, generateEdgePoints)
 import JigsawImage
     exposing
@@ -22,7 +22,6 @@ import Random
 import Seeded exposing (Seeded(..))
 import Set as S exposing (Set)
 import UI exposing (UI(..))
-import DB exposing (DB)
 
 
 type Msg
@@ -128,19 +127,3 @@ generateModel image =
 
 type Key
     = Number Int
-
-
-
--- Until I figure out how to handle index out of bounds
--- exceptions more elegantly
-
-
-defaultPieceGroup : PieceGroup
-defaultPieceGroup =
-    { position = Point 0 0
-    , isSelected = False
-    , id = -10
-    , neighbours = S.empty
-    , members = []
-    , visibilityGroup = -1
-    }
