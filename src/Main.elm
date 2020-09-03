@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Browser
-import DB
+import DB exposing (DB)
 import Drag
 import JigsawImage exposing (isPieceGroupInsideBox, isPointInsidePieceGroup)
 import Keyboard exposing (Keyboard)
@@ -124,15 +124,16 @@ updateMouseDown coordinate keyboard model =
         { db, visibleGroups } =
             model
 
-        ( selected, unSelected ) =
-            ( DB.getSelected db, DB.getUnSelected db )
+        selected =
+            DB.getSelected db
 
         { image } =
             model.configuration
 
         clickedPieceGroup =
-            (unSelected ++ selected)
-                |> List.filter (isPointInsidePieceGroup visibleGroups image coordinate)
+            db
+                |> DB.findBy
+                    (isPointInsidePieceGroup visibleGroups image coordinate)
                 |> List.reverse
                 |> List.head
 

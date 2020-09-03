@@ -5303,7 +5303,7 @@ var $author$project$DB$makeDb = function (list) {
 		list);
 	var selected = _v0.a;
 	var unSelected = _v0.b;
-	return {p: selected, q: unSelected};
+	return {j: selected, m: unSelected};
 };
 var $elm$core$Basics$negate = function (n) {
 	return -n;
@@ -5314,7 +5314,7 @@ var $author$project$Model$buildModel = F3(
 			G: {R: image, cy: 30.0},
 			c: $author$project$DB$makeDb(pieceGroups),
 			aW: edges,
-			k: $author$project$UI$WaitingForInput,
+			l: $author$project$UI$WaitingForInput,
 			at: $elm$core$Set$fromList(
 				_List_fromArray(
 					[-1]))
@@ -6431,7 +6431,7 @@ var $elm$browser$Browser$Events$onMouseUp = A2($elm$browser$Browser$Events$on, 0
 var $author$project$Subscription$trackMouseUp = $elm$browser$Browser$Events$onMouseUp(
 	$elm$json$Json$Decode$succeed($author$project$Model$MouseUp));
 var $author$project$Subscription$subscriptions = function (newModel) {
-	var _v0 = newModel.k;
+	var _v0 = newModel.l;
 	switch (_v0.$) {
 		case 0:
 			return $elm$core$Platform$Sub$batch(
@@ -6453,8 +6453,8 @@ var $author$project$Seeded$unwrap = function (_v0) {
 };
 var $author$project$DB$modifySelected = F2(
 	function (f, _v0) {
-		var selected = _v0.p;
-		var unSelected = _v0.q;
+		var selected = _v0.j;
+		var unSelected = _v0.m;
 		var _v1 = A2(
 			$elm$core$List$partition,
 			function ($) {
@@ -6464,8 +6464,8 @@ var $author$project$DB$modifySelected = F2(
 		var s = _v1.a;
 		var u = _v1.b;
 		return {
-			p: s,
-			q: _Utils_ap(u, unSelected)
+			j: s,
+			m: _Utils_ap(u, unSelected)
 		};
 	});
 var $elm$core$Dict$get = F2(
@@ -6936,17 +6936,21 @@ var $elm$core$List$filter = F2(
 			_List_Nil,
 			list);
 	});
+var $author$project$DB$findBy = F2(
+	function (filter, _v0) {
+		var selected = _v0.j;
+		var unSelected = _v0.m;
+		return _Utils_ap(
+			A2($elm$core$List$filter, filter, unSelected),
+			A2($elm$core$List$filter, filter, selected));
+	});
 var $author$project$Drag$Drag = $elm$core$Basics$identity;
 var $author$project$Drag$from = function (p) {
 	return {P: p, M: p};
 };
 var $author$project$DB$getSelected = function (_v0) {
-	var selected = _v0.p;
+	var selected = _v0.j;
 	return selected;
-};
-var $author$project$DB$getUnSelected = function (_v0) {
-	var unSelected = _v0.q;
-	return unSelected;
 };
 var $elm$core$List$head = function (list) {
 	if (list.b) {
@@ -7008,8 +7012,8 @@ var $elm$core$List$member = F2(
 	});
 var $author$project$DB$modify = F3(
 	function (id, action, _v0) {
-		var selected = _v0.p;
-		var unSelected = _v0.q;
+		var selected = _v0.j;
+		var unSelected = _v0.m;
 		var _v1 = A2(
 			$elm$core$List$partition,
 			function ($) {
@@ -7023,7 +7027,7 @@ var $author$project$DB$modify = F3(
 				_Utils_ap(selected, unSelected)));
 		var s = _v1.a;
 		var u = _v1.b;
-		return {p: s, q: u};
+		return {j: s, m: u};
 	});
 var $author$project$PieceGroup$select = function (x) {
 	return _Utils_update(
@@ -7036,24 +7040,20 @@ var $author$project$Main$updateMouseDown = F3(
 		var _v0 = model;
 		var db = _v0.c;
 		var visibleGroups = _v0.at;
-		var _v1 = _Utils_Tuple2(
-			$author$project$DB$getSelected(db),
-			$author$project$DB$getUnSelected(db));
-		var selected = _v1.a;
-		var unSelected = _v1.b;
-		var _v2 = model.G;
-		var image = _v2.R;
+		var selected = $author$project$DB$getSelected(db);
+		var _v1 = model.G;
+		var image = _v1.R;
 		var clickedPieceGroup = $elm$core$List$head(
 			$elm$core$List$reverse(
 				A2(
-					$elm$core$List$filter,
+					$author$project$DB$findBy,
 					A3($author$project$JigsawImage$isPointInsidePieceGroup, visibleGroups, image, coordinate),
-					_Utils_ap(unSelected, selected))));
+					db)));
 		if (clickedPieceGroup.$ === 1) {
 			return _Utils_update(
 				model,
 				{
-					k: A2(
+					l: A2(
 						$author$project$UI$Boxing,
 						mode,
 						$author$project$Drag$from(coordinate))
@@ -7066,11 +7066,11 @@ var $author$project$Main$updateMouseDown = F3(
 				$author$project$Drag$from(coordinate));
 			return A2($elm$core$List$member, pg, selected) ? _Utils_update(
 				model,
-				{k: ui}) : (keyboard.cx ? _Utils_update(
+				{l: ui}) : (keyboard.cx ? _Utils_update(
 				model,
 				{
 					c: A3($author$project$DB$modify, pg.b8, $author$project$PieceGroup$select, model.c),
-					k: ui
+					l: ui
 				}) : _Utils_update(
 				model,
 				{
@@ -7079,7 +7079,7 @@ var $author$project$Main$updateMouseDown = F3(
 						pg.b8,
 						$author$project$PieceGroup$select,
 						A2($author$project$DB$modifySelected, $author$project$PieceGroup$deselect, model.c)),
-					k: ui
+					l: ui
 				}));
 		}
 	});
@@ -7108,8 +7108,8 @@ var $elm$core$Tuple$mapFirst = F2(
 	});
 var $author$project$DB$aggregateBy = F3(
 	function (test, combine, _v0) {
-		var selected = _v0.p;
-		var unSelected = _v0.q;
+		var selected = _v0.j;
+		var unSelected = _v0.m;
 		var merge = function (list) {
 			if (!list.b) {
 				return $elm$core$Maybe$Nothing;
@@ -7146,7 +7146,7 @@ var $author$project$DB$aggregateBy = F3(
 						_Utils_ap(selected, unSelected)))));
 		var s = _v1.a;
 		var u = _v1.b;
-		return {p: s, q: u};
+		return {j: s, m: u};
 	});
 var $author$project$Drag$distance = function (_v0) {
 	var start = _v0.M;
@@ -7188,8 +7188,8 @@ var $author$project$JigsawImage$isPieceGroupInsideBox = F4(
 	});
 var $author$project$DB$map = F2(
 	function (action, _v0) {
-		var selected = _v0.p;
-		var unSelected = _v0.q;
+		var selected = _v0.j;
+		var unSelected = _v0.m;
 		var _v1 = A2(
 			$elm$core$List$partition,
 			function ($) {
@@ -7201,7 +7201,7 @@ var $author$project$DB$map = F2(
 				_Utils_ap(selected, unSelected)));
 		var s = _v1.a;
 		var u = _v1.b;
-		return {p: s, q: u};
+		return {j: s, m: u};
 	});
 var $elm$core$Dict$diff = F2(
 	function (t1, t2) {
@@ -7239,8 +7239,8 @@ var $author$project$PieceGroup$merge = F2(
 	});
 var $author$project$DB$modifyBy = F3(
 	function (test, action, _v0) {
-		var selected = _v0.p;
-		var unSelected = _v0.q;
+		var selected = _v0.j;
+		var unSelected = _v0.m;
 		var _v1 = A2(
 			$elm$core$List$partition,
 			function ($) {
@@ -7254,7 +7254,7 @@ var $author$project$DB$modifyBy = F3(
 				_Utils_ap(selected, unSelected)));
 		var s = _v1.a;
 		var u = _v1.b;
-		return {p: s, q: u};
+		return {j: s, m: u};
 	});
 var $author$project$PieceGroup$move = F2(
 	function (offset, pg) {
@@ -7328,7 +7328,7 @@ var $author$project$PieceGroup$shouldBeMerged = F3(
 	});
 var $author$project$Main$updateMouseUp = function (model) {
 	var selected = $author$project$DB$getSelected(model.c);
-	var _v0 = model.k;
+	var _v0 = model.l;
 	switch (_v0.$) {
 		case 1:
 			var mode = _v0.a;
@@ -7360,7 +7360,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 								},
 								$author$project$PieceGroup$select,
 								model.c),
-							k: $author$project$UI$WaitingForInput
+							l: $author$project$UI$WaitingForInput
 						});
 				case 2:
 					return _Utils_update(
@@ -7373,7 +7373,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 								},
 								$author$project$PieceGroup$deselect,
 								model.c),
-							k: $author$project$UI$WaitingForInput
+							l: $author$project$UI$WaitingForInput
 						});
 				default:
 					return _Utils_update(
@@ -7385,7 +7385,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 									return isWithin(pg) ? $author$project$PieceGroup$select(pg) : $author$project$PieceGroup$deselect(pg);
 								},
 								model.c),
-							k: $author$project$UI$WaitingForInput
+							l: $author$project$UI$WaitingForInput
 						});
 			}
 		case 0:
@@ -7406,14 +7406,14 @@ var $author$project$Main$updateMouseUp = function (model) {
 							shouldBeMerged,
 							$author$project$PieceGroup$merge,
 							A3($author$project$DB$modify, pg.b8, move, model.c)),
-						k: $author$project$UI$WaitingForInput
+						l: $author$project$UI$WaitingForInput
 					});
 			} else {
 				return _Utils_update(
 					model,
 					{
 						c: A2($author$project$DB$modifySelected, move, model.c),
-						k: $author$project$UI$WaitingForInput
+						l: $author$project$UI$WaitingForInput
 					});
 			}
 		default:
@@ -7427,7 +7427,7 @@ var $author$project$Drag$to = F2(
 	});
 var $author$project$Main$updateMoveMouse = F2(
 	function (newPos, model) {
-		var _v0 = model.k;
+		var _v0 = model.l;
 		switch (_v0.$) {
 			case 0:
 				var mode = _v0.a;
@@ -7435,7 +7435,7 @@ var $author$project$Main$updateMoveMouse = F2(
 				return _Utils_update(
 					model,
 					{
-						k: A2(
+						l: A2(
 							$author$project$UI$Moving,
 							mode,
 							A2($author$project$Drag$to, newPos, drag))
@@ -7446,7 +7446,7 @@ var $author$project$Main$updateMoveMouse = F2(
 				return _Utils_update(
 					model,
 					{
-						k: A2(
+						l: A2(
 							$author$project$UI$Boxing,
 							mode,
 							A2($author$project$Drag$to, newPos, drag))
@@ -7748,6 +7748,10 @@ var $author$project$View$lazyclipPathDefs = $elm$svg$Svg$Lazy$lazy2(
 var $author$project$View$viewClipPath = function (model) {
 	return A2($author$project$View$lazyclipPathDefs, model.G.R, model.aW);
 };
+var $author$project$DB$getUnSelected = function (_v0) {
+	var unSelected = _v0.m;
+	return unSelected;
+};
 var $elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
 	return _VirtualDom_keyedNode(
 		_VirtualDom_noScript(tag));
@@ -7880,7 +7884,7 @@ var $author$project$View$viewDiv = function (model) {
 			A2(
 			$author$project$View$keyedDiv,
 			function () {
-				var _v2 = model.k;
+				var _v2 = model.l;
 				if (!_v2.$) {
 					var drag = _v2.b;
 					var _v3 = $author$project$Drag$distance(drag);
@@ -7943,7 +7947,7 @@ var $author$project$View$viewSelectionBox = function (model) {
 					$author$project$View$turnOffTheBloodyImageDragging),
 				_List_Nil);
 		});
-	var _v0 = model.k;
+	var _v0 = model.l;
 	if (_v0.$ === 1) {
 		var mode = _v0.a;
 		var drag = _v0.b;

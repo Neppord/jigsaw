@@ -1,5 +1,5 @@
 module DB exposing
-    ( DB
+    ( DB, findBy
     , aggregateBy
     , getSelected
     , getUnSelected
@@ -131,3 +131,7 @@ aggregateBy test combine (DB { selected, unSelected }) =
                     Just <| List.foldl combine head tail
     in
     DB { selected = s, unSelected = u }
+
+findBy : (PieceGroup -> Bool) -> DB -> List PieceGroup
+findBy filter (DB {selected, unSelected}) =
+    List.filter filter unSelected ++ List.filter filter selected
