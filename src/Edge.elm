@@ -2,19 +2,19 @@ module Edge exposing
     ( Bezier(..)
     , Edge(..)
     , EdgePoints
-    , Orientation(..), toId
+    , Orientation(..)
     , cords
     , generateEdgePoints
     , getEdge
     , indexOf
     , pieceEdges
+    , toId
     )
 
 import Array
+import PieceGroup
 import Point exposing (Point)
 import Random
-import PieceGroup exposing (PieceGroup)
-import Random exposing (int)
 
 
 rApply : Random.Generator (a -> b) -> Random.Generator a -> Random.Generator b
@@ -149,13 +149,18 @@ cords width index =
     , index // width
     )
 
+
 toId : Int -> Int -> PieceGroup.ID -> Int
-toId w h (x, y) = x + y * w
+toId w _ ( x, y ) =
+    x + y * w
+
 
 indexOf : Orientation -> Int -> Int -> PieceGroup.ID -> Int
-indexOf orientation width height (x, y) =
+indexOf orientation width height ( x, y ) =
     let
-        id = toId width height (x, y)
+        id =
+            toId width height ( x, y )
+
         nv =
             (width - 1) * height
 

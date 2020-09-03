@@ -39,6 +39,7 @@ indexOfSuite =
         ]
 
 
+id : Test
 id =
     describe "toId"
         [ test "1, 1 = 4" <| \_ -> Edge.toId 3 3 ( 1, 1 ) |> equal 4
