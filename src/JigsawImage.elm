@@ -3,7 +3,6 @@ module JigsawImage exposing
     , isPieceInsideBox
     , isPointInsidePiece
     , pieceIdToOffset
-    , pieceIdToPoint
     , shufflePiecePositions
     )
 
@@ -76,8 +75,3 @@ isPointInsidePiece image point pos id =
         && (pieceTL.y <= point.y)
         && (pieceBR.x >= point.x)
         && (pieceBR.y >= point.y)
-
-
-pieceIdToPoint : Int -> Int -> Point
-pieceIdToPoint id xpieces =
-    Point (modBy xpieces id) (id // xpieces)
