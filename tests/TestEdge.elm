@@ -28,6 +28,17 @@ indexOfSuite =
                 , \_ -> 10 |> equal (Edge.indexOf North 3 3 7)
                 , \_ -> 2 |> equal (Edge.indexOf East 3 3 3)
                 , \_ -> Edge.indexOf East 3 3 0 |> equal 0
+                , \_ -> Edge.indexOf East 3 3 1 |> equal 1
+                , \_ -> Edge.indexOf East 3 3 3 |> equal 2
+                , \_ -> Edge.indexOf East 3 3 4 |> equal 3
+                , \_ -> Edge.indexOf East 3 3 6 |> equal 4
+                , \_ -> Edge.indexOf East 3 3 7 |> equal 5
+                , \_ -> Edge.indexOf South 3 3 0 |> equal 6
+                , \_ -> Edge.indexOf South 3 3 1 |> equal 7
+                , \_ -> Edge.indexOf South 3 3 2 |> equal 8
+                , \_ -> Edge.indexOf South 3 3 3 |> equal 9
+                , \_ -> Edge.indexOf South 3 3 4 |> equal 10
+                , \_ -> Edge.indexOf South 3 3 5 |> equal 11
                 ]
         ]
     
