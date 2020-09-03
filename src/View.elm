@@ -1,5 +1,6 @@
 module View exposing (view)
 
+import DB
 import Drag
 import Edge exposing (Edge)
 import Html exposing (Attribute, Html)
@@ -7,7 +8,7 @@ import Html.Attributes exposing (height, style, width)
 import Html.Events
 import Html.Keyed
 import Html.Lazy
-import JigsawImage exposing (JigsawImage, pieceIdToOffset)
+import JigsawImage exposing (JigsawImage)
 import Model
     exposing
         ( Msg(..)
@@ -21,7 +22,6 @@ import Svg.Attributes
 import Svg.Lazy
 import SvgUtil
 import UI
-import DB
 
 
 view : NewModel -> Html Msg
@@ -123,32 +123,38 @@ lazyPieceDiv =
 
 
 pieceDiv : JigsawImage -> PieceGroup -> PieceGroup.ID -> Html msg
-pieceDiv image pg pid =
+pieceDiv image pg ( x, y ) =
     let
-        offset =
-            pieceIdToOffset image pid
+        ( dx, dy ) =
+            ( x * image.pieceWidth, y * image.pieceHeight )
 
-        w =
-            image.pieceWidth * 2
+        borderHeight =
+            image.pieceHeight // 2
 
-        h =
-            image.pieceHeight * 2
+        borderWidth =
+            image.pieceWidth // 2
 
         top =
-            String.fromInt (pg.position.y + offset.y - h // 4) ++ "px"
+            String.fromInt (pg.position.y + dy - borderHeight) ++ "px"
 
         left =
-            String.fromInt (pg.position.x + offset.x - w // 4) ++ "px"
+            String.fromInt (pg.position.x + dx - borderWidth) ++ "px"
+
+        width =
+            borderWidth + image.pieceWidth + borderWidth
+
+        height =
+            borderHeight + image.pieceHeight + borderHeight
     in
     Html.div
-        [ style "width" <| String.fromInt w ++ "px"
-        , style "height" <| String.fromInt h ++ "px"
-        , style "clipPath" <| clipPathRef pid
+        [ style "width" <| String.fromInt width ++ "px"
+        , style "height" <| String.fromInt height ++ "px"
+        , style "clipPath" <| clipPathRef ( x, y )
         , style "background-image" <| "url('" ++ image.path ++ "')"
         , style "background-position" <|
-            String.fromInt (w // 4 - offset.x)
+            String.fromInt (borderWidth - dx)
                 ++ "px "
-                ++ String.fromInt (h // 4 - offset.y)
+                ++ String.fromInt (borderWidth - dy)
                 ++ "px"
         , style "position" "absolute"
         , style "transform" ("translate(" ++ left ++ "," ++ top ++ ")")
@@ -250,9 +256,9 @@ renderPieces image visiblePieces =
         pieceGroupDiv : PieceGroup -> List ( String, Html msg )
         pieceGroupDiv pg =
             let
-                render (x, y) =
+                render ( x, y ) =
                     ( "piece-" ++ String.fromInt x ++ "-" ++ String.fromInt y
-                    , lazyPieceDiv image pg (x, y)
+                    , lazyPieceDiv image pg ( x, y )
                     )
             in
             List.map render pg.members
@@ -310,8 +316,8 @@ piecePath image edges id =
 
 
 pieceClipId : PieceGroup.ID -> String
-pieceClipId (x, y) =
-    "piece-" ++ String.fromInt x  ++ "-" ++ String.fromInt y ++ "-clip"
+pieceClipId ( x, y ) =
+    "piece-" ++ String.fromInt x ++ "-" ++ String.fromInt y ++ "-clip"
 
 
 clipPathRef : PieceGroup.ID -> String

@@ -7969,12 +7969,18 @@ var $author$project$View$clipPathRef = function (id) {
 	return 'url(#' + ($author$project$View$pieceClipId(id) + ')');
 };
 var $author$project$View$pieceDiv = F3(
-	function (image, pg, pid) {
-		var w = image.ap * 2;
-		var offset = A2($author$project$JigsawImage$pieceIdToOffset, image, pid);
-		var left = $elm$core$String$fromInt((pg.z.aa + offset.aa) - ((w / 4) | 0)) + 'px';
-		var h = image.ao * 2;
-		var top = $elm$core$String$fromInt((pg.z.ab + offset.ab) - ((h / 4) | 0)) + 'px';
+	function (image, pg, _v0) {
+		var x = _v0.a;
+		var y = _v0.b;
+		var borderWidth = (image.ap / 2) | 0;
+		var width = (borderWidth + image.ap) + borderWidth;
+		var borderHeight = (image.ao / 2) | 0;
+		var height = (borderHeight + image.ao) + borderHeight;
+		var _v1 = _Utils_Tuple2(x * image.ap, y * image.ao);
+		var dx = _v1.a;
+		var dy = _v1.b;
+		var left = $elm$core$String$fromInt((pg.z.aa + dx) - borderWidth) + 'px';
+		var top = $elm$core$String$fromInt((pg.z.ab + dy) - borderHeight) + 'px';
 		return A2(
 			$elm$html$Html$div,
 			_List_fromArray(
@@ -7982,20 +7988,21 @@ var $author$project$View$pieceDiv = F3(
 					A2(
 					$elm$html$Html$Attributes$style,
 					'width',
-					$elm$core$String$fromInt(w) + 'px'),
+					$elm$core$String$fromInt(width) + 'px'),
 					A2(
 					$elm$html$Html$Attributes$style,
 					'height',
-					$elm$core$String$fromInt(h) + 'px'),
+					$elm$core$String$fromInt(height) + 'px'),
 					A2(
 					$elm$html$Html$Attributes$style,
 					'clipPath',
-					$author$project$View$clipPathRef(pid)),
+					$author$project$View$clipPathRef(
+						_Utils_Tuple2(x, y))),
 					A2($elm$html$Html$Attributes$style, 'background-image', 'url(\'' + (image.cp + '\')')),
 					A2(
 					$elm$html$Html$Attributes$style,
 					'background-position',
-					$elm$core$String$fromInt(((w / 4) | 0) - offset.aa) + ('px ' + ($elm$core$String$fromInt(((h / 4) | 0) - offset.ab) + 'px'))),
+					$elm$core$String$fromInt(borderWidth - dx) + ('px ' + ($elm$core$String$fromInt(borderWidth - dy) + 'px'))),
 					A2($elm$html$Html$Attributes$style, 'position', 'absolute'),
 					A2($elm$html$Html$Attributes$style, 'transform', 'translate(' + (left + (',' + (top + ')'))))
 				]),
