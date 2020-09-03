@@ -1,6 +1,5 @@
 module View exposing (view)
 
-import DB
 import Drag
 import Edge exposing (Edge)
 import Html exposing (Attribute, Html)
@@ -22,6 +21,7 @@ import Svg.Attributes
 import Svg.Lazy
 import SvgUtil
 import UI
+import DB
 
 
 view : NewModel -> Html Msg
@@ -145,11 +145,6 @@ pieceDiv image pg pid =
         , style "height" <| String.fromInt h ++ "px"
         , style "clipPath" <| clipPathRef pid
         , style "background-image" <| "url('" ++ image.path ++ "')"
-        , style "background-size" <|
-            String.fromInt image.width
-                ++ "px "
-                ++ String.fromInt image.height
-                ++ "px"
         , style "background-position" <|
             String.fromInt (w // 4 - offset.x)
                 ++ "px "
@@ -255,9 +250,9 @@ renderPieces image visiblePieces =
         pieceGroupDiv : PieceGroup -> List ( String, Html msg )
         pieceGroupDiv pg =
             let
-                render ( x, y ) =
+                render (x, y) =
                     ( "piece-" ++ String.fromInt x ++ "-" ++ String.fromInt y
-                    , lazyPieceDiv image pg ( x, y )
+                    , lazyPieceDiv image pg (x, y)
                     )
             in
             List.map render pg.members
@@ -315,8 +310,8 @@ piecePath image edges id =
 
 
 pieceClipId : PieceGroup.ID -> String
-pieceClipId ( x, y ) =
-    "piece-" ++ String.fromInt x ++ "-" ++ String.fromInt y ++ "-clip"
+pieceClipId (x, y) =
+    "piece-" ++ String.fromInt x  ++ "-" ++ String.fromInt y ++ "-clip"
 
 
 clipPathRef : PieceGroup.ID -> String
