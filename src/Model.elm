@@ -7,7 +7,6 @@ module Model exposing
     , init
     )
 
-import Dict
 import Edge exposing (Edge, generateEdgePoints)
 import JigsawImage
     exposing
@@ -89,7 +88,7 @@ init () =
 
 buildModel :
     JigsawImage
-    -> Dict.Dict Int PieceGroup
+    -> List PieceGroup
     -> List (List Edge)
     -> NewModel
 buildModel image pieceGroups edges =
@@ -99,7 +98,7 @@ buildModel image pieceGroups edges =
         }
     , visibleGroups = S.fromList [ -1 ]
     , edges = edges
-    , db = DB.makeDb <| Dict.values pieceGroups
+    , db = DB.makeDb pieceGroups
     , ui = WaitingForInput
     }
 
@@ -114,8 +113,7 @@ generateModel image =
             shufflePiecePositions image.width image.height image
 
         generatePieceGroups =
-            generatePositions
-                |> Random.map (createPieceGroups image)
+            Random.map (createPieceGroups image) generatePositions
 
         generateEdges =
             Random.map

@@ -5308,22 +5308,11 @@ var $author$project$DB$makeDb = function (list) {
 var $elm$core$Basics$negate = function (n) {
 	return -n;
 };
-var $elm$core$Dict$values = function (dict) {
-	return A3(
-		$elm$core$Dict$foldr,
-		F3(
-			function (key, value, valueList) {
-				return A2($elm$core$List$cons, value, valueList);
-			}),
-		_List_Nil,
-		dict);
-};
 var $author$project$Model$buildModel = F3(
 	function (image, pieceGroups, edges) {
 		return {
 			G: {R: image, cy: 30.0},
-			c: $author$project$DB$makeDb(
-				$elm$core$Dict$values(pieceGroups)),
+			c: $author$project$DB$makeDb(pieceGroups),
 			aW: edges,
 			k: $author$project$UI$WaitingForInput,
 			at: $elm$core$Set$fromList(
@@ -5445,22 +5434,6 @@ var $author$project$JigsawImage$createPieceGroup = F3(
 			bN: -1
 		};
 	});
-var $elm$core$Dict$fromList = function (assocs) {
-	return A3(
-		$elm$core$List$foldl,
-		F2(
-			function (_v0, dict) {
-				var key = _v0.a;
-				var value = _v0.b;
-				return A3($elm$core$Dict$insert, key, value, dict);
-			}),
-		$elm$core$Dict$empty,
-		assocs);
-};
-var $elm$core$Tuple$pair = F2(
-	function (a, b) {
-		return _Utils_Tuple2(a, b);
-	});
 var $author$project$JigsawImage$createPieceGroups = F2(
 	function (image, points) {
 		var numberOfPieces = image.v * image.ab;
@@ -5471,16 +5444,11 @@ var $author$project$JigsawImage$createPieceGroups = F2(
 			$elm$core$List$map,
 			$author$project$JigsawImage$pieceIdToOffset(image),
 			ids) : points;
-		return $elm$core$Dict$fromList(
-			A3(
-				$elm$core$List$map2,
-				$elm$core$Tuple$pair,
-				ids,
-				A3(
-					$elm$core$List$map2,
-					$author$project$JigsawImage$createPieceGroup(image),
-					ids,
-					positions)));
+		return A3(
+			$elm$core$List$map2,
+			$author$project$JigsawImage$createPieceGroup(image),
+			ids,
+			positions);
 	});
 var $author$project$Point$add = F2(
 	function (a, b) {
@@ -6198,6 +6166,18 @@ var $elm$browser$Browser$Events$addKey = function (sub) {
 			$elm$browser$Browser$Events$nodeToKey(node),
 			name),
 		sub);
+};
+var $elm$core$Dict$fromList = function (assocs) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, dict) {
+				var key = _v0.a;
+				var value = _v0.b;
+				return A3($elm$core$Dict$insert, key, value, dict);
+			}),
+		$elm$core$Dict$empty,
+		assocs);
 };
 var $elm$core$Process$kill = _Scheduler_kill;
 var $elm$core$Dict$merge = F6(

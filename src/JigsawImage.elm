@@ -74,7 +74,7 @@ createPieceGroup image id pos =
     }
 
 
-createPieceGroups : JigsawImage -> List Point -> D.Dict Int PieceGroup
+createPieceGroups : JigsawImage -> List Point -> List PieceGroup
 createPieceGroups image points =
     let
         numberOfPieces =
@@ -92,8 +92,6 @@ createPieceGroups image points =
 
     in
     List.map2 (createPieceGroup image) ids positions
-        |> List.map2 Tuple.pair ids
-        |> D.fromList
 
 
 pieceIdToOffset : JigsawImage -> Int -> Point
