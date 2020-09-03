@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Browser
-import DB
+import DB exposing (getSelected)
 import Drag
 import JigsawImage exposing (isPieceGroupInsideBox, isPointInsidePieceGroup)
 import Keyboard exposing (Keyboard)
@@ -21,7 +21,6 @@ import Set exposing (Set)
 import Subscription exposing (subscriptions)
 import UI
 import View exposing (view)
-import DB exposing (getSelected)
 
 
 main : Program () (Seeded NewModel) Msg
@@ -184,49 +183,45 @@ updateMouseUp model =
                 { image } =
                     model.configuration
 
-                isWithin pg =
+                topLeft =
+                    Point x y
+
+                bottomRight =
+                    Point (x + w) (y + h)
+
+                isWithin =
+                    JigsawImage.isPieceGroupInsideBox image topLeft bottomRight
+
+                shouldBeSelected pg =
                     Set.member pg.visibilityGroup model.visibleGroups
-                        && isPieceGroupInsideBox
-                            image
-                            (Point x y)
-                            (Point (x + w) (y + h))
-                            pg
-            in
-            case mode of
-                UI.Add ->
-                    { model
-                        | ui = UI.WaitingForInput
-                        , db =
+                        && isWithin pg
+
+                db =
+                    case mode of
+                        UI.Add ->
                             model.db
                                 |> DB.modifyBy
-                                    (\pg -> isWithin pg || pg.isSelected)
+                                    (\pg -> shouldBeSelected pg || pg.isSelected)
                                     PieceGroup.select
-                    }
 
-                UI.Remove ->
-                    { model
-                        | ui = UI.WaitingForInput
-                        , db =
+                        UI.Remove ->
                             model.db
                                 |> DB.modifyBy
-                                    (\pg -> isWithin pg || not pg.isSelected)
+                                    (\pg -> shouldBeSelected pg || not pg.isSelected)
                                     PieceGroup.deselect
-                    }
 
-                UI.Replace ->
-                    { model
-                        | ui = UI.WaitingForInput
-                        , db =
+                        UI.Replace ->
                             model.db
                                 |> DB.map
                                     (\pg ->
-                                        if pg |> isWithin then
+                                        if pg |> shouldBeSelected then
                                             PieceGroup.select pg
 
                                         else
                                             PieceGroup.deselect pg
                                     )
-                    }
+            in
+            { model | ui = UI.WaitingForInput, db = db }
 
         UI.Moving _ drag ->
             let
