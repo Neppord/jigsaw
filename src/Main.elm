@@ -1,9 +1,8 @@
 module Main exposing (main)
 
 import Browser
-import DB exposing (getSelected)
+import DB
 import Drag
-import JigsawImage exposing (isPieceGroupInsideBox, isPointInsidePieceGroup)
 import Keyboard exposing (Keyboard)
 import List
 import Model
@@ -130,7 +129,7 @@ updateMouseDown coordinate keyboard model =
         clickedPieceGroup =
             db
                 |> DB.findBy
-                    (isPointInsidePieceGroup visibleGroups image coordinate)
+                    (PieceGroup.isPointInsidePieceGroup visibleGroups image coordinate)
                 |> List.reverse
                 |> List.head
 
@@ -190,7 +189,7 @@ updateMouseUp model =
                     Point (x + w) (y + h)
 
                 isWithin =
-                    JigsawImage.isPieceGroupInsideBox image topLeft bottomRight
+                    PieceGroup.isPieceGroupInsideBox image topLeft bottomRight
 
                 shouldBeSelected pg =
                     Set.member pg.visibilityGroup model.visibleGroups

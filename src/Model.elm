@@ -11,7 +11,6 @@ import Edge exposing (Edge, generateEdgePoints)
 import JigsawImage
     exposing
         ( JigsawImage
-        , createPieceGroups
         , shufflePiecePositions
         )
 import Keyboard exposing (Keyboard)
@@ -112,7 +111,7 @@ generateModel image =
             shufflePiecePositions image.width image.height image
 
         generatePieceGroups =
-            Random.map (createPieceGroups image) generatePositions
+            Random.map (PieceGroup.createPieceGroups image) generatePositions
 
         generateEdges =
             Random.map

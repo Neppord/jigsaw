@@ -1,9 +1,13 @@
-module JigsawImage exposing (JigsawImage, pieceIdToOffset, isPieceInsideBox, isPointInsidePieceGroup, isPointInsidePiece, isPieceGroupInsideBox, createPieceGroups, createPieceGroup, shufflePiecePositions)
+module JigsawImage exposing
+    ( JigsawImage, pieceIdToPoint
+    , isPieceInsideBox
+    , isPointInsidePiece
+    , pieceIdToOffset
+    , shufflePiecePositions
+    )
 
 import Point exposing (Point)
 import Random
-import PieceGroup exposing (PieceGroup)
-import Set exposing (Set)
 
 
 type alias JigsawImage =
@@ -16,7 +20,6 @@ type alias JigsawImage =
     , pieceWidth : Int
     , pieceHeight : Int
     }
-
 
 
 shufflePiecePositions : Int -> Int -> JigsawImage -> Random.Generator (List Point)
@@ -40,59 +43,6 @@ shufflePiecePositions w h image =
     Point.randomPoints n xmin xmax ymin ymax
 
 
-createPieceGroup : JigsawImage -> Int -> Point -> PieceGroup
-createPieceGroup image id pos =
-    let
-        isRealNeighbour i x =
-            x
-                >= 0
-                && x
-                < (image.xpieces * image.ypieces)
-                && Point.taxiDist
-                    (pieceIdToPoint i image.xpieces)
-                    (pieceIdToPoint x image.xpieces)
-                == 1
-
-        possibleNeighbours i =
-            [ i - image.xpieces, i - 1, i + 1, i + image.xpieces ]
-
-        neighbours =
-            possibleNeighbours id
-                |> Set.fromList
-                |> Set.filter (isRealNeighbour id)
-
-        position =
-            Point.sub pos (pieceIdToOffset image id)
-    in
-    { position = position
-    , isSelected = False
-    , id = id
-    , members = [ id ]
-    , neighbours = neighbours
-    , visibilityGroup = -1
-    }
-
-
-createPieceGroups : JigsawImage -> List Point -> List PieceGroup
-createPieceGroups image points =
-    let
-        numberOfPieces =
-            image.xpieces * image.ypieces
-
-        ids =
-            List.range 0 (numberOfPieces - 1)
-
-        positions =
-            if List.length points < numberOfPieces then
-                List.map (pieceIdToOffset image) ids
-
-            else
-                points
-
-    in
-    List.map2 (createPieceGroup image) ids positions
-
-
 pieceIdToOffset : JigsawImage -> Int -> Point
 pieceIdToOffset image id =
     Point.dot
@@ -103,7 +53,6 @@ pieceIdToOffset image id =
 isPieceInsideBox : JigsawImage -> Point -> Point -> Point -> Int -> Bool
 isPieceInsideBox image pos boxTL boxBR id =
     let
-
         pieceTL =
             Point.add pos <| pieceIdToOffset image id
 
@@ -116,15 +65,9 @@ isPieceInsideBox image pos boxTL boxBR id =
         && (pieceBR.y >= boxTL.y)
 
 
-isPieceGroupInsideBox : JigsawImage -> Point -> Point -> PieceGroup -> Bool
-isPieceGroupInsideBox image boxTL boxBR pieceGroup =
-    List.any (isPieceInsideBox image pieceGroup.position boxTL boxBR) pieceGroup.members
-
-
 isPointInsidePiece : JigsawImage -> Point -> Point -> Int -> Bool
 isPointInsidePiece image point pos id =
     let
-
         pieceTL =
             Point.add pos <| pieceIdToOffset image id
 
@@ -135,11 +78,6 @@ isPointInsidePiece image point pos id =
         && (pieceTL.y <= point.y)
         && (pieceBR.x >= point.x)
         && (pieceBR.y >= point.y)
-
-isPointInsidePieceGroup : Set Int -> JigsawImage -> Point -> PieceGroup -> Bool
-isPointInsidePieceGroup visibleGroups image point pieceGroup =
-    Set.member pieceGroup.visibilityGroup visibleGroups
-        && List.any (isPointInsidePiece image point pieceGroup.position) pieceGroup.members
 
 
 pieceIdToPoint : Int -> Int -> Point
