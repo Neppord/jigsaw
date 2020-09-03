@@ -124,9 +124,6 @@ updateMouseDown coordinate keyboard model =
         { db, visibleGroups } =
             model
 
-        selected =
-            DB.getSelected db
-
         { image } =
             model.configuration
 
@@ -156,7 +153,7 @@ updateMouseDown coordinate keyboard model =
                 ui =
                     UI.Moving UI.Snap (Drag.from coordinate)
             in
-            if List.member pg selected then
+            if pg.isSelected then
                 { model | ui = ui }
 
             else if keyboard.shift then

@@ -6948,10 +6948,6 @@ var $author$project$Drag$Drag = $elm$core$Basics$identity;
 var $author$project$Drag$from = function (p) {
 	return {P: p, M: p};
 };
-var $author$project$DB$getSelected = function (_v0) {
-	var selected = _v0.j;
-	return selected;
-};
 var $elm$core$List$head = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -7001,15 +6997,6 @@ var $author$project$JigsawImage$isPointInsidePieceGroup = F4(
 			A3($author$project$JigsawImage$isPointInsidePiece, image, point, pieceGroup.aD),
 			pieceGroup.az);
 	});
-var $elm$core$List$member = F2(
-	function (x, xs) {
-		return A2(
-			$elm$core$List$any,
-			function (a) {
-				return _Utils_eq(a, x);
-			},
-			xs);
-	});
 var $author$project$DB$modify = F3(
 	function (id, action, _v0) {
 		var selected = _v0.j;
@@ -7040,7 +7027,6 @@ var $author$project$Main$updateMouseDown = F3(
 		var _v0 = model;
 		var db = _v0.c;
 		var visibleGroups = _v0.at;
-		var selected = $author$project$DB$getSelected(db);
 		var _v1 = model.G;
 		var image = _v1.R;
 		var clickedPieceGroup = $elm$core$List$head(
@@ -7064,7 +7050,7 @@ var $author$project$Main$updateMouseDown = F3(
 				$author$project$UI$Moving,
 				0,
 				$author$project$Drag$from(coordinate));
-			return A2($elm$core$List$member, pg, selected) ? _Utils_update(
+			return pg.I ? _Utils_update(
 				model,
 				{l: ui}) : (keyboard.cx ? _Utils_update(
 				model,
@@ -7166,6 +7152,10 @@ var $author$project$Drag$getDimensions = function (_v0) {
 		_: A2($elm$core$Basics$min, start._, current._),
 		aa: A2($elm$core$Basics$min, start.aa, current.aa)
 	};
+};
+var $author$project$DB$getSelected = function (_v0) {
+	var selected = _v0.j;
+	return selected;
 };
 var $author$project$JigsawImage$isPieceInsideBox = F5(
 	function (image, pos, boxTL, boxBR, id) {
