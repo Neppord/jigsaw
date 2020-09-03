@@ -1,9 +1,9 @@
-module JigsawImage exposing (..)
+module JigsawImage exposing (JigsawImage, pieceIdToOffset, isPieceInsideBox, isPointInsidePieceGroup, isPointInsidePiece, isPieceGroupInsideBox, createPieceGroups, createPieceGroup, shufflePiecePositions)
 
 import Point exposing (Point)
 import Random
-import Set as S
 import PieceGroup exposing (PieceGroup)
+import Set exposing (Set)
 
 
 type alias JigsawImage =
@@ -58,8 +58,8 @@ createPieceGroup image id pos =
 
         neighbours =
             possibleNeighbours id
-                |> S.fromList
-                |> S.filter (isRealNeighbour id)
+                |> Set.fromList
+                |> Set.filter (isRealNeighbour id)
 
         position =
             Point.sub pos (pieceIdToOffset image id)
@@ -136,9 +136,9 @@ isPointInsidePiece image point pos id =
         && (pieceBR.x >= point.x)
         && (pieceBR.y >= point.y)
 
-
+isPointInsidePieceGroup : Set Int -> JigsawImage -> Point -> PieceGroup -> Bool
 isPointInsidePieceGroup visibleGroups image point pieceGroup =
-    S.member pieceGroup.visibilityGroup visibleGroups
+    Set.member pieceGroup.visibilityGroup visibleGroups
         && List.any (isPointInsidePiece image point pieceGroup.position) pieceGroup.members
 
 
