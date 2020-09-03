@@ -21,6 +21,7 @@ import Set exposing (Set)
 import Subscription exposing (subscriptions)
 import UI
 import View exposing (view)
+import DB exposing (getSelected)
 
 
 main : Program () (Seeded NewModel) Msg
@@ -174,11 +175,6 @@ updateMouseDown coordinate keyboard model =
 
 updateMouseUp : NewModel -> NewModel
 updateMouseUp model =
-    let
-        selected =
-            model.db
-                |> DB.getSelected
-    in
     case model.ui of
         UI.Boxing mode drag ->
             let
@@ -237,7 +233,7 @@ updateMouseUp model =
                 move =
                     PieceGroup.move (Drag.distance drag)
             in
-            case selected of
+            case model.db |> DB.getSelected of
                 pg :: [] ->
                     let
                         moved =

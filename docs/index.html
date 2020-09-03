@@ -7317,7 +7317,6 @@ var $author$project$PieceGroup$shouldBeMerged = F3(
 				one.cf)) > 0);
 	});
 var $author$project$Main$updateMouseUp = function (model) {
-	var selected = $author$project$DB$getSelected(model.c);
 	var _v0 = model.l;
 	switch (_v0.$) {
 		case 1:
@@ -7382,8 +7381,9 @@ var $author$project$Main$updateMouseUp = function (model) {
 			var drag = _v0.b;
 			var move = $author$project$PieceGroup$move(
 				$author$project$Drag$distance(drag));
-			if (selected.b && (!selected.b.b)) {
-				var pg = selected.a;
+			var _v4 = $author$project$DB$getSelected(model.c);
+			if (_v4.b && (!_v4.b.b)) {
+				var pg = _v4.a;
 				var moved = move(pg);
 				var shouldBeMerged = function (x) {
 					return A3($author$project$PieceGroup$shouldBeMerged, model.G.cy, moved, x) || _Utils_eq(x.b8, pg.b8);
