@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Browser
-import DB exposing (DB)
+import DB
 import Drag
 import JigsawImage exposing (isPieceGroupInsideBox, isPointInsidePieceGroup)
 import Keyboard exposing (Keyboard)
