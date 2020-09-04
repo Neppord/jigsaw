@@ -1,4 +1,4 @@
-module KDDict exposing (KDDict, Key(..), addAxis, empty, findAll, findAllInRange, fromList, fromListBy, get, insert, key, merge, remove, toList)
+module KDDict exposing (KDDict, Key(..), addAxis, empty, findAll, findAllInRange, fromList, fromListBy, get, insert, key, merge, remove, removeAll, toList)
 
 
 type KDDict comparable v
@@ -218,6 +218,11 @@ remove query dict =
         |> toList
         |> List.filter (Tuple.first >> (/=) query)
         |> fromList
+
+
+removeAll : List (Key comparable) -> KDDict comparable v -> KDDict comparable v
+removeAll keys db =
+    List.foldl remove db keys
 
 
 insert : Key comparable -> v -> KDDict comparable v -> KDDict comparable v

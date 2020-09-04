@@ -194,7 +194,6 @@ aggregateBy test combine db =
             db
 
         Just merged ->
-            targets
-                |> List.map makeKey
-                |> List.foldl KDDict.remove db
+            db
+                |> KDDict.removeAll (List.map makeKey targets)
                 |> insert merged
