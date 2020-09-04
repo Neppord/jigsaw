@@ -58,3 +58,13 @@ randomPointsAndZ n xmin xmax ymin ymax =
         Tuple.pair
         (randomPoints n xmin xmax ymin ymax)
         (shuffle <| List.range 0 (n - 1))
+
+
+toPair : Point -> ( Int, Int )
+toPair point =
+    ( point.x, point.y )
+
+
+fromPair : ( Int, Int ) -> Point
+fromPair ( x, y ) =
+    Point x y
