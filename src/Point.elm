@@ -52,14 +52,6 @@ randomPoints n xmin xmax ymin ymax =
     Random.list n <| randomPoint xmin xmax ymin ymax
 
 
-randomPointsAndZ : Int -> Int -> Int -> Int -> Int -> Random.Generator ( List Point, List Int )
-randomPointsAndZ n xmin xmax ymin ymax =
-    Random.map2
-        Tuple.pair
-        (randomPoints n xmin xmax ymin ymax)
-        (shuffle <| List.range 0 (n - 1))
-
-
 toPair : Point -> ( Int, Int )
 toPair point =
     ( point.x, point.y )
