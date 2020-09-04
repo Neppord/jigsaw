@@ -6179,7 +6179,7 @@ var $author$project$Seeded$step = function (_v0) {
 	return A2($author$project$Seeded$Seeded, nextSeed, a);
 };
 var $author$project$Model$init = function (_v0) {
-	var _v1 = _Utils_Tuple2(4, 4);
+	var _v1 = _Utils_Tuple2(2, 2);
 	var xpieces = _v1.a;
 	var ypieces = _v1.b;
 	var _v2 = _Utils_Tuple2(533, 538);
@@ -7319,31 +7319,60 @@ var $author$project$Main$updateMouseDown = F3(
 				}));
 		}
 	});
-var $elm$core$Maybe$map2 = F3(
-	function (func, ma, mb) {
-		if (ma.$ === 1) {
-			return $elm$core$Maybe$Nothing;
+var $author$project$KDDict$insert_ = F4(
+	function (i, key_, value, dict) {
+		if (!dict.$) {
+			return A4(
+				$author$project$KDDict$Node,
+				i,
+				$author$project$KDDict$Empty,
+				_Utils_Tuple2(key_, value),
+				$author$project$KDDict$Empty);
 		} else {
-			var a = ma.a;
-			if (mb.$ === 1) {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var b = mb.a;
-				return $elm$core$Maybe$Just(
-					A2(func, a, b));
-			}
+			var s = dict.b;
+			var _v1 = dict.c;
+			var k = _v1.a;
+			var v = _v1.b;
+			var l = dict.d;
+			return (_Utils_cmp(
+				A2($author$project$KDDict$getIndex, i, key_),
+				A2($author$project$KDDict$getIndex, i, k)) < 0) ? A4(
+				$author$project$KDDict$Node,
+				i,
+				A4($author$project$KDDict$insert_, i + 1, key_, value, s),
+				_Utils_Tuple2(k, v),
+				l) : A4(
+				$author$project$KDDict$Node,
+				i,
+				s,
+				_Utils_Tuple2(k, v),
+				A4($author$project$KDDict$insert_, i + 1, key_, value, l));
 		}
 	});
-var $elm$core$Tuple$mapFirst = F2(
-	function (func, _v0) {
-		var x = _v0.a;
-		var y = _v0.b;
-		return _Utils_Tuple2(
-			func(x),
-			y);
+var $author$project$KDDict$insert = $author$project$KDDict$insert_(0);
+var $author$project$DB$insert = function (pg) {
+	return A2(
+		$author$project$KDDict$insert,
+		$author$project$DB$makeKey(pg),
+		pg);
+};
+var $author$project$KDDict$remove = F2(
+	function (query, dict) {
+		return $author$project$KDDict$fromList(
+			A2(
+				$elm$core$List$filter,
+				A2(
+					$elm$core$Basics$composeR,
+					$elm$core$Tuple$first,
+					$elm$core$Basics$neq(query)),
+				$author$project$KDDict$toList(dict)));
 	});
 var $author$project$DB$aggregateBy = F3(
 	function (test, combine, db) {
+		var targets = A2(
+			$elm$core$List$filter,
+			test,
+			$author$project$DB$all(db));
 		var merge = function (list) {
 			if (!list.b) {
 				return $elm$core$Maybe$Nothing;
@@ -7354,26 +7383,20 @@ var $author$project$DB$aggregateBy = F3(
 					A3($elm$core$List$foldl, combine, head, tail));
 			}
 		};
-		var modified = function (_v0) {
-			var maybe = _v0.a;
-			var rest = _v0.b;
+		var _v0 = merge(targets);
+		if (_v0.$ === 1) {
+			return db;
+		} else {
+			var merged = _v0.a;
 			return A2(
-				$elm$core$Maybe$withDefault,
-				rest,
+				$author$project$DB$insert,
+				merged,
 				A3(
-					$elm$core$Maybe$map2,
-					$elm$core$List$cons,
-					maybe,
-					$elm$core$Maybe$Just(rest)));
-		}(
-			A2(
-				$elm$core$Tuple$mapFirst,
-				merge,
-				A2(
-					$elm$core$List$partition,
-					test,
-					$author$project$DB$all(db))));
-		return $author$project$DB$makeDb(modified);
+					$elm$core$List$foldl,
+					$author$project$KDDict$remove,
+					db,
+					A2($elm$core$List$map, $author$project$DB$makeKey, targets)));
+		}
 	});
 var $author$project$Drag$distance = function (_v0) {
 	var start = _v0.N;

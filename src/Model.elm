@@ -54,13 +54,13 @@ init () =
             ( 533, 538 )
 
         ( xpieces, ypieces ) =
-            ( 4, 4 )
+            ( 2, 2 )
 
         pieceWidth =
-             width // xpieces
+            width // xpieces
 
         pieceHeight =
-           height // ypieces
+            height // ypieces
 
         image =
             { path = "kitten.png"

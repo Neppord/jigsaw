@@ -134,15 +134,9 @@ map action db =
 aggregateBy : (PieceGroup -> Bool) -> (PieceGroup -> PieceGroup -> PieceGroup) -> DB -> DB
 aggregateBy test combine db =
     let
-        modified =
+        targets =
             all db
-                |> List.partition test
-                |> Tuple.mapFirst merge
-                |> (\( maybe, rest ) ->
-                        Just rest
-                            |> Maybe.map2 (::) maybe
-                            |> Maybe.withDefault rest
-                   )
+                |> List.filter test
 
         merge list =
             case list of
@@ -152,7 +146,20 @@ aggregateBy test combine db =
                 head :: tail ->
                     Just <| List.foldl combine head tail
     in
-    makeDb modified
+    case merge targets of
+        Nothing ->
+            db
+
+        Just merged ->
+            targets
+                |> List.map makeKey
+                |> List.foldl KDDict.remove db
+                |> insert merged
+
+
+insert : PieceGroup -> DB -> DB
+insert pg =
+    KDDict.insert (makeKey pg) pg
 
 
 findBy : (PieceGroup -> Bool) -> DB -> List PieceGroup
