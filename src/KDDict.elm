@@ -1,4 +1,4 @@
-module KDDict exposing (KDDict, Key(..), addAxis, empty, findAll, findAllInRange, fromList, fromListBy, get, insert, key, merge, remove, removeAll, toList)
+module KDDict exposing (KDDict, Key(..), addAxis, empty, findAll, findAllInRange, fromList, fromListBy, get, insert, key, makeRangeQuery, merge, remove, removeAll, toList)
 
 
 type KDDict comparable v
@@ -16,6 +16,26 @@ type alias Query a =
 
 type alias RangeQuery a =
     Query ( a, a )
+
+
+makeRangeQuery : Query a -> Query a -> RangeQuery a
+makeRangeQuery (Key x xs) (Key y ys) =
+    let
+        combine x_ y_ =
+            case ( x_, y_ ) of
+                ( Nothing, Nothing ) ->
+                    Nothing
+
+                ( Nothing, Just y__ ) ->
+                    Just ( y__, y__ )
+
+                ( Just x__, Nothing ) ->
+                    Just ( x__, x__ )
+
+                ( Just x__, Just y__ ) ->
+                    Just ( x__, y__ )
+    in
+    Key (combine x y) (List.map2 combine xs ys)
 
 
 key : a -> Key a

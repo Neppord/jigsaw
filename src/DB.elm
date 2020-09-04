@@ -1,6 +1,5 @@
 module DB exposing
     ( DB
-    , aggregateBy
     , findBy
     , getSelected
     , getUnSelected
@@ -13,8 +12,9 @@ module DB exposing
     )
 
 import KDDict exposing (KDDict)
-import Maybe exposing (withDefault)
+import Maybe
 import PieceGroup exposing (PieceGroup)
+import Point
 import Set
 
 
@@ -40,23 +40,41 @@ keyBool v =
 
 
 makeKey : PieceGroup -> DbKey
-makeKey { id, isSelected } =
+makeKey { id, isSelected, position } =
+    let
+        position_ =
+            position
+                |> Point.toPair
+    in
     KDDict.key (keyBool isSelected)
         |> KDDict.addAxis (Tuple.second id)
         |> KDDict.addAxis (Tuple.first id)
+        |> KDDict.addAxis (Tuple.second position_)
+        |> KDDict.addAxis (Tuple.first position_)
 
 
 type alias QueryConst =
     { id : Maybe ( Int, Int )
     , isSelected : Maybe Bool
+    , position : Maybe ( Int, Int )
+    }
+
+
+emptyQuery : QueryConst
+emptyQuery =
+    { id = Nothing
+    , isSelected = Nothing
+    , position = Nothing
     }
 
 
 makeQuery : QueryConst -> DbQuery
-makeQuery { id, isSelected } =
+makeQuery { id, isSelected, position } =
     KDDict.key (Maybe.map keyBool isSelected)
         |> KDDict.addAxis (Maybe.map Tuple.second id)
         |> KDDict.addAxis (Maybe.map Tuple.first id)
+        |> KDDict.addAxis (Maybe.map Tuple.second position)
+        |> KDDict.addAxis (Maybe.map Tuple.first position)
 
 
 makeDb : List PieceGroup -> DB
@@ -68,22 +86,14 @@ getSelected : DB -> List PieceGroup
 getSelected db =
     db
         |> KDDict.findAll
-            (makeQuery
-                { isSelected = Just True
-                , id = Nothing
-                }
-            )
+            (makeQuery { emptyQuery | isSelected = Just True })
 
 
 getUnSelected : DB -> List PieceGroup
 getUnSelected db =
     db
         |> KDDict.findAll
-            (makeQuery
-                { isSelected = Just False
-                , id = Nothing
-                }
-            )
+            (makeQuery { emptyQuery | isSelected = Just False })
 
 
 modifySelected : (PieceGroup -> PieceGroup) -> DB -> DB
@@ -164,36 +174,48 @@ snap snapDistance db =
                             snapDistance
                             pg
                             x
+
+                position =
+                    pg.position
+
+                radius =
+                    floor snapDistance
+
+                topLeft =
+                    position
+                        |> Point.add (Point.Point -radius -radius)
+                        |> Point.toPair
+
+                bottomRight =
+                    position
+                        |> Point.add (Point.Point radius radius)
+                        |> Point.toPair
+
+                targets =
+                    db
+                        |> KDDict.findAllInRange
+                            (KDDict.makeRangeQuery
+                                (makeQuery { emptyQuery | position = Just topLeft })
+                                (makeQuery { emptyQuery | position = Just bottomRight })
+                            )
+                        |> List.filter shouldBeMerged_
+
+                merge list =
+                    case list of
+                        [] ->
+                            Nothing
+
+                        head :: tail ->
+                            Just <| List.foldl PieceGroup.merge head tail
             in
-            db
-                |> aggregateBy
-                    shouldBeMerged_
-                    PieceGroup.merge
+            case merge targets of
+                Nothing ->
+                    db
+
+                Just merged ->
+                    db
+                        |> KDDict.removeAll (List.map makeKey targets)
+                        |> insert merged
 
         _ ->
             db
-
-
-aggregateBy : (PieceGroup -> Bool) -> (PieceGroup -> PieceGroup -> PieceGroup) -> DB -> DB
-aggregateBy test combine db =
-    let
-        targets =
-            all db
-                |> List.filter test
-
-        merge list =
-            case list of
-                [] ->
-                    Nothing
-
-                head :: tail ->
-                    Just <| List.foldl combine head tail
-    in
-    case merge targets of
-        Nothing ->
-            db
-
-        Just merged ->
-            db
-                |> KDDict.removeAll (List.map makeKey targets)
-                |> insert merged
