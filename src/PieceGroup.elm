@@ -36,6 +36,8 @@ type alias PieceGroup =
     , members : List Piece
     , neighbours : Set ID
     , position : Point
+    , minOffset : Point
+    , maxOffset : Point
     , isSelected : Bool
     , visibilityGroup : Int
     }
@@ -51,11 +53,25 @@ merge a b =
             Set.diff
                 (Set.union b.neighbours a.neighbours)
                 (Set.fromList <| List.map .id newMembers)
+
+        minOffset =
+            Point
+                (min a.minOffset.x b.minOffset.x)
+                (min a.minOffset.y b.minOffset.y)
+
+        maxOffset =
+            Point
+                (max a.minOffset.x b.minOffset.x)
+                (max a.minOffset.y b.minOffset.y)
     in
-    { b
-        | isSelected = False
-        , members = newMembers
-        , neighbours = newNeighbours
+    { id = a.id
+    , minOffset = minOffset
+    , maxOffset = maxOffset
+    , isSelected = False
+    , members = newMembers
+    , neighbours = newNeighbours
+    , visibilityGroup = a.visibilityGroup
+    , position = a.position
     }
 
 
@@ -104,6 +120,8 @@ createPieceGroup image id pos =
     , members = [ Piece id offset size ]
     , neighbours = neighbours id
     , visibilityGroup = -1
+    , maxOffset = offset
+    , minOffset = offset
     }
 
 
