@@ -158,14 +158,15 @@ snap snapDistance db =
     case db |> getSelected of
         pg :: [] ->
             let
-                shouldBeMerged_ x =
+                memberIds =
+                    Set.fromList <| List.map .id pg.members
+
+                shouldBeMerged x =
                     (x.id == pg.id)
-                        || (Set.size <|
-                                Set.intersect
-                                    (Set.fromList <| List.map .id x.members)
-                                    pg.neighbours
+                        || (Set.intersect memberIds x.neighbours
+                                |> Set.isEmpty
+                                |> not
                            )
-                        > 0
 
                 position =
                     pg.position
@@ -190,7 +191,7 @@ snap snapDistance db =
                                 (makeQuery { emptyQuery | position = Just topLeft })
                                 (makeQuery { emptyQuery | position = Just bottomRight })
                             )
-                        |> List.filter shouldBeMerged_
+                        |> List.filter shouldBeMerged
 
                 merge list =
                     case list of

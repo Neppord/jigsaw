@@ -7564,6 +7564,17 @@ var $elm$core$Set$intersect = F2(
 		var dict2 = _v1;
 		return A2($elm$core$Dict$intersect, dict1, dict2);
 	});
+var $elm$core$Dict$isEmpty = function (dict) {
+	if (dict.$ === -2) {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm$core$Set$isEmpty = function (_v0) {
+	var dict = _v0;
+	return $elm$core$Dict$isEmpty(dict);
+};
 var $author$project$KDDict$makeRangeQuery = F2(
 	function (_v0, _v1) {
 		var x = _v0.a;
@@ -7664,48 +7675,11 @@ var $author$project$KDDict$removeAll = F2(
 	function (keys, db) {
 		return A3($elm$core$List$foldl, $author$project$KDDict$remove, db, keys);
 	});
-var $elm$core$Dict$sizeHelp = F2(
-	function (n, dict) {
-		sizeHelp:
-		while (true) {
-			if (dict.$ === -2) {
-				return n;
-			} else {
-				var left = dict.d;
-				var right = dict.e;
-				var $temp$n = A2($elm$core$Dict$sizeHelp, n + 1, right),
-					$temp$dict = left;
-				n = $temp$n;
-				dict = $temp$dict;
-				continue sizeHelp;
-			}
-		}
-	});
-var $elm$core$Dict$size = function (dict) {
-	return A2($elm$core$Dict$sizeHelp, 0, dict);
-};
-var $elm$core$Set$size = function (_v0) {
-	var dict = _v0;
-	return $elm$core$Dict$size(dict);
-};
 var $author$project$DB$snap = F2(
 	function (snapDistance, db) {
 		var _v0 = $author$project$DB$getSelected(db);
 		if (_v0.b && (!_v0.b.b)) {
 			var pg = _v0.a;
-			var shouldBeMerged_ = function (x) {
-				return _Utils_eq(x.x, pg.x) || ($elm$core$Set$size(
-					A2(
-						$elm$core$Set$intersect,
-						$elm$core$Set$fromList(
-							A2(
-								$elm$core$List$map,
-								function ($) {
-									return $.x;
-								},
-								x.b8)),
-						pg.cd)) > 0);
-			};
 			var radius = $elm$core$Basics$floor(snapDistance);
 			var position = pg.E;
 			var topLeft = $author$project$Point$toPair(
@@ -7723,6 +7697,17 @@ var $author$project$DB$snap = F2(
 						A3($elm$core$List$foldl, $author$project$PieceGroup$merge, head, tail));
 				}
 			};
+			var memberIds = $elm$core$Set$fromList(
+				A2(
+					$elm$core$List$map,
+					function ($) {
+						return $.x;
+					},
+					pg.b8));
+			var shouldBeMerged = function (x) {
+				return _Utils_eq(x.x, pg.x) || (!$elm$core$Set$isEmpty(
+					A2($elm$core$Set$intersect, memberIds, x.cd)));
+			};
 			var bottomRight = $author$project$Point$toPair(
 				A2(
 					$author$project$Point$add,
@@ -7730,7 +7715,7 @@ var $author$project$DB$snap = F2(
 					position));
 			var targets = A2(
 				$elm$core$List$filter,
-				shouldBeMerged_,
+				shouldBeMerged,
 				A2(
 					$author$project$KDDict$findAllInRange,
 					A2(
