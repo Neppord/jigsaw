@@ -1,4 +1,18 @@
-module PieceGroup exposing (ID, PieceGroup, createPieceGroup, createPieceGroups, deselect, distance, genIds, isPieceGroupInsideBox, isPointInsidePieceGroup, merge, move, select, shouldBeMerged)
+module PieceGroup exposing
+    ( ID
+    , PieceGroup
+    , createPieceGroup
+    , createPieceGroups
+    , deselect
+    , distance
+    , genIds
+    , isPieceGroupInsideBox
+    , isPointInsidePieceGroup
+    , merge
+    , move
+    , select
+    , shouldBeMerged
+    )
 
 import JigsawImage exposing (JigsawImage)
 import Point exposing (Point)
