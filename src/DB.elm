@@ -9,6 +9,7 @@ module DB exposing
     , modify
     , modifyBy
     , modifySelected
+    , snap
     )
 
 import KDDict exposing (KDDict)
@@ -165,3 +166,24 @@ insert pg =
 findBy : (PieceGroup -> Bool) -> DB -> List PieceGroup
 findBy filter db =
     List.filter filter (all db)
+
+
+snap : Float -> DB -> DB
+snap snapDistance db =
+    case db |> getSelected of
+        pg :: [] ->
+            let
+                shouldBeMerged x =
+                    (x.id == pg.id)
+                        || PieceGroup.shouldBeMerged
+                            snapDistance
+                            pg
+                            x
+            in
+            db
+                |> aggregateBy
+                    shouldBeMerged
+                    PieceGroup.merge
+
+        _ ->
+            db

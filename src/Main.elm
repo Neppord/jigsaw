@@ -230,27 +230,11 @@ updateMouseUp model =
                 updatedDb =
                     DB.modifySelected move model.db
             in
-            case updatedDb |> DB.getSelected of
-                pg :: [] ->
-                    let
-                        shouldBeMerged x =
-                            (x.id == pg.id)
-                                || PieceGroup.shouldBeMerged model.configuration.snapDistance pg x
-                    in
-                    { model
-                        | ui = UI.WaitingForInput
-                        , db =
-                            updatedDb
-                                |> DB.aggregateBy
-                                    shouldBeMerged
-                                    PieceGroup.merge
-                    }
-
-                _ ->
-                    { model
-                        | ui = UI.WaitingForInput
-                        , db = updatedDb
-                    }
+            { model
+                | ui = UI.WaitingForInput
+                , db =
+                    DB.snap model.configuration.snapDistance updatedDb
+            }
 
         _ ->
             model
