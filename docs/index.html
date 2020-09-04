@@ -7537,6 +7537,33 @@ var $author$project$DB$insert = function (pg) {
 		$author$project$DB$makeKey(pg),
 		pg);
 };
+var $elm$core$Dict$filter = F2(
+	function (isGood, dict) {
+		return A3(
+			$elm$core$Dict$foldl,
+			F3(
+				function (k, v, d) {
+					return A2(isGood, k, v) ? A3($elm$core$Dict$insert, k, v, d) : d;
+				}),
+			$elm$core$Dict$empty,
+			dict);
+	});
+var $elm$core$Dict$intersect = F2(
+	function (t1, t2) {
+		return A2(
+			$elm$core$Dict$filter,
+			F2(
+				function (k, _v0) {
+					return A2($elm$core$Dict$member, k, t2);
+				}),
+			t1);
+	});
+var $elm$core$Set$intersect = F2(
+	function (_v0, _v1) {
+		var dict1 = _v0;
+		var dict2 = _v1;
+		return A2($elm$core$Dict$intersect, dict1, dict2);
+	});
 var $author$project$KDDict$makeRangeQuery = F2(
 	function (_v0, _v1) {
 		var x = _v0.a;
@@ -7637,44 +7664,6 @@ var $author$project$KDDict$removeAll = F2(
 	function (keys, db) {
 		return A3($elm$core$List$foldl, $author$project$KDDict$remove, db, keys);
 	});
-var $elm$core$Basics$pow = _Basics_pow;
-var $elm$core$Basics$sqrt = _Basics_sqrt;
-var $author$project$Point$dist = F2(
-	function (a, b) {
-		return $elm$core$Basics$sqrt(
-			A2($elm$core$Basics$pow, b._ - a._, 2) + A2($elm$core$Basics$pow, b.aa - a.aa, 2));
-	});
-var $author$project$PieceGroup$distance = F2(
-	function (from, to) {
-		return A2($author$project$Point$dist, from.E, to.E);
-	});
-var $elm$core$Dict$filter = F2(
-	function (isGood, dict) {
-		return A3(
-			$elm$core$Dict$foldl,
-			F3(
-				function (k, v, d) {
-					return A2(isGood, k, v) ? A3($elm$core$Dict$insert, k, v, d) : d;
-				}),
-			$elm$core$Dict$empty,
-			dict);
-	});
-var $elm$core$Dict$intersect = F2(
-	function (t1, t2) {
-		return A2(
-			$elm$core$Dict$filter,
-			F2(
-				function (k, _v0) {
-					return A2($elm$core$Dict$member, k, t2);
-				}),
-			t1);
-	});
-var $elm$core$Set$intersect = F2(
-	function (_v0, _v1) {
-		var dict1 = _v0;
-		var dict2 = _v1;
-		return A2($elm$core$Dict$intersect, dict1, dict2);
-	});
 var $elm$core$Dict$sizeHelp = F2(
 	function (n, dict) {
 		sizeHelp:
@@ -7699,27 +7688,23 @@ var $elm$core$Set$size = function (_v0) {
 	var dict = _v0;
 	return $elm$core$Dict$size(dict);
 };
-var $author$project$DB$shouldBeMerged = F3(
-	function (snapDistance, one, other) {
-		var otherIds = $elm$core$Set$fromList(
-			A2(
-				$elm$core$List$map,
-				function ($) {
-					return $.x;
-				},
-				other.b8));
-		return (_Utils_cmp(
-			A2($author$project$PieceGroup$distance, other, one),
-			snapDistance) < 0) && ($elm$core$Set$size(
-			A2($elm$core$Set$intersect, otherIds, one.cd)) > 0);
-	});
 var $author$project$DB$snap = F2(
 	function (snapDistance, db) {
 		var _v0 = $author$project$DB$getSelected(db);
 		if (_v0.b && (!_v0.b.b)) {
 			var pg = _v0.a;
 			var shouldBeMerged_ = function (x) {
-				return _Utils_eq(x.x, pg.x) || A3($author$project$DB$shouldBeMerged, snapDistance, pg, x);
+				return _Utils_eq(x.x, pg.x) || ($elm$core$Set$size(
+					A2(
+						$elm$core$Set$intersect,
+						$elm$core$Set$fromList(
+							A2(
+								$elm$core$List$map,
+								function ($) {
+									return $.x;
+								},
+								x.b8)),
+						pg.cd)) > 0);
 			};
 			var radius = $elm$core$Basics$floor(snapDistance);
 			var position = pg.E;

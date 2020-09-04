@@ -153,16 +153,6 @@ findBy filter db =
     List.filter filter (all db)
 
 
-shouldBeMerged : Float -> PieceGroup -> PieceGroup -> Bool
-shouldBeMerged snapDistance one other =
-    let
-        otherIds =
-            Set.fromList <| List.map .id other.members
-    in
-    (PieceGroup.distance other one < snapDistance)
-        && ((Set.size <| Set.intersect otherIds one.neighbours) > 0)
-
-
 snap : Float -> DB -> DB
 snap snapDistance db =
     case db |> getSelected of
@@ -170,10 +160,12 @@ snap snapDistance db =
             let
                 shouldBeMerged_ x =
                     (x.id == pg.id)
-                        || shouldBeMerged
-                            snapDistance
-                            pg
-                            x
+                        || (Set.size <|
+                                Set.intersect
+                                    (Set.fromList <| List.map .id x.members)
+                                    pg.neighbours
+                           )
+                        > 0
 
                 position =
                     pg.position
