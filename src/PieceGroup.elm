@@ -12,7 +12,6 @@ module PieceGroup exposing
     , merge
     , move
     , select
-    , shouldBeMerged
     )
 
 import JigsawImage exposing (JigsawImage)
@@ -73,16 +72,6 @@ merge a b =
     , visibilityGroup = a.visibilityGroup
     , position = a.position
     }
-
-
-shouldBeMerged : Float -> PieceGroup -> PieceGroup -> Bool
-shouldBeMerged snapDistance one other =
-    let
-        otherIds =
-            Set.fromList <| List.map .id other.members
-    in
-    (distance other one < snapDistance)
-        && ((Set.size <| Set.intersect otherIds one.neighbours) > 0)
 
 
 distance : PieceGroup -> PieceGroup -> Float

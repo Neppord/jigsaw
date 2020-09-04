@@ -15,6 +15,7 @@ module DB exposing
 import KDDict exposing (KDDict)
 import Maybe exposing (withDefault)
 import PieceGroup exposing (PieceGroup)
+import Set
 
 
 type alias DB =
@@ -132,6 +133,47 @@ map action db =
     makeDb (List.map action (all db))
 
 
+insert : PieceGroup -> DB -> DB
+insert pg =
+    KDDict.insert (makeKey pg) pg
+
+
+findBy : (PieceGroup -> Bool) -> DB -> List PieceGroup
+findBy filter db =
+    List.filter filter (all db)
+
+
+shouldBeMerged : Float -> PieceGroup -> PieceGroup -> Bool
+shouldBeMerged snapDistance one other =
+    let
+        otherIds =
+            Set.fromList <| List.map .id other.members
+    in
+    (PieceGroup.distance other one < snapDistance)
+        && ((Set.size <| Set.intersect otherIds one.neighbours) > 0)
+
+
+snap : Float -> DB -> DB
+snap snapDistance db =
+    case db |> getSelected of
+        pg :: [] ->
+            let
+                shouldBeMerged_ x =
+                    (x.id == pg.id)
+                        || shouldBeMerged
+                            snapDistance
+                            pg
+                            x
+            in
+            db
+                |> aggregateBy
+                    shouldBeMerged_
+                    PieceGroup.merge
+
+        _ ->
+            db
+
+
 aggregateBy : (PieceGroup -> Bool) -> (PieceGroup -> PieceGroup -> PieceGroup) -> DB -> DB
 aggregateBy test combine db =
     let
@@ -156,34 +198,3 @@ aggregateBy test combine db =
                 |> List.map makeKey
                 |> List.foldl KDDict.remove db
                 |> insert merged
-
-
-insert : PieceGroup -> DB -> DB
-insert pg =
-    KDDict.insert (makeKey pg) pg
-
-
-findBy : (PieceGroup -> Bool) -> DB -> List PieceGroup
-findBy filter db =
-    List.filter filter (all db)
-
-
-snap : Float -> DB -> DB
-snap snapDistance db =
-    case db |> getSelected of
-        pg :: [] ->
-            let
-                shouldBeMerged x =
-                    (x.id == pg.id)
-                        || PieceGroup.shouldBeMerged
-                            snapDistance
-                            pg
-                            x
-            in
-            db
-                |> aggregateBy
-                    shouldBeMerged
-                    PieceGroup.merge
-
-        _ ->
-            db
