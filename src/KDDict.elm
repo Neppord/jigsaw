@@ -4,6 +4,7 @@ module KDDict exposing (KDDict, Key(..), addAxis, empty, findAll, findAllInRange
 type KDDict comparable v
     = Empty
     | Node Int (KDDict comparable v) ( Key comparable, v ) (KDDict comparable v)
+    | Deleted Int (KDDict comparable v) (KDDict comparable v)
 
 
 type Key a
@@ -112,6 +113,9 @@ toList dict =
         Node _ smaller item larger ->
             toList smaller ++ item :: toList larger
 
+        Deleted _ smaller larger ->
+            toList smaller ++ toList larger
+
 
 get : Key comparable -> KDDict comparable v -> Maybe v
 get query dict =
@@ -128,6 +132,14 @@ get query dict =
 
             else
                 get query larger
+
+        Deleted _ smaller larger ->
+            case get query smaller of
+                Nothing ->
+                    get query larger
+
+                a ->
+                    a
 
 
 match : Query comparable -> Key comparable -> Bool
@@ -166,6 +178,9 @@ findAll query dict =
 
             else
                 rest
+
+        Deleted _ smaller larger ->
+            findAll query smaller ++ findAll query larger
 
 
 matchRange : RangeQuery comparable -> Key comparable -> Bool
@@ -231,13 +246,33 @@ findAllInRange query dict =
             else
                 rest
 
+        Deleted _ smaller larger ->
+            findAllInRange query smaller ++ findAllInRange query larger
+
 
 remove : Key comparable -> KDDict comparable v -> KDDict comparable v
-remove query dict =
-    dict
-        |> toList
-        |> List.filter (Tuple.first >> (/=) query)
-        |> fromList
+remove q dict =
+    case dict of
+        Empty ->
+            Empty
+
+        Node i s ( key_, v ) l ->
+            if q == key_ then
+                Deleted i s l
+
+            else
+                case compare (getIndex i q) (getIndex i key_) of
+                    LT ->
+                        Node i (remove q s) ( key_, v ) l
+
+                    GT ->
+                        Node i (remove q s) ( key_, v ) (remove q l)
+
+                    EQ ->
+                        Node i (remove q s) ( key_, v ) (remove q l)
+
+        Deleted i s l ->
+            Deleted i (remove q s) (remove q l)
 
 
 removeAll : List (Key comparable) -> KDDict comparable v -> KDDict comparable v
@@ -263,6 +298,13 @@ insert_ i key_ value dict =
             else
                 Node i s ( k, v ) (insert_ (i + 1) key_ value l)
 
+        Deleted _ s l ->
+            if modBy 2 i == 0 then
+                Deleted i (insert_ (i + 1) key_ value s) l
+
+            else
+                Deleted i s (insert_ (i + 1) key_ value l)
+
 
 merge : KDDict comparable v -> KDDict comparable v -> KDDict comparable v
 merge d1 d2 =
@@ -283,3 +325,6 @@ merge d1 d2 =
 
                 GT ->
                     toList d1 ++ toList d2 |> fromList
+
+        ( _, _ ) ->
+            toList d1 ++ toList d2 |> fromList

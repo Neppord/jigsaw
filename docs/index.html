@@ -6665,40 +6665,47 @@ var $author$project$KDDict$match = F2(
 	});
 var $author$project$KDDict$findAll = F2(
 	function (query, dict) {
-		if (!dict.$) {
-			return _List_Nil;
-		} else {
-			var index = dict.a;
-			var smaller = dict.b;
-			var _v1 = dict.c;
-			var key_ = _v1.a;
-			var value = _v1.b;
-			var larger = dict.d;
-			var rest = function () {
-				var _v2 = A2($author$project$KDDict$getIndex, index, query);
-				if (_v2.$ === 1) {
-					return _Utils_ap(
-						A2($author$project$KDDict$findAll, query, smaller),
-						A2($author$project$KDDict$findAll, query, larger));
-				} else {
-					var thing = _v2.a;
-					var _v3 = A2(
-						$elm$core$Basics$compare,
-						thing,
-						A2($author$project$KDDict$getIndex, index, key_));
-					switch (_v3) {
-						case 1:
-							return _Utils_ap(
-								A2($author$project$KDDict$findAll, query, smaller),
-								A2($author$project$KDDict$findAll, query, larger));
-						case 0:
-							return A2($author$project$KDDict$findAll, query, smaller);
-						default:
-							return A2($author$project$KDDict$findAll, query, larger);
+		switch (dict.$) {
+			case 0:
+				return _List_Nil;
+			case 1:
+				var index = dict.a;
+				var smaller = dict.b;
+				var _v1 = dict.c;
+				var key_ = _v1.a;
+				var value = _v1.b;
+				var larger = dict.d;
+				var rest = function () {
+					var _v2 = A2($author$project$KDDict$getIndex, index, query);
+					if (_v2.$ === 1) {
+						return _Utils_ap(
+							A2($author$project$KDDict$findAll, query, smaller),
+							A2($author$project$KDDict$findAll, query, larger));
+					} else {
+						var thing = _v2.a;
+						var _v3 = A2(
+							$elm$core$Basics$compare,
+							thing,
+							A2($author$project$KDDict$getIndex, index, key_));
+						switch (_v3) {
+							case 1:
+								return _Utils_ap(
+									A2($author$project$KDDict$findAll, query, smaller),
+									A2($author$project$KDDict$findAll, query, larger));
+							case 0:
+								return A2($author$project$KDDict$findAll, query, smaller);
+							default:
+								return A2($author$project$KDDict$findAll, query, larger);
+						}
 					}
-				}
-			}();
-			return A2($author$project$KDDict$match, query, key_) ? A2($elm$core$List$cons, value, rest) : rest;
+				}();
+				return A2($author$project$KDDict$match, query, key_) ? A2($elm$core$List$cons, value, rest) : rest;
+			default:
+				var smaller = dict.b;
+				var larger = dict.c;
+				return _Utils_ap(
+					A2($author$project$KDDict$findAll, query, smaller),
+					A2($author$project$KDDict$findAll, query, larger));
 		}
 	});
 var $elm$core$Maybe$map = F2(
@@ -7221,18 +7228,25 @@ var $author$project$PieceGroup$deselect = function (x) {
 		{H: false});
 };
 var $author$project$KDDict$toList = function (dict) {
-	if (!dict.$) {
-		return _List_Nil;
-	} else {
-		var smaller = dict.b;
-		var item = dict.c;
-		var larger = dict.d;
-		return _Utils_ap(
-			$author$project$KDDict$toList(smaller),
-			A2(
-				$elm$core$List$cons,
-				item,
-				$author$project$KDDict$toList(larger)));
+	switch (dict.$) {
+		case 0:
+			return _List_Nil;
+		case 1:
+			var smaller = dict.b;
+			var item = dict.c;
+			var larger = dict.d;
+			return _Utils_ap(
+				$author$project$KDDict$toList(smaller),
+				A2(
+					$elm$core$List$cons,
+					item,
+					$author$project$KDDict$toList(larger)));
+		default:
+			var smaller = dict.b;
+			var larger = dict.c;
+			return _Utils_ap(
+				$author$project$KDDict$toList(smaller),
+				$author$project$KDDict$toList(larger));
 	}
 };
 var $author$project$DB$all = function (db) {
@@ -7450,73 +7464,97 @@ var $author$project$KDDict$matchRange = F2(
 	});
 var $author$project$KDDict$findAllInRange = F2(
 	function (query, dict) {
-		if (!dict.$) {
-			return _List_Nil;
-		} else {
-			var index = dict.a;
-			var smaller = dict.b;
-			var _v1 = dict.c;
-			var key_ = _v1.a;
-			var value = _v1.b;
-			var larger = dict.d;
-			var rest = function () {
-				var _v2 = A2($author$project$KDDict$getIndex, index, query);
-				if (_v2.$ === 1) {
-					return _Utils_ap(
-						A2($author$project$KDDict$findAllInRange, query, smaller),
-						A2($author$project$KDDict$findAllInRange, query, larger));
-				} else {
-					var _v3 = _v2.a;
-					var s = _v3.a;
-					var l = _v3.b;
-					var toCompare = A2($author$project$KDDict$getIndex, index, key_);
-					var _v4 = _Utils_Tuple2(
-						_Utils_cmp(toCompare, s) < 0,
-						_Utils_cmp(l, toCompare) < 0);
-					if (_v4.a) {
-						return A2($author$project$KDDict$findAllInRange, query, larger);
+		switch (dict.$) {
+			case 0:
+				return _List_Nil;
+			case 1:
+				var index = dict.a;
+				var smaller = dict.b;
+				var _v1 = dict.c;
+				var key_ = _v1.a;
+				var value = _v1.b;
+				var larger = dict.d;
+				var rest = function () {
+					var _v2 = A2($author$project$KDDict$getIndex, index, query);
+					if (_v2.$ === 1) {
+						return _Utils_ap(
+							A2($author$project$KDDict$findAllInRange, query, smaller),
+							A2($author$project$KDDict$findAllInRange, query, larger));
 					} else {
-						if (_v4.b) {
-							return A2($author$project$KDDict$findAllInRange, query, smaller);
+						var _v3 = _v2.a;
+						var s = _v3.a;
+						var l = _v3.b;
+						var toCompare = A2($author$project$KDDict$getIndex, index, key_);
+						var _v4 = _Utils_Tuple2(
+							_Utils_cmp(toCompare, s) < 0,
+							_Utils_cmp(l, toCompare) < 0);
+						if (_v4.a) {
+							return A2($author$project$KDDict$findAllInRange, query, larger);
 						} else {
-							return _Utils_ap(
-								A2($author$project$KDDict$findAllInRange, query, smaller),
-								A2($author$project$KDDict$findAllInRange, query, larger));
+							if (_v4.b) {
+								return A2($author$project$KDDict$findAllInRange, query, smaller);
+							} else {
+								return _Utils_ap(
+									A2($author$project$KDDict$findAllInRange, query, smaller),
+									A2($author$project$KDDict$findAllInRange, query, larger));
+							}
 						}
 					}
-				}
-			}();
-			return A2($author$project$KDDict$matchRange, query, key_) ? A2($elm$core$List$cons, value, rest) : rest;
+				}();
+				return A2($author$project$KDDict$matchRange, query, key_) ? A2($elm$core$List$cons, value, rest) : rest;
+			default:
+				var smaller = dict.b;
+				var larger = dict.c;
+				return _Utils_ap(
+					A2($author$project$KDDict$findAllInRange, query, smaller),
+					A2($author$project$KDDict$findAllInRange, query, larger));
 		}
+	});
+var $author$project$KDDict$Deleted = F3(
+	function (a, b, c) {
+		return {$: 2, a: a, b: b, c: c};
 	});
 var $author$project$KDDict$insert_ = F4(
 	function (i, key_, value, dict) {
-		if (!dict.$) {
-			return A4(
-				$author$project$KDDict$Node,
-				i,
-				$author$project$KDDict$Empty,
-				_Utils_Tuple2(key_, value),
-				$author$project$KDDict$Empty);
-		} else {
-			var s = dict.b;
-			var _v1 = dict.c;
-			var k = _v1.a;
-			var v = _v1.b;
-			var l = dict.d;
-			return (_Utils_cmp(
-				A2($author$project$KDDict$getIndex, i, key_),
-				A2($author$project$KDDict$getIndex, i, k)) < 0) ? A4(
-				$author$project$KDDict$Node,
-				i,
-				A4($author$project$KDDict$insert_, i + 1, key_, value, s),
-				_Utils_Tuple2(k, v),
-				l) : A4(
-				$author$project$KDDict$Node,
-				i,
-				s,
-				_Utils_Tuple2(k, v),
-				A4($author$project$KDDict$insert_, i + 1, key_, value, l));
+		switch (dict.$) {
+			case 0:
+				return A4(
+					$author$project$KDDict$Node,
+					i,
+					$author$project$KDDict$Empty,
+					_Utils_Tuple2(key_, value),
+					$author$project$KDDict$Empty);
+			case 1:
+				var s = dict.b;
+				var _v1 = dict.c;
+				var k = _v1.a;
+				var v = _v1.b;
+				var l = dict.d;
+				return (_Utils_cmp(
+					A2($author$project$KDDict$getIndex, i, key_),
+					A2($author$project$KDDict$getIndex, i, k)) < 0) ? A4(
+					$author$project$KDDict$Node,
+					i,
+					A4($author$project$KDDict$insert_, i + 1, key_, value, s),
+					_Utils_Tuple2(k, v),
+					l) : A4(
+					$author$project$KDDict$Node,
+					i,
+					s,
+					_Utils_Tuple2(k, v),
+					A4($author$project$KDDict$insert_, i + 1, key_, value, l));
+			default:
+				var s = dict.b;
+				var l = dict.c;
+				return (!A2($elm$core$Basics$modBy, 2, i)) ? A3(
+					$author$project$KDDict$Deleted,
+					i,
+					A4($author$project$KDDict$insert_, i + 1, key_, value, s),
+					l) : A3(
+					$author$project$KDDict$Deleted,
+					i,
+					s,
+					A4($author$project$KDDict$insert_, i + 1, key_, value, l));
 		}
 	});
 var $author$project$KDDict$insert = $author$project$KDDict$insert_(0);
@@ -7650,15 +7688,58 @@ var $author$project$PieceGroup$merge = F2(
 		return {x: a.x, H: false, aw: maxOffset, ca: newMembers, o: minOffset, cf: newNeighbours, E: a.E, bN: a.bN};
 	});
 var $author$project$KDDict$remove = F2(
-	function (query, dict) {
-		return $author$project$KDDict$fromList(
-			A2(
-				$elm$core$List$filter,
-				A2(
-					$elm$core$Basics$composeR,
-					$elm$core$Tuple$first,
-					$elm$core$Basics$neq(query)),
-				$author$project$KDDict$toList(dict)));
+	function (q, dict) {
+		switch (dict.$) {
+			case 0:
+				return $author$project$KDDict$Empty;
+			case 1:
+				var i = dict.a;
+				var s = dict.b;
+				var _v1 = dict.c;
+				var key_ = _v1.a;
+				var v = _v1.b;
+				var l = dict.d;
+				if (_Utils_eq(q, key_)) {
+					return A3($author$project$KDDict$Deleted, i, s, l);
+				} else {
+					var _v2 = A2(
+						$elm$core$Basics$compare,
+						A2($author$project$KDDict$getIndex, i, q),
+						A2($author$project$KDDict$getIndex, i, key_));
+					switch (_v2) {
+						case 0:
+							return A4(
+								$author$project$KDDict$Node,
+								i,
+								A2($author$project$KDDict$remove, q, s),
+								_Utils_Tuple2(key_, v),
+								l);
+						case 2:
+							return A4(
+								$author$project$KDDict$Node,
+								i,
+								A2($author$project$KDDict$remove, q, s),
+								_Utils_Tuple2(key_, v),
+								A2($author$project$KDDict$remove, q, l));
+						default:
+							return A4(
+								$author$project$KDDict$Node,
+								i,
+								A2($author$project$KDDict$remove, q, s),
+								_Utils_Tuple2(key_, v),
+								A2($author$project$KDDict$remove, q, l));
+					}
+				}
+			default:
+				var i = dict.a;
+				var s = dict.b;
+				var l = dict.c;
+				return A3(
+					$author$project$KDDict$Deleted,
+					i,
+					A2($author$project$KDDict$remove, q, s),
+					A2($author$project$KDDict$remove, q, l));
+		}
 	});
 var $author$project$KDDict$removeAll = F2(
 	function (keys, db) {
