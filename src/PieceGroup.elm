@@ -1,5 +1,6 @@
 module PieceGroup exposing
     ( ID
+    , Piece
     , PieceGroup
     , createPieceGroup
     , createPieceGroups
@@ -23,9 +24,15 @@ type alias ID =
     ( Int, Int )
 
 
+type alias Piece =
+    { id : ID
+    , offset : Point
+    }
+
+
 type alias PieceGroup =
     { id : ID
-    , members : List ID
+    , members : List Piece
     , neighbours : Set ID
     , position : Point
     , isSelected : Bool
@@ -40,7 +47,9 @@ merge a b =
             b.members ++ a.members
 
         newNeighbours =
-            Set.diff (Set.union b.neighbours a.neighbours) (Set.fromList newMembers)
+            Set.diff
+                (Set.union b.neighbours a.neighbours)
+                (Set.fromList <| List.map .id newMembers)
     in
     { b
         | isSelected = False
@@ -51,10 +60,12 @@ merge a b =
 
 shouldBeMerged : Float -> PieceGroup -> PieceGroup -> Bool
 shouldBeMerged snapDistance one other =
-    distance other one
-        < snapDistance
-        && (Set.size <| Set.intersect (Set.fromList other.members) one.neighbours)
-        > 0
+    let
+        otherIds =
+            Set.fromList <| List.map .id other.members
+    in
+    (distance other one < snapDistance)
+        && ((Set.size <| Set.intersect otherIds one.neighbours) > 0)
 
 
 distance : PieceGroup -> PieceGroup -> Float
@@ -79,10 +90,14 @@ deselect x =
 
 createPieceGroup : JigsawImage -> ID -> Point -> PieceGroup
 createPieceGroup image id pos =
-    { position = Point.sub pos (JigsawImage.pieceIdToOffset image id)
+    let
+        offset =
+            JigsawImage.pieceIdToOffset image id
+    in
+    { position = Point.sub pos offset
     , isSelected = False
     , id = id
-    , members = [ id ]
+    , members = [ Piece id offset ]
     , neighbours = neighbours id
     , visibilityGroup = -1
     }
@@ -90,13 +105,16 @@ createPieceGroup image id pos =
 
 isPieceGroupInsideBox : JigsawImage -> Point -> Point -> PieceGroup -> Bool
 isPieceGroupInsideBox image boxTL boxBR pieceGroup =
-    List.any (JigsawImage.isPieceInsideBox image pieceGroup.position boxTL boxBR) pieceGroup.members
+    List.any (JigsawImage.isPieceInsideBox image pieceGroup.position boxTL boxBR) <|
+        List.map .id pieceGroup.members
 
 
 isPointInsidePieceGroup : Set Int -> JigsawImage -> Point -> PieceGroup -> Bool
 isPointInsidePieceGroup visibleGroups image point pieceGroup =
     Set.member pieceGroup.visibilityGroup visibleGroups
-        && List.any (JigsawImage.isPointInsidePiece image point pieceGroup.position) pieceGroup.members
+        && (List.any (JigsawImage.isPointInsidePiece image point pieceGroup.position) <|
+                List.map .id pieceGroup.members
+           )
 
 
 createPieceGroups : JigsawImage -> List Point -> List PieceGroup

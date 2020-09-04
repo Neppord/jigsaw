@@ -117,16 +117,19 @@ viewSelectionBox model =
             box -10 -10 0 0 "rgba(0,255,0,0.2)"
 
 
-lazyPieceDiv : JigsawImage -> PieceGroup -> PieceGroup.ID -> Html msg
+lazyPieceDiv : JigsawImage -> PieceGroup -> PieceGroup.Piece -> Html msg
 lazyPieceDiv =
     Html.Lazy.lazy3 pieceDiv
 
 
-pieceDiv : JigsawImage -> PieceGroup -> PieceGroup.ID -> Html msg
-pieceDiv image pg ( x, y ) =
+pieceDiv : JigsawImage -> PieceGroup -> PieceGroup.Piece -> Html msg
+pieceDiv image pg piece =
     let
+        ( x, y ) =
+            piece.id
+
         ( dx, dy ) =
-            ( x * image.pieceWidth, y * image.pieceHeight )
+            ( piece.offset.x, piece.offset.y )
 
         borderHeight =
             image.pieceHeight // 2
@@ -256,9 +259,13 @@ renderPieces image visiblePieces =
         pieceGroupDiv : PieceGroup -> List ( String, Html msg )
         pieceGroupDiv pg =
             let
-                render ( x, y ) =
+                render piece =
+                    let
+                        ( x, y ) =
+                            piece.id
+                    in
                     ( "piece-" ++ String.fromInt x ++ "-" ++ String.fromInt y
-                    , lazyPieceDiv image pg ( x, y )
+                    , lazyPieceDiv image pg piece
                     )
             in
             List.map render pg.members
