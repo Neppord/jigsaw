@@ -7648,7 +7648,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 			if (_v4.b && (!_v4.b.b)) {
 				var pg = _v4.a;
 				var shouldBeMerged = function (x) {
-					return A3($author$project$PieceGroup$shouldBeMerged, model.G.cx, pg, x) || _Utils_eq(x.I, pg.I);
+					return _Utils_eq(x.I, pg.I) || A3($author$project$PieceGroup$shouldBeMerged, model.G.cx, pg, x);
 				};
 				return _Utils_update(
 					model,

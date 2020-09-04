@@ -234,9 +234,8 @@ updateMouseUp model =
                 pg :: [] ->
                     let
                         shouldBeMerged x =
-                            PieceGroup.shouldBeMerged model.configuration.snapDistance pg x
-                                || x.id
-                                == pg.id
+                            (x.id == pg.id)
+                                || PieceGroup.shouldBeMerged model.configuration.snapDistance pg x
                     in
                     { model
                         | ui = UI.WaitingForInput
