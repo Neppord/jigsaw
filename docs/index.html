@@ -8335,6 +8335,19 @@ var $author$project$View$viewDiv = function (model) {
 	return _List_fromArray(
 		[
 			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					A2($elm$html$Html$Attributes$style, 'bottom', '0'),
+					A2($elm$html$Html$Attributes$style, 'position', 'absolute')
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(
+					'pieces: ' + $elm$core$String$fromInt(
+						$elm$core$List$length(unSelected) + $elm$core$List$length(selected)))
+				])),
+			A2(
 			$author$project$View$keyedDiv,
 			_List_Nil,
 			shadowBlack(

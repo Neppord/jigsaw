@@ -3,7 +3,7 @@ module View exposing (view)
 import DB
 import Drag
 import Edge exposing (Edge)
-import Html exposing (Attribute, Html)
+import Html exposing (Attribute, Html, div, text)
 import Html.Attributes exposing (height, style, width)
 import Html.Events
 import Html.Keyed
@@ -217,7 +217,13 @@ viewDiv model =
         shadowRed =
             shadowWithColor "red"
     in
-    [ keyedDiv
+    [ div [ style "bottom" "0", style "position" "absolute" ]
+        [ text
+            ("pieces: "
+                ++ String.fromInt (List.length unSelected + List.length selected)
+            )
+        ]
+    , keyedDiv
         []
         (unSelected
             |> List.filter isVisible
