@@ -125,42 +125,40 @@ lazyPieceDiv =
 pieceDiv : JigsawImage -> PieceGroup -> PieceGroup.Piece -> Html msg
 pieceDiv image pg piece =
     let
-        ( x, y ) =
-            piece.id
-
-        ( dx, dy ) =
-            ( piece.offset.x, piece.offset.y )
-
         borderHeight =
             image.pieceHeight // 2
 
         borderWidth =
             image.pieceWidth // 2
 
-        top =
-            String.fromInt (pg.position.y + dy - borderHeight) ++ "px"
-
-        left =
-            String.fromInt (pg.position.x + dx - borderWidth) ++ "px"
-
         width =
             borderWidth + image.pieceWidth + borderWidth
 
         height =
             borderHeight + image.pieceHeight + borderHeight
+
+        ( left, top ) =
+            pg.position
+                |> Point.add piece.offset
+                |> Point.add (Point -borderWidth -borderHeight)
+                |> Point.toPair
+
+        ( bgLeft, bgTop ) =
+            piece.offset
+                |> Point.sub (Point borderWidth borderHeight)
+                |> Point.toPair
+
+        translate =
+            "translate(" ++ String.fromInt left ++ "px," ++ String.fromInt top ++ "px)"
     in
     Html.div
         [ style "width" <| String.fromInt width ++ "px"
         , style "height" <| String.fromInt height ++ "px"
-        , style "clipPath" <| clipPathRef ( x, y )
+        , style "clipPath" <| clipPathRef piece.id
         , style "background-image" <| "url('" ++ image.path ++ "')"
-        , style "background-position" <|
-            String.fromInt (borderWidth - dx)
-                ++ "px "
-                ++ String.fromInt (borderWidth - dy)
-                ++ "px"
+        , style "background-position" (String.fromInt bgLeft ++ "px " ++ String.fromInt bgTop ++ "px")
         , style "position" "absolute"
-        , style "transform" ("translate(" ++ left ++ "," ++ top ++ ")")
+        , style "transform" translate
         ]
         []
 

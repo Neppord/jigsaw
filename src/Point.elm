@@ -1,7 +1,18 @@
-module Point exposing (Point, add, dist, dot, randomPoint, randomPoints, randomPointsAndZ, sub, taxiDist, toString)
+module Point exposing
+    ( Point
+    , add
+    , dist
+    , dot
+    , fromPair
+    , randomPoint
+    , randomPoints
+    , sub
+    , taxiDist
+    , toPair
+    , toString
+    )
 
 import Random
-import Random.List exposing (shuffle)
 
 
 type alias Point =

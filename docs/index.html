@@ -7992,20 +7992,30 @@ var $elm$html$Html$Lazy$lazy3 = $elm$virtual_dom$VirtualDom$lazy3;
 var $author$project$View$clipPathRef = function (id) {
 	return 'url(#' + ($author$project$View$pieceClipId(id) + ')');
 };
+var $author$project$Point$toPair = function (point) {
+	return _Utils_Tuple2(point.aa, point.ab);
+};
 var $author$project$View$pieceDiv = F3(
 	function (image, pg, piece) {
 		var borderWidth = (image.ap / 2) | 0;
 		var width = (borderWidth + image.ap) + borderWidth;
 		var borderHeight = (image.ao / 2) | 0;
 		var height = (borderHeight + image.ao) + borderHeight;
-		var _v0 = piece.H;
-		var x = _v0.a;
-		var y = _v0.b;
-		var _v1 = _Utils_Tuple2(piece.ck.aa, piece.ck.ab);
-		var dx = _v1.a;
-		var dy = _v1.b;
-		var left = $elm$core$String$fromInt((pg.z.aa + dx) - borderWidth) + 'px';
-		var top = $elm$core$String$fromInt((pg.z.ab + dy) - borderHeight) + 'px';
+		var _v0 = $author$project$Point$toPair(
+			A2(
+				$author$project$Point$add,
+				A2($author$project$Point$Point, -borderWidth, -borderHeight),
+				A2($author$project$Point$add, piece.ck, pg.z)));
+		var left = _v0.a;
+		var top = _v0.b;
+		var translate = 'translate(' + ($elm$core$String$fromInt(left) + ('px,' + ($elm$core$String$fromInt(top) + 'px)')));
+		var _v1 = $author$project$Point$toPair(
+			A2(
+				$author$project$Point$sub,
+				A2($author$project$Point$Point, borderWidth, borderHeight),
+				piece.ck));
+		var bgLeft = _v1.a;
+		var bgTop = _v1.b;
 		return A2(
 			$elm$html$Html$div,
 			_List_fromArray(
@@ -8021,15 +8031,14 @@ var $author$project$View$pieceDiv = F3(
 					A2(
 					$elm$html$Html$Attributes$style,
 					'clipPath',
-					$author$project$View$clipPathRef(
-						_Utils_Tuple2(x, y))),
+					$author$project$View$clipPathRef(piece.H)),
 					A2($elm$html$Html$Attributes$style, 'background-image', 'url(\'' + (image.cp + '\')')),
 					A2(
 					$elm$html$Html$Attributes$style,
 					'background-position',
-					$elm$core$String$fromInt(borderWidth - dx) + ('px ' + ($elm$core$String$fromInt(borderWidth - dy) + 'px'))),
+					$elm$core$String$fromInt(bgLeft) + ('px ' + ($elm$core$String$fromInt(bgTop) + 'px'))),
 					A2($elm$html$Html$Attributes$style, 'position', 'absolute'),
-					A2($elm$html$Html$Attributes$style, 'transform', 'translate(' + (left + (',' + (top + ')'))))
+					A2($elm$html$Html$Attributes$style, 'transform', translate)
 				]),
 			_List_Nil);
 	});
