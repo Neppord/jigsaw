@@ -179,9 +179,6 @@ updateMouseUp model =
                 { x, y, w, h } =
                     Drag.getDimensions drag
 
-                { image } =
-                    model.configuration
-
                 topLeft =
                     Point x y
 
@@ -189,7 +186,7 @@ updateMouseUp model =
                     Point (x + w) (y + h)
 
                 isWithin =
-                    PieceGroup.isPieceGroupInsideBox image topLeft bottomRight
+                    PieceGroup.isPieceGroupInsideBox topLeft bottomRight
 
                 shouldBeSelected pg =
                     Set.member pg.visibilityGroup model.visibleGroups

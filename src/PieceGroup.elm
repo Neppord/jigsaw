@@ -114,8 +114,8 @@ createPieceGroup image id pos =
     }
 
 
-isPieceGroupInsideBox : JigsawImage -> Point -> Point -> PieceGroup -> Bool
-isPieceGroupInsideBox image boxTL boxBR pieceGroup =
+isPieceGroupInsideBox : Point -> Point -> PieceGroup -> Bool
+isPieceGroupInsideBox boxTL boxBR pieceGroup =
     List.any
         (isPieceInsideBox pieceGroup.position boxTL boxBR)
         pieceGroup.members

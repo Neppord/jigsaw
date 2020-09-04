@@ -798,11 +798,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.M.S === region.aY.S)
+	if (region.L.R === region.aY.R)
 	{
-		return 'on line ' + region.M.S;
+		return 'on line ' + region.L.R;
 	}
-	return 'on lines ' + region.M.S + ' through ' + region.aY.S;
+	return 'on lines ' + region.L.R + ' through ' + region.aY.R;
 }
 
 
@@ -4203,8 +4203,8 @@ function _Browser_getViewport()
 	return {
 		bE: _Browser_getScene(),
 		bM: {
-			_: _Browser_window.pageXOffset,
-			aa: _Browser_window.pageYOffset,
+			Z: _Browser_window.pageXOffset,
+			_: _Browser_window.pageYOffset,
 			bO: _Browser_doc.documentElement.clientWidth,
 			a2: _Browser_doc.documentElement.clientHeight
 		}
@@ -4245,8 +4245,8 @@ function _Browser_getViewportOf(id)
 				a2: node.scrollHeight
 			},
 			bM: {
-				_: node.scrollLeft,
-				aa: node.scrollTop,
+				Z: node.scrollLeft,
+				_: node.scrollTop,
 				bO: node.clientWidth,
 				a2: node.clientHeight
 			}
@@ -4280,14 +4280,14 @@ function _Browser_getElement(id)
 		return {
 			bE: _Browser_getScene(),
 			bM: {
-				_: x,
-				aa: y,
+				Z: x,
+				_: y,
 				bO: _Browser_doc.documentElement.clientWidth,
 				a2: _Browser_doc.documentElement.clientHeight
 			},
 			b0: {
-				_: x + rect.left,
-				aa: y + rect.top,
+				Z: x + rect.left,
+				_: y + rect.top,
 				bO: rect.width,
 				a2: rect.height
 			}
@@ -5421,11 +5421,11 @@ var $elm$core$Tuple$second = function (_v0) {
 	return y;
 };
 var $author$project$Point$toPair = function (point) {
-	return _Utils_Tuple2(point._, point.aa);
+	return _Utils_Tuple2(point.Z, point._);
 };
 var $author$project$DB$makeKey = function (_v0) {
 	var id = _v0.x;
-	var isSelected = _v0.I;
+	var isSelected = _v0.H;
 	var position = _v0.E;
 	var position_ = $author$project$Point$toPair(position);
 	return A2(
@@ -5452,7 +5452,7 @@ var $elm$core$Basics$negate = function (n) {
 var $author$project$Model$buildModel = F3(
 	function (image, pieceGroups, edges) {
 		return {
-			G: {R: image, cx: 30.0},
+			O: {ai: image, cx: 30.0},
 			h: $author$project$DB$makeDb(pieceGroups),
 			aW: edges,
 			s: $author$project$UI$WaitingForInput,
@@ -5467,7 +5467,7 @@ var $author$project$PieceGroup$Piece = F3(
 	});
 var $author$project$Point$Point = F2(
 	function (x, y) {
-		return {_: x, aa: y};
+		return {Z: x, _: y};
 	});
 var $author$project$PieceGroup$neighbours = function (_v0) {
 	var x = _v0.a;
@@ -5489,7 +5489,7 @@ var $author$project$JigsawImage$pieceIdToOffset = F2(
 	});
 var $author$project$Point$sub = F2(
 	function (a, b) {
-		return A2($author$project$Point$Point, a._ - b._, a.aa - b.aa);
+		return A2($author$project$Point$Point, a.Z - b.Z, a._ - b._);
 	});
 var $author$project$PieceGroup$createPieceGroup = F3(
 	function (image, id, pos) {
@@ -5497,7 +5497,7 @@ var $author$project$PieceGroup$createPieceGroup = F3(
 		var offset = A2($author$project$JigsawImage$pieceIdToOffset, image, id);
 		return {
 			x: id,
-			I: false,
+			H: false,
 			aw: offset,
 			ca: _List_fromArray(
 				[
@@ -5559,7 +5559,7 @@ var $author$project$PieceGroup$createPieceGroups = F2(
 	});
 var $author$project$Point$add = F2(
 	function (a, b) {
-		return A2($author$project$Point$Point, a._ + b._, a.aa + b.aa);
+		return A2($author$project$Point$Point, a.Z + b.Z, a._ + b._);
 	});
 var $elm$random$Random$Generator = $elm$core$Basics$identity;
 var $elm$random$Random$constant = function (value) {
@@ -5581,7 +5581,7 @@ var $author$project$Edge$defaultPoints = _List_fromArray(
 	]);
 var $author$project$Point$dot = F2(
 	function (a, b) {
-		return A2($author$project$Point$Point, a._ * b._, a.aa * b.aa);
+		return A2($author$project$Point$Point, a.Z * b.Z, a._ * b._);
 	});
 var $elm$random$Random$map = F2(
 	function (func, _v0) {
@@ -5993,11 +5993,11 @@ var $author$project$Edge$makeEdge = F2(
 				A2($author$project$Point$Point, 0, 200));
 		};
 		var rotate = function (p) {
-			return A2($author$project$Point$Point, p.aa, p._);
+			return A2($author$project$Point$Point, p._, p.Z);
 		};
 		var flip = F2(
 			function (p, q) {
-				return A2($author$project$Point$Point, (2 * q._) - p._, (2 * q.aa) - p.aa);
+				return A2($author$project$Point$Point, (2 * q.Z) - p.Z, (2 * q._) - p._);
 			});
 		var reverse = function (ps) {
 			if (((((((((ps.b && ps.b.b) && ps.b.b.b) && ps.b.b.b.b) && ps.b.b.b.b.b) && ps.b.b.b.b.b.b) && ps.b.b.b.b.b.b.b) && ps.b.b.b.b.b.b.b.b) && ps.b.b.b.b.b.b.b.b.b) && (!ps.b.b.b.b.b.b.b.b.b.b)) {
@@ -6594,7 +6594,7 @@ var $author$project$Seeded$unwrap = function (_v0) {
 	var a = _v0.b;
 	return a;
 };
-var $author$project$DB$emptyQuery = {x: $elm$core$Maybe$Nothing, I: $elm$core$Maybe$Nothing, E: $elm$core$Maybe$Nothing};
+var $author$project$DB$emptyQuery = {x: $elm$core$Maybe$Nothing, H: $elm$core$Maybe$Nothing, E: $elm$core$Maybe$Nothing};
 var $elm$core$List$any = F2(
 	function (isOkay, list) {
 		any:
@@ -6713,7 +6713,7 @@ var $elm$core$Maybe$map = F2(
 	});
 var $author$project$DB$makeQuery = function (_v0) {
 	var id = _v0.x;
-	var isSelected = _v0.I;
+	var isSelected = _v0.H;
 	var position = _v0.E;
 	return A2(
 		$author$project$KDDict$addAxis,
@@ -6737,7 +6737,7 @@ var $author$project$DB$getSelected = function (db) {
 			_Utils_update(
 				$author$project$DB$emptyQuery,
 				{
-					I: $elm$core$Maybe$Just(true)
+					H: $elm$core$Maybe$Just(true)
 				})),
 		db);
 };
@@ -6748,7 +6748,7 @@ var $author$project$DB$getUnSelected = function (db) {
 			_Utils_update(
 				$author$project$DB$emptyQuery,
 				{
-					I: $elm$core$Maybe$Just(false)
+					H: $elm$core$Maybe$Just(false)
 				})),
 		db);
 };
@@ -7191,7 +7191,7 @@ var $author$project$Main$updateKeyChange = F3(
 						function (pg) {
 							return _Utils_update(
 								pg,
-								{I: true, bN: x});
+								{H: true, bN: x});
 						},
 						model.h)
 				}) : _Utils_update(
@@ -7218,7 +7218,7 @@ var $author$project$UI$Snap = 0;
 var $author$project$PieceGroup$deselect = function (x) {
 	return _Utils_update(
 		x,
-		{I: false});
+		{H: false});
 };
 var $author$project$KDDict$toList = function (dict) {
 	if (!dict.$) {
@@ -7250,7 +7250,7 @@ var $author$project$DB$findBy = F2(
 	});
 var $author$project$Drag$Drag = $elm$core$Basics$identity;
 var $author$project$Drag$from = function (p) {
-	return {P: p, M: p};
+	return {P: p, L: p};
 };
 var $author$project$JigsawImage$isPointInsidePiece = F4(
 	function (image, point, pos, id) {
@@ -7262,7 +7262,7 @@ var $author$project$JigsawImage$isPointInsidePiece = F4(
 			$author$project$Point$add,
 			pieceTL,
 			A2($author$project$Point$Point, image.aB, image.aA));
-		return (_Utils_cmp(pieceTL._, point._) < 1) && ((_Utils_cmp(pieceTL.aa, point.aa) < 1) && ((_Utils_cmp(pieceBR._, point._) > -1) && (_Utils_cmp(pieceBR.aa, point.aa) > -1)));
+		return (_Utils_cmp(pieceTL.Z, point.Z) < 1) && ((_Utils_cmp(pieceTL._, point._) < 1) && ((_Utils_cmp(pieceBR.Z, point.Z) > -1) && (_Utils_cmp(pieceBR._, point._) > -1)));
 	});
 var $author$project$PieceGroup$isPointInsidePieceGroup = F4(
 	function (visibleGroups, image, point, pieceGroup) {
@@ -7290,7 +7290,7 @@ var $author$project$DB$modify = F3(
 var $author$project$PieceGroup$select = function (x) {
 	return _Utils_update(
 		x,
-		{I: true});
+		{H: true});
 };
 var $author$project$Main$updateMouseDown = F3(
 	function (coordinate, keyboard, model) {
@@ -7298,8 +7298,8 @@ var $author$project$Main$updateMouseDown = F3(
 		var _v0 = model;
 		var db = _v0.h;
 		var visibleGroups = _v0.aq;
-		var _v1 = model.G;
-		var image = _v1.R;
+		var _v1 = model.O;
+		var image = _v1.ai;
 		var clickedPieceGroup = $elm$core$List$head(
 			$elm$core$List$reverse(
 				A2(
@@ -7321,7 +7321,7 @@ var $author$project$Main$updateMouseDown = F3(
 				$author$project$UI$Moving,
 				0,
 				$author$project$Drag$from(coordinate));
-			return pg.I ? _Utils_update(
+			return pg.H ? _Utils_update(
 				model,
 				{s: ui}) : (keyboard.cw ? _Utils_update(
 				model,
@@ -7341,7 +7341,7 @@ var $author$project$Main$updateMouseDown = F3(
 		}
 	});
 var $author$project$Drag$distance = function (_v0) {
-	var start = _v0.M;
+	var start = _v0.L;
 	var current = _v0.P;
 	return A2($author$project$Point$sub, current, start);
 };
@@ -7350,23 +7350,23 @@ var $elm$core$Basics$min = F2(
 		return (_Utils_cmp(x, y) < 0) ? x : y;
 	});
 var $author$project$Drag$getDimensions = function (_v0) {
-	var start = _v0.M;
+	var start = _v0.L;
 	var current = _v0.P;
 	return {
-		b6: $elm$core$Basics$abs(start.aa - current.aa),
-		cH: $elm$core$Basics$abs(start._ - current._),
-		_: A2($elm$core$Basics$min, start._, current._),
-		aa: A2($elm$core$Basics$min, start.aa, current.aa)
+		b6: $elm$core$Basics$abs(start._ - current._),
+		cH: $elm$core$Basics$abs(start.Z - current.Z),
+		Z: A2($elm$core$Basics$min, start.Z, current.Z),
+		_: A2($elm$core$Basics$min, start._, current._)
 	};
 };
 var $author$project$PieceGroup$isPieceInsideBox = F4(
 	function (pos, boxTL, boxBR, piece) {
 		var pieceTL = A2($author$project$Point$add, pos, piece.br);
 		var pieceBR = A2($author$project$Point$add, pieceTL, piece.bF);
-		return (_Utils_cmp(pieceTL._, boxBR._) < 1) && ((_Utils_cmp(pieceTL.aa, boxBR.aa) < 1) && ((_Utils_cmp(pieceBR._, boxTL._) > -1) && (_Utils_cmp(pieceBR.aa, boxTL.aa) > -1)));
+		return (_Utils_cmp(pieceTL.Z, boxBR.Z) < 1) && ((_Utils_cmp(pieceTL._, boxBR._) < 1) && ((_Utils_cmp(pieceBR.Z, boxTL.Z) > -1) && (_Utils_cmp(pieceBR._, boxTL._) > -1)));
 	});
-var $author$project$PieceGroup$isPieceGroupInsideBox = F4(
-	function (image, boxTL, boxBR, pieceGroup) {
+var $author$project$PieceGroup$isPieceGroupInsideBox = F3(
+	function (boxTL, boxBR, pieceGroup) {
 		return A2(
 			$elm$core$List$any,
 			A3($author$project$PieceGroup$isPieceInsideBox, pieceGroup.E, boxTL, boxBR),
@@ -7641,13 +7641,13 @@ var $author$project$PieceGroup$merge = F2(
 					newMembers)));
 		var minOffset = A2(
 			$author$project$Point$Point,
-			A2($elm$core$Basics$min, a.o._, b.o._),
-			A2($elm$core$Basics$min, a.o.aa, b.o.aa));
+			A2($elm$core$Basics$min, a.o.Z, b.o.Z),
+			A2($elm$core$Basics$min, a.o._, b.o._));
 		var maxOffset = A2(
 			$author$project$Point$Point,
-			A2($elm$core$Basics$max, a.o._, b.o._),
-			A2($elm$core$Basics$max, a.o.aa, b.o.aa));
-		return {x: a.x, I: false, aw: maxOffset, ca: newMembers, o: minOffset, cf: newNeighbours, E: a.E, bN: a.bN};
+			A2($elm$core$Basics$max, a.o.Z, b.o.Z),
+			A2($elm$core$Basics$max, a.o._, b.o._));
+		return {x: a.x, H: false, aw: maxOffset, ca: newMembers, o: minOffset, cf: newNeighbours, E: a.E, bN: a.bN};
 	});
 var $author$project$KDDict$remove = F2(
 	function (query, dict) {
@@ -7745,16 +7745,14 @@ var $author$project$Main$updateMouseUp = function (model) {
 		case 1:
 			var mode = _v0.a;
 			var drag = _v0.b;
-			var _v1 = model.G;
-			var image = _v1.R;
-			var _v2 = $author$project$Drag$getDimensions(drag);
-			var x = _v2._;
-			var y = _v2.aa;
-			var w = _v2.cH;
-			var h = _v2.b6;
+			var _v1 = $author$project$Drag$getDimensions(drag);
+			var x = _v1.Z;
+			var y = _v1._;
+			var w = _v1.cH;
+			var h = _v1.b6;
 			var bottomRight = A2($author$project$Point$Point, x + w, y + h);
 			var topLeft = A2($author$project$Point$Point, x, y);
-			var isWithin = A3($author$project$PieceGroup$isPieceGroupInsideBox, image, topLeft, bottomRight);
+			var isWithin = A2($author$project$PieceGroup$isPieceGroupInsideBox, topLeft, bottomRight);
 			var shouldBeSelected = function (pg) {
 				return A2($elm$core$Set$member, pg.bN, model.aq) && isWithin(pg);
 			};
@@ -7764,7 +7762,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 						return A3(
 							$author$project$DB$modifyBy,
 							function (pg) {
-								return shouldBeSelected(pg) || pg.I;
+								return shouldBeSelected(pg) || pg.H;
 							},
 							$author$project$PieceGroup$select,
 							model.h);
@@ -7772,7 +7770,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 						return A3(
 							$author$project$DB$modifyBy,
 							function (pg) {
-								return shouldBeSelected(pg) || (!pg.I);
+								return shouldBeSelected(pg) || (!pg.H);
 							},
 							$author$project$PieceGroup$deselect,
 							model.h);
@@ -7796,7 +7794,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 			return _Utils_update(
 				model,
 				{
-					h: A2($author$project$DB$snap, model.G.cx, updatedDb),
+					h: A2($author$project$DB$snap, model.O.cx, updatedDb),
 					s: $author$project$UI$WaitingForInput
 				});
 		default:
@@ -7805,8 +7803,8 @@ var $author$project$Main$updateMouseUp = function (model) {
 };
 var $author$project$Drag$to = F2(
 	function (point, _v0) {
-		var start = _v0.M;
-		return {P: point, M: start};
+		var start = _v0.L;
+		return {P: point, L: start};
 	});
 var $author$project$Main$updateMoveMouse = F2(
 	function (newPos, model) {
@@ -7853,10 +7851,10 @@ var $author$project$Main$update = F2(
 									A2(
 										$elm$core$Basics$composeR,
 										function ($) {
-											return $.G;
+											return $.O;
 										},
 										function ($) {
-											return $.R;
+											return $.ai;
 										}),
 									seededModel)));
 					case 4:
@@ -7892,14 +7890,14 @@ var $author$project$Main$update = F2(
 							return _Utils_update(
 								configuration,
 								{
-									R: updateImage(configuration.R)
+									ai: updateImage(configuration.ai)
 								});
 						};
 						var updateModel = function (model) {
 							return _Utils_update(
 								model,
 								{
-									G: updateConfiguration(model.G)
+									O: updateConfiguration(model.O)
 								});
 						};
 						return A2($author$project$Seeded$map, updateModel, seededModel);
@@ -8001,7 +7999,7 @@ var $elm$core$String$concat = function (strings) {
 	return A2($elm$core$String$join, '', strings);
 };
 var $author$project$Point$toString = function (p) {
-	return $elm$core$String$fromInt(p._) + (' ' + $elm$core$String$fromInt(p.aa));
+	return $elm$core$String$fromInt(p.Z) + (' ' + $elm$core$String$fromInt(p._));
 };
 var $author$project$SvgUtil$pointsToSvg = function (pts) {
 	return A2(
@@ -8131,7 +8129,7 @@ var $author$project$View$lazyclipPathDefs = $elm$svg$Svg$Lazy$lazy2(
 						A2($author$project$View$definePieceClipPaths, image, edges))));
 		}));
 var $author$project$View$viewClipPath = function (model) {
-	return A2($author$project$View$lazyclipPathDefs, model.G.R, model.aW);
+	return A2($author$project$View$lazyclipPathDefs, model.O.ai, model.aW);
 };
 var $elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
 	return _VirtualDom_keyedNode(
@@ -8157,10 +8155,10 @@ var $author$project$View$clipPathRef = function (id) {
 };
 var $author$project$View$pieceDiv = F3(
 	function (backgroundUrl, pg, piece) {
-		var _v0 = _Utils_Tuple2((piece.bF._ / 2) | 0, (piece.bF.aa / 2) | 0);
+		var _v0 = _Utils_Tuple2((piece.bF.Z / 2) | 0, (piece.bF._ / 2) | 0);
 		var borderWidth = _v0.a;
 		var borderHeight = _v0.b;
-		var height = (borderHeight + piece.bF.aa) + borderHeight;
+		var height = (borderHeight + piece.bF._) + borderHeight;
 		var _v1 = $author$project$Point$toPair(
 			A2(
 				$author$project$Point$add,
@@ -8169,7 +8167,7 @@ var $author$project$View$pieceDiv = F3(
 		var left = _v1.a;
 		var top = _v1.b;
 		var translate = 'translate(' + ($elm$core$String$fromInt(left) + ('px,' + ($elm$core$String$fromInt(top) + 'px)')));
-		var width = (borderWidth + piece.bF._) + borderWidth;
+		var width = (borderWidth + piece.bF.Z) + borderWidth;
 		var _v2 = $author$project$Point$toPair(
 			A2(
 				$author$project$Point$sub,
@@ -8241,7 +8239,7 @@ var $author$project$View$viewDiv = function (model) {
 		});
 	var shadowRed = shadowWithColor('red');
 	var shadowBlack = shadowWithColor('black');
-	var image = model.G.R;
+	var image = model.O.ai;
 	var _v0 = model;
 	var db = _v0.h;
 	var visibleGroups = _v0.aq;
@@ -8270,8 +8268,8 @@ var $author$project$View$viewDiv = function (model) {
 				if (!_v2.$) {
 					var drag = _v2.b;
 					var _v3 = $author$project$Drag$distance(drag);
-					var x = _v3._;
-					var y = _v3.aa;
+					var x = _v3.Z;
+					var y = _v3._;
 					return _List_fromArray(
 						[
 							A2(
@@ -8334,8 +8332,8 @@ var $author$project$View$viewSelectionBox = function (model) {
 		var mode = _v0.a;
 		var drag = _v0.b;
 		var _v1 = $author$project$Drag$getDimensions(drag);
-		var x = _v1._;
-		var y = _v1.aa;
+		var x = _v1.Z;
+		var y = _v1._;
 		var w = _v1.cH;
 		var h = _v1.b6;
 		return A5(
@@ -8359,7 +8357,7 @@ var $author$project$View$viewSelectionBox = function (model) {
 	}
 };
 var $author$project$View$view = function (model) {
-	var image = model.G.R;
+	var image = model.O.ai;
 	return A2(
 		$elm$html$Html$div,
 		$author$project$View$turnOffTheBloodyImageDragging,
@@ -8409,7 +8407,7 @@ var $author$project$View$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Attributes$placeholder('Image Url'),
-								$elm$html$Html$Attributes$value(model.G.R.cr),
+								$elm$html$Html$Attributes$value(model.O.ai.cr),
 								$elm$html$Html$Events$onInput($author$project$Model$ChangeImageUrl)
 							]),
 						_List_Nil)
