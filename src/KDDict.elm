@@ -1,4 +1,4 @@
-module KDDict exposing (KDDict, Key(..), addAxis, empty, findAll, fromList, fromListBy, get, insert, key, merge, remove, toList)
+module KDDict exposing (KDDict, Key(..), addAxis, empty, findAll, findAllInRange, fromList, fromListBy, get, insert, key, merge, remove, toList)
 
 
 type KDDict comparable v
@@ -8,6 +8,14 @@ type KDDict comparable v
 
 type Key a
     = Key a (List a)
+
+
+type alias Query a =
+    Key (Maybe a)
+
+
+type alias RangeQuery a =
+    Query ( a, a )
 
 
 key : a -> Key a
@@ -102,14 +110,14 @@ get query dict =
                 get query larger
 
 
-match : Key (Maybe comparable) -> Key comparable -> Bool
+match : Query comparable -> Key comparable -> Bool
 match (Key q qs) (Key k ks) =
     List.map2 Tuple.pair (q :: qs) (k :: ks)
         |> List.filter (Tuple.first >> (/=) Nothing)
         |> List.all (\( query, key_ ) -> query == Just key_)
 
 
-findAll : Key (Maybe comparable) -> KDDict comparable v -> List v
+findAll : Query comparable -> KDDict comparable v -> List v
 findAll query dict =
     case dict of
         Empty ->
@@ -134,6 +142,70 @@ findAll query dict =
                                     findAll query larger
             in
             if match query key_ then
+                value :: rest
+
+            else
+                rest
+
+
+matchRange : RangeQuery comparable -> Key comparable -> Bool
+matchRange (Key q qs) (Key k ks) =
+    let
+        concat ma b =
+            case ma of
+                Nothing ->
+                    b
+
+                Just a ->
+                    a :: b
+
+        promote ( ma, b ) =
+            case ma of
+                Nothing ->
+                    Nothing
+
+                Just a ->
+                    Just ( a, b )
+
+        inRange ( ( s, l ), i ) =
+            s <= i && i <= l
+    in
+    List.map2 Tuple.pair (q :: qs) (k :: ks)
+        |> List.map promote
+        |> List.foldl concat []
+        |> List.all inRange
+
+
+findAllInRange : RangeQuery comparable -> KDDict comparable v -> List v
+findAllInRange query dict =
+    case dict of
+        Empty ->
+            []
+
+        Node index smaller ( key_, value ) larger ->
+            let
+                rest =
+                    case getIndex index query of
+                        Nothing ->
+                            findAllInRange query smaller ++ findAllInRange query larger
+
+                        Just ( s, l ) ->
+                            let
+                                toCompare =
+                                    getIndex index key_
+                            in
+                            case ( toCompare < s, l < toCompare ) of
+                                ( True, _ ) ->
+                                    findAllInRange query larger
+
+                                ( _, True ) ->
+                                    findAllInRange query smaller
+
+                                ( _, _ ) ->
+                                    {- s < toCompare < l -}
+                                    findAllInRange query smaller ++ findAllInRange query larger
+            in
+            if matchRange query key_ then
                 value :: rest
 
             else
