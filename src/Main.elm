@@ -64,9 +64,9 @@ update msg seededModel =
         ChangeImageUrl url ->
             let
                 updateModel model =
-                    { model | configuration = updateConfiduration model.configuration }
+                    { model | configuration = updateConfiguration model.configuration }
 
-                updateConfiduration configuration =
+                updateConfiguration configuration =
                     { configuration | image = updateImage configuration.image }
 
                 updateImage image =
