@@ -1,6 +1,5 @@
 module JigsawImage exposing
     ( JigsawImage
-    , isPieceInsideBox
     , isPointInsidePiece
     , pieceIdToOffset
     , shufflePiecePositions
@@ -45,21 +44,6 @@ shufflePiecePositions w h image =
 pieceIdToOffset : JigsawImage -> ( Int, Int ) -> Point
 pieceIdToOffset image ( x, y ) =
     Point (x * image.pieceWidth) (y * image.pieceHeight)
-
-
-isPieceInsideBox : JigsawImage -> Point -> Point -> Point -> ( Int, Int ) -> Bool
-isPieceInsideBox image pos boxTL boxBR id =
-    let
-        pieceTL =
-            Point.add pos <| pieceIdToOffset image id
-
-        pieceBR =
-            Point.add pieceTL <| Point image.pieceWidth image.pieceHeight
-    in
-    (pieceTL.x <= boxBR.x)
-        && (pieceTL.y <= boxBR.y)
-        && (pieceBR.x >= boxTL.x)
-        && (pieceBR.y >= boxTL.y)
 
 
 isPointInsidePiece : JigsawImage -> Point -> Point -> ( Int, Int ) -> Bool

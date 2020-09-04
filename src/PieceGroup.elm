@@ -116,8 +116,24 @@ createPieceGroup image id pos =
 
 isPieceGroupInsideBox : JigsawImage -> Point -> Point -> PieceGroup -> Bool
 isPieceGroupInsideBox image boxTL boxBR pieceGroup =
-    List.any (JigsawImage.isPieceInsideBox image pieceGroup.position boxTL boxBR) <|
-        List.map .id pieceGroup.members
+    List.any
+        (isPieceInsideBox pieceGroup.position boxTL boxBR)
+        pieceGroup.members
+
+
+isPieceInsideBox : Point -> Point -> Point -> Piece -> Bool
+isPieceInsideBox pos boxTL boxBR piece =
+    let
+        pieceTL =
+            Point.add pos piece.offset
+
+        pieceBR =
+            Point.add pieceTL piece.size
+    in
+    (pieceTL.x <= boxBR.x)
+        && (pieceTL.y <= boxBR.y)
+        && (pieceBR.x >= boxTL.x)
+        && (pieceBR.y >= boxTL.y)
 
 
 isPointInsidePieceGroup : Set Int -> JigsawImage -> Point -> PieceGroup -> Bool
