@@ -226,23 +226,22 @@ updateMouseUp model =
             let
                 move =
                     PieceGroup.move (Drag.distance drag)
+
+                updatedDb =
+                    DB.modifySelected move model.db
             in
-            case model.db |> DB.getSelected of
+            case updatedDb |> DB.getSelected of
                 pg :: [] ->
                     let
-                        moved =
-                            move pg
-
                         shouldBeMerged x =
-                            PieceGroup.shouldBeMerged model.configuration.snapDistance moved x
+                            PieceGroup.shouldBeMerged model.configuration.snapDistance pg x
                                 || x.id
                                 == pg.id
                     in
                     { model
                         | ui = UI.WaitingForInput
                         , db =
-                            model.db
-                                |> DB.modify pg.id move
+                            updatedDb
                                 |> DB.aggregateBy
                                     shouldBeMerged
                                     PieceGroup.merge
@@ -251,7 +250,7 @@ updateMouseUp model =
                 _ ->
                     { model
                         | ui = UI.WaitingForInput
-                        , db = DB.modifySelected move model.db
+                        , db = updatedDb
                     }
 
         _ ->
