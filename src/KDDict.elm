@@ -214,24 +214,10 @@ findAllInRange query dict =
 
 remove : Key comparable -> KDDict comparable v -> KDDict comparable v
 remove query dict =
-    case dict of
-        Empty ->
-            Empty
-
-        Node index smaller ( key_, value ) larger ->
-            if query == key_ then
-                (toList smaller ++ toList larger) |> fromList
-
-            else
-                case compare (getIndex index query) (getIndex index key_) of
-                    EQ ->
-                        (toList smaller ++ ( key_, value ) :: toList larger) |> fromList
-
-                    LT ->
-                        Node index (remove query smaller) ( key_, value ) larger
-
-                    GT ->
-                        Node index smaller ( key_, value ) (remove query larger)
+    dict
+        |> toList
+        |> List.filter (Tuple.first >> (/=) query)
+        |> fromList
 
 
 insert : Key comparable -> v -> KDDict comparable v -> KDDict comparable v
