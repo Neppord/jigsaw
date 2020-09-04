@@ -1871,7 +1871,7 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.b8,
+		impl.b7,
 		impl.cD,
 		impl.cy,
 		function() { return function() {} }
@@ -3897,7 +3897,7 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.b8,
+		impl.b7,
 		impl.cD,
 		impl.cy,
 		function(sendToApp, initialModel) {
@@ -3933,7 +3933,7 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.b8,
+		impl.b7,
 		impl.cD,
 		impl.cy,
 		function(sendToApp, initialModel) {
@@ -3946,7 +3946,7 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 			{
 				_VirtualDom_divertHrefToApp = divertHrefToApp;
 				var doc = view(model);
-				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.bU);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.bT);
 				var patches = _VirtualDom_diff(currNode, nextNode);
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
@@ -4007,8 +4007,8 @@ function _Browser_makeAnimator(model, draw)
 
 function _Browser_application(impl)
 {
-	var onUrlChange = impl.cl;
-	var onUrlRequest = impl.cm;
+	var onUrlChange = impl.ck;
+	var onUrlRequest = impl.cl;
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
@@ -4038,9 +4038,9 @@ function _Browser_application(impl)
 				}
 			});
 		},
-		b8: function(flags)
+		b7: function(flags)
 		{
-			return A3(impl.b8, flags, _Browser_getUrl(), key);
+			return A3(impl.b7, flags, _Browser_getUrl(), key);
 		},
 		cE: impl.cE,
 		cD: impl.cD,
@@ -4110,17 +4110,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { b6: 'hidden', bW: 'visibilitychange' }
+		? { b5: 'hidden', bV: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { b6: 'mozHidden', bW: 'mozvisibilitychange' }
+		? { b5: 'mozHidden', bV: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { b6: 'msHidden', bW: 'msvisibilitychange' }
+		? { b5: 'msHidden', bV: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { b6: 'webkitHidden', bW: 'webkitvisibilitychange' }
-		: { b6: 'hidden', bW: 'visibilitychange' };
+		? { b5: 'webkitHidden', bV: 'webkitvisibilitychange' }
+		: { b5: 'hidden', bV: 'visibilitychange' };
 }
 
 
@@ -4202,10 +4202,10 @@ function _Browser_getViewport()
 {
 	return {
 		bD: _Browser_getScene(),
-		bL: {
+		bK: {
 			aa: _Browser_window.pageXOffset,
 			ab: _Browser_window.pageYOffset,
-			bN: _Browser_doc.documentElement.clientWidth,
+			bM: _Browser_doc.documentElement.clientWidth,
 			a2: _Browser_doc.documentElement.clientHeight
 		}
 	};
@@ -4216,7 +4216,7 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		bN: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		bM: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
 		a2: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
@@ -4241,13 +4241,13 @@ function _Browser_getViewportOf(id)
 	{
 		return {
 			bD: {
-				bN: node.scrollWidth,
+				bM: node.scrollWidth,
 				a2: node.scrollHeight
 			},
-			bL: {
+			bK: {
 				aa: node.scrollLeft,
 				ab: node.scrollTop,
-				bN: node.clientWidth,
+				bM: node.clientWidth,
 				a2: node.clientHeight
 			}
 		};
@@ -4279,16 +4279,16 @@ function _Browser_getElement(id)
 		var y = _Browser_window.pageYOffset;
 		return {
 			bD: _Browser_getScene(),
-			bL: {
+			bK: {
 				aa: x,
 				ab: y,
-				bN: _Browser_doc.documentElement.clientWidth,
+				bM: _Browser_doc.documentElement.clientWidth,
 				a2: _Browser_doc.documentElement.clientHeight
 			},
-			b$: {
+			b_: {
 				aa: x + rect.left,
 				ab: y + rect.top,
-				bN: rect.width,
+				bM: rect.width,
 				a2: rect.height
 			}
 		};
@@ -4870,7 +4870,7 @@ var $elm$url$Url$Http = 0;
 var $elm$url$Url$Https = 1;
 var $elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
-		return {a_: fragment, a3: host, cp: path, bs: port_, bv: protocol, bw: query};
+		return {a_: fragment, a3: host, co: path, bs: port_, bv: protocol, bw: query};
 	});
 var $elm$core$String$contains = _String_contains;
 var $elm$core$String$length = _String_length;
@@ -5450,9 +5450,13 @@ var $author$project$Model$buildModel = F3(
 					[-1]))
 		};
 	});
-var $author$project$PieceGroup$Piece = F2(
-	function (id, offset) {
-		return {H: id, ck: offset};
+var $author$project$PieceGroup$Piece = F3(
+	function (id, offset, size) {
+		return {H: id, cj: offset, cu: size};
+	});
+var $author$project$Point$Point = F2(
+	function (x, y) {
+		return {aa: x, ab: y};
 	});
 var $author$project$PieceGroup$neighbours = function (_v0) {
 	var x = _v0.a;
@@ -5466,10 +5470,6 @@ var $author$project$PieceGroup$neighbours = function (_v0) {
 				_Utils_Tuple2(x, y + 1)
 			]));
 };
-var $author$project$Point$Point = F2(
-	function (x, y) {
-		return {aa: x, ab: y};
-	});
 var $author$project$JigsawImage$pieceIdToOffset = F2(
 	function (image, _v0) {
 		var x = _v0.a;
@@ -5482,17 +5482,18 @@ var $author$project$Point$sub = F2(
 	});
 var $author$project$PieceGroup$createPieceGroup = F3(
 	function (image, id, pos) {
+		var size = A2($author$project$Point$Point, image.ap, image.ao);
 		var offset = A2($author$project$JigsawImage$pieceIdToOffset, image, id);
 		return {
 			H: id,
 			S: false,
 			w: _List_fromArray(
 				[
-					A2($author$project$PieceGroup$Piece, id, offset)
+					A3($author$project$PieceGroup$Piece, id, offset, size)
 				]),
 			I: $author$project$PieceGroup$neighbours(id),
 			z: A2($author$project$Point$sub, pos, offset),
-			bM: -1
+			bL: -1
 		};
 	});
 var $elm$core$List$append = F2(
@@ -6078,7 +6079,7 @@ var $author$project$Edge$makeEdge = F2(
 					var _v9 = _v0.b;
 					var p2 = _v9.a;
 					return $author$project$Edge$Flat(
-						{bP: p1, bT: p2});
+						{bO: p1, bS: p2});
 				}
 			} else {
 				break _v0$2;
@@ -6114,13 +6115,13 @@ var $author$project$JigsawImage$shufflePiecePositions = F3(
 		var ymin = 0;
 		var ymax = h - ((image.a2 / image.aL) | 0);
 		var xmin = 0;
-		var xmax = w - ((image.bN / image.aK) | 0);
+		var xmax = w - ((image.bM / image.aK) | 0);
 		var n = image.aK * image.aL;
 		return A5($author$project$Point$randomPoints, n, xmin, xmax, ymin, ymax);
 	});
 var $author$project$Model$generateModel = function (image) {
 	var numberOfEdges = (((2 * image.aK) * image.aL) - image.aK) - image.aL;
-	var generatePositions = A3($author$project$JigsawImage$shufflePiecePositions, image.bN, image.a2, image);
+	var generatePositions = A3($author$project$JigsawImage$shufflePiecePositions, image.bM, image.a2, image);
 	var generatePieceGroups = A2(
 		$elm$random$Random$map,
 		$author$project$PieceGroup$createPieceGroups(image),
@@ -6184,7 +6185,7 @@ var $author$project$Model$init = function (_v0) {
 	var height = _v2.b;
 	var pieceHeight = (height / ypieces) | 0;
 	var pieceWidth = (width / xpieces) | 0;
-	var image = {a2: height, cp: 'kitten.png', ao: pieceHeight, ap: pieceWidth, bN: width, aK: xpieces, aL: ypieces};
+	var image = {a2: height, co: 'kitten.png', ao: pieceHeight, ap: pieceWidth, bM: width, aK: xpieces, aL: ypieces};
 	return _Utils_Tuple2(
 		$author$project$Seeded$step(
 			A2(
@@ -6236,7 +6237,7 @@ var $author$project$Decode$key = A2(
 	A2($elm$json$Json$Decode$field, 'key', $elm$json$Json$Decode$string));
 var $author$project$Keyboard$Keyboard = F2(
 	function (shift, ctrl) {
-		return {bZ: ctrl, cu: shift};
+		return {bY: ctrl, ct: shift};
 	});
 var $elm$json$Json$Decode$bool = _Json_decodeBool;
 var $author$project$Decode$keyboard = A3(
@@ -6251,7 +6252,7 @@ var $elm$browser$Browser$Events$MySub = F3(
 	});
 var $elm$browser$Browser$Events$State = F2(
 	function (subs, pids) {
-		return {br: pids, bI: subs};
+		return {br: pids, bH: subs};
 	});
 var $elm$browser$Browser$Events$init = $elm$core$Task$succeed(
 	A2($elm$browser$Browser$Events$State, _List_Nil, $elm$core$Dict$empty));
@@ -6503,7 +6504,7 @@ var $elm$browser$Browser$Events$onSelfMsg = F3(
 			var decoder = _v3.c;
 			return _Utils_eq(subKey, key) ? A2(_Browser_decodeEvent, decoder, event) : $elm$core$Maybe$Nothing;
 		};
-		var messages = A2($elm$core$List$filterMap, toMessage, state.bI);
+		var messages = A2($elm$core$List$filterMap, toMessage, state.bH);
 		return A2(
 			$elm$core$Task$andThen,
 			function (_v1) {
@@ -7159,7 +7160,7 @@ var $author$project$Main$updateKeyChange = F3(
 	function (keyboard, key, model) {
 		if (!key.$) {
 			var x = key.a;
-			return keyboard.bZ ? _Utils_update(
+			return keyboard.bY ? _Utils_update(
 				model,
 				{
 					g: A2(
@@ -7167,7 +7168,7 @@ var $author$project$Main$updateKeyChange = F3(
 						function (pg) {
 							return _Utils_update(
 								pg,
-								{S: true, bM: x});
+								{S: true, bL: x});
 						},
 						model.g)
 				}) : _Utils_update(
@@ -7242,7 +7243,7 @@ var $author$project$JigsawImage$isPointInsidePiece = F4(
 	});
 var $author$project$PieceGroup$isPointInsidePieceGroup = F4(
 	function (visibleGroups, image, point, pieceGroup) {
-		return A2($elm$core$Set$member, pieceGroup.bM, visibleGroups) && A2(
+		return A2($elm$core$Set$member, pieceGroup.bL, visibleGroups) && A2(
 			$elm$core$List$any,
 			A3($author$project$JigsawImage$isPointInsidePiece, image, point, pieceGroup.z),
 			A2(
@@ -7270,7 +7271,7 @@ var $author$project$PieceGroup$select = function (x) {
 };
 var $author$project$Main$updateMouseDown = F3(
 	function (coordinate, keyboard, model) {
-		var mode = keyboard.cu ? 1 : (keyboard.bZ ? 2 : 0);
+		var mode = keyboard.ct ? 1 : (keyboard.bY ? 2 : 0);
 		var _v0 = model;
 		var db = _v0.g;
 		var visibleGroups = _v0.at;
@@ -7299,7 +7300,7 @@ var $author$project$Main$updateMouseDown = F3(
 				$author$project$Drag$from(coordinate));
 			return pg.S ? _Utils_update(
 				model,
-				{o: ui}) : (keyboard.cu ? _Utils_update(
+				{o: ui}) : (keyboard.ct ? _Utils_update(
 				model,
 				{
 					g: A3($author$project$DB$modify, pg.H, $author$project$PieceGroup$select, model.g),
@@ -7385,7 +7386,7 @@ var $author$project$Drag$getDimensions = function (_v0) {
 	var start = _v0.M;
 	var current = _v0.P;
 	return {
-		b5: $elm$core$Basics$abs(start.ab - current.ab),
+		b4: $elm$core$Basics$abs(start.ab - current.ab),
 		cF: $elm$core$Basics$abs(start.aa - current.aa),
 		aa: A2($elm$core$Basics$min, start.aa, current.aa),
 		ab: A2($elm$core$Basics$min, start.ab, current.ab)
@@ -7570,12 +7571,12 @@ var $author$project$Main$updateMouseUp = function (model) {
 			var x = _v2.aa;
 			var y = _v2.ab;
 			var w = _v2.cF;
-			var h = _v2.b5;
+			var h = _v2.b4;
 			var bottomRight = A2($author$project$Point$Point, x + w, y + h);
 			var topLeft = A2($author$project$Point$Point, x, y);
 			var isWithin = A3($author$project$PieceGroup$isPieceGroupInsideBox, image, topLeft, bottomRight);
 			var shouldBeSelected = function (pg) {
-				return A2($elm$core$Set$member, pg.bM, model.at) && isWithin(pg);
+				return A2($elm$core$Set$member, pg.bL, model.at) && isWithin(pg);
 			};
 			var db = function () {
 				switch (mode) {
@@ -7723,7 +7724,7 @@ var $author$project$Main$update = F2(
 						var updateImage = function (image) {
 							return _Utils_update(
 								image,
-								{cp: url});
+								{co: url});
 						};
 						var updateConfiguration = function (configuration) {
 							return _Utils_update(
@@ -7877,8 +7878,8 @@ var $author$project$SvgUtil$edgeToSvg = function (e) {
 				_List_fromArray(
 					[b1, b2, b3, b4])));
 	} else {
-		var a = e.a.bP;
-		var b = e.a.bT;
+		var a = e.a.bO;
+		var b = e.a.bS;
 		return 'L ' + $author$project$SvgUtil$pointsToSvg(
 			_List_fromArray(
 				[a, b]));
@@ -7996,26 +7997,27 @@ var $author$project$Point$toPair = function (point) {
 	return _Utils_Tuple2(point.aa, point.ab);
 };
 var $author$project$View$pieceDiv = F3(
-	function (image, pg, piece) {
-		var borderWidth = (image.ap / 2) | 0;
-		var width = (borderWidth + image.ap) + borderWidth;
-		var borderHeight = (image.ao / 2) | 0;
-		var height = (borderHeight + image.ao) + borderHeight;
-		var _v0 = $author$project$Point$toPair(
+	function (backgroundUrl, pg, piece) {
+		var _v0 = _Utils_Tuple2((piece.cu.aa / 2) | 0, (piece.cu.ab / 2) | 0);
+		var borderWidth = _v0.a;
+		var borderHeight = _v0.b;
+		var height = (borderHeight + piece.cu.ab) + borderHeight;
+		var _v1 = $author$project$Point$toPair(
 			A2(
 				$author$project$Point$add,
 				A2($author$project$Point$Point, -borderWidth, -borderHeight),
-				A2($author$project$Point$add, piece.ck, pg.z)));
-		var left = _v0.a;
-		var top = _v0.b;
+				A2($author$project$Point$add, piece.cj, pg.z)));
+		var left = _v1.a;
+		var top = _v1.b;
 		var translate = 'translate(' + ($elm$core$String$fromInt(left) + ('px,' + ($elm$core$String$fromInt(top) + 'px)')));
-		var _v1 = $author$project$Point$toPair(
+		var width = (borderWidth + piece.cu.aa) + borderWidth;
+		var _v2 = $author$project$Point$toPair(
 			A2(
 				$author$project$Point$sub,
 				A2($author$project$Point$Point, borderWidth, borderHeight),
-				piece.ck));
-		var bgLeft = _v1.a;
-		var bgTop = _v1.b;
+				piece.cj));
+		var bgLeft = _v2.a;
+		var bgTop = _v2.b;
 		return A2(
 			$elm$html$Html$div,
 			_List_fromArray(
@@ -8032,7 +8034,7 @@ var $author$project$View$pieceDiv = F3(
 					$elm$html$Html$Attributes$style,
 					'clipPath',
 					$author$project$View$clipPathRef(piece.H)),
-					A2($elm$html$Html$Attributes$style, 'background-image', 'url(\'' + (image.cp + '\')')),
+					A2($elm$html$Html$Attributes$style, 'background-image', 'url(\'' + (backgroundUrl + '\')')),
 					A2(
 					$elm$html$Html$Attributes$style,
 					'background-position',
@@ -8052,7 +8054,7 @@ var $author$project$View$renderPieces = F2(
 				var y = _v0.b;
 				return _Utils_Tuple2(
 					'piece-' + ($elm$core$String$fromInt(x) + ('-' + $elm$core$String$fromInt(y))),
-					A3($author$project$View$lazyPieceDiv, image, pg, piece));
+					A3($author$project$View$lazyPieceDiv, image.co, pg, piece));
 			};
 			return A2($elm$core$List$map, render, pg.w);
 		};
@@ -8085,7 +8087,7 @@ var $author$project$View$viewDiv = function (model) {
 	var db = _v0.g;
 	var visibleGroups = _v0.at;
 	var isVisible = function (pieceGroup) {
-		return A2($elm$core$Set$member, pieceGroup.bM, visibleGroups);
+		return A2($elm$core$Set$member, pieceGroup.bL, visibleGroups);
 	};
 	var _v1 = _Utils_Tuple2(
 		$author$project$DB$getSelected(db),
@@ -8176,7 +8178,7 @@ var $author$project$View$viewSelectionBox = function (model) {
 		var x = _v1.aa;
 		var y = _v1.ab;
 		var w = _v1.cF;
-		var h = _v1.b5;
+		var h = _v1.b4;
 		return A5(
 			box,
 			x,
@@ -8212,7 +8214,7 @@ var $author$project$View$view = function (model) {
 						A2(
 						$elm$html$Html$Attributes$style,
 						'width',
-						$elm$core$String$fromInt(image.bN) + 'px'),
+						$elm$core$String$fromInt(image.bM) + 'px'),
 						A2(
 						$elm$html$Html$Attributes$style,
 						'height',
@@ -8248,7 +8250,7 @@ var $author$project$View$view = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Attributes$placeholder('Image Url'),
-								$elm$html$Html$Attributes$value(model.F.R.cp),
+								$elm$html$Html$Attributes$value(model.F.R.co),
 								$elm$html$Html$Events$onInput($author$project$Model$ChangeImageUrl)
 							]),
 						_List_Nil)
@@ -8257,7 +8259,7 @@ var $author$project$View$view = function (model) {
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{
-		b8: $author$project$Model$init,
+		b7: $author$project$Model$init,
 		cy: A2($elm$core$Basics$composeR, $author$project$Seeded$unwrap, $author$project$Subscription$subscriptions),
 		cD: $author$project$Main$update,
 		cE: A2($elm$core$Basics$composeR, $author$project$Seeded$unwrap, $author$project$View$view)

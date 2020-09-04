@@ -27,6 +27,7 @@ type alias ID =
 type alias Piece =
     { id : ID
     , offset : Point
+    , size : Point
     }
 
 
@@ -93,11 +94,14 @@ createPieceGroup image id pos =
     let
         offset =
             JigsawImage.pieceIdToOffset image id
+
+        size =
+            Point image.pieceWidth image.pieceHeight
     in
     { position = Point.sub pos offset
     , isSelected = False
     , id = id
-    , members = [ Piece id offset ]
+    , members = [ Piece id offset size ]
     , neighbours = neighbours id
     , visibilityGroup = -1
     }

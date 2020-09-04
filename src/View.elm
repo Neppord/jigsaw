@@ -117,25 +117,24 @@ viewSelectionBox model =
             box -10 -10 0 0 "rgba(0,255,0,0.2)"
 
 
-lazyPieceDiv : JigsawImage -> PieceGroup -> PieceGroup.Piece -> Html msg
+lazyPieceDiv : String -> PieceGroup -> PieceGroup.Piece -> Html msg
 lazyPieceDiv =
     Html.Lazy.lazy3 pieceDiv
 
 
-pieceDiv : JigsawImage -> PieceGroup -> PieceGroup.Piece -> Html msg
-pieceDiv image pg piece =
+pieceDiv : String -> PieceGroup -> PieceGroup.Piece -> Html msg
+pieceDiv backgroundUrl pg piece =
     let
-        borderHeight =
-            image.pieceHeight // 2
-
-        borderWidth =
-            image.pieceWidth // 2
+        ( borderWidth, borderHeight ) =
+            ( piece.size.x // 2
+            , piece.size.y // 2
+            )
 
         width =
-            borderWidth + image.pieceWidth + borderWidth
+            borderWidth + piece.size.x + borderWidth
 
         height =
-            borderHeight + image.pieceHeight + borderHeight
+            borderHeight + piece.size.y + borderHeight
 
         ( left, top ) =
             pg.position
@@ -155,7 +154,7 @@ pieceDiv image pg piece =
         [ style "width" <| String.fromInt width ++ "px"
         , style "height" <| String.fromInt height ++ "px"
         , style "clipPath" <| clipPathRef piece.id
-        , style "background-image" <| "url('" ++ image.path ++ "')"
+        , style "background-image" <| "url('" ++ backgroundUrl ++ "')"
         , style "background-position" (String.fromInt bgLeft ++ "px " ++ String.fromInt bgTop ++ "px")
         , style "position" "absolute"
         , style "transform" translate
@@ -263,7 +262,7 @@ renderPieces image visiblePieces =
                             piece.id
                     in
                     ( "piece-" ++ String.fromInt x ++ "-" ++ String.fromInt y
-                    , lazyPieceDiv image pg piece
+                    , lazyPieceDiv image.path pg piece
                     )
             in
             List.map render pg.members
