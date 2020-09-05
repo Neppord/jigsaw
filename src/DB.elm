@@ -1,5 +1,6 @@
 module DB exposing
     ( DB
+    , boxSelect
     , findBy
     , getSelected
     , getUnSelected
@@ -11,11 +12,13 @@ module DB exposing
     , snap
     )
 
+import Drag
 import KDDict exposing (KDDict)
 import Maybe
 import PieceGroup exposing (PieceGroup)
 import Point
 import Set
+import UI
 
 
 type alias DB =
@@ -212,3 +215,47 @@ snap snapDistance db =
 
         _ ->
             db
+
+
+boxSelect : Set.Set Int -> UI.SelectionMode -> Drag.Drag -> DB -> DB
+boxSelect visibleGroups mode drag db =
+    let
+        { x, y, w, h } =
+            Drag.getDimensions drag
+
+        topLeft =
+            Point.Point x y
+
+        bottomRight =
+            Point.Point (x + w) (y + h)
+
+        isWithin =
+            PieceGroup.isPieceGroupInsideBox topLeft bottomRight
+
+        shouldBeSelected pg =
+            Set.member pg.visibilityGroup visibleGroups
+                && isWithin pg
+    in
+    case mode of
+        UI.Add ->
+            db
+                |> modifyBy
+                    (\pg -> shouldBeSelected pg || pg.isSelected)
+                    PieceGroup.select
+
+        UI.Remove ->
+            db
+                |> modifyBy
+                    (\pg -> shouldBeSelected pg || not pg.isSelected)
+                    PieceGroup.deselect
+
+        UI.Replace ->
+            db
+                |> map
+                    (\pg ->
+                        if pg |> shouldBeSelected then
+                            PieceGroup.select pg
+
+                        else
+                            PieceGroup.deselect pg
+                    )

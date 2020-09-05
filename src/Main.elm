@@ -175,50 +175,10 @@ updateMouseUp : NewModel -> NewModel
 updateMouseUp model =
     case model.ui of
         UI.Boxing mode drag ->
-            let
-                db =
-                    let
-                        { x, y, w, h } =
-                            Drag.getDimensions drag
-
-                        topLeft =
-                            Point x y
-
-                        bottomRight =
-                            Point (x + w) (y + h)
-
-                        isWithin =
-                            PieceGroup.isPieceGroupInsideBox topLeft bottomRight
-
-                        shouldBeSelected pg =
-                            Set.member pg.visibilityGroup model.visibleGroups
-                                && isWithin pg
-                    in
-                    case mode of
-                        UI.Add ->
-                            model.db
-                                |> DB.modifyBy
-                                    (\pg -> shouldBeSelected pg || pg.isSelected)
-                                    PieceGroup.select
-
-                        UI.Remove ->
-                            model.db
-                                |> DB.modifyBy
-                                    (\pg -> shouldBeSelected pg || not pg.isSelected)
-                                    PieceGroup.deselect
-
-                        UI.Replace ->
-                            model.db
-                                |> DB.map
-                                    (\pg ->
-                                        if pg |> shouldBeSelected then
-                                            PieceGroup.select pg
-
-                                        else
-                                            PieceGroup.deselect pg
-                                    )
-            in
-            { model | ui = UI.WaitingForInput, db = db }
+            { model
+                | ui = UI.WaitingForInput
+                , db = DB.boxSelect model.visibleGroups mode drag model.db
+            }
 
         UI.Moving _ drag ->
             let
