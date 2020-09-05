@@ -1,6 +1,10 @@
 {
   "scripts": {
-    "build":  "rm -rf docs/* && elm make --optimize src/Main.elm --output=docs/index.html && cp -r src/*.png docs/"
+    "build":  "npm run analyse && npm run clean && npm run build-elm && npm run build-resources",
+    "build-elm": "elm make --optimize src/Main.elm --output=docs/index.html",
+    "build-resources": "cp -r src/*.png docs" ,
+    "clean": "rm -rf docs/*",
+    "analyse": "elm-analyse"
   },
   "devDependencies": {
     "elm": "^0.19.1-3",
