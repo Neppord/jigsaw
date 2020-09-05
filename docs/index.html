@@ -7413,22 +7413,35 @@ var $author$project$PieceGroup$move = F2(
 				E: A2($author$project$Point$add, offset, pg.E)
 			});
 	});
+var $elm$core$Maybe$map2 = F3(
+	function (func, ma, mb) {
+		if (ma.$ === 1) {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var a = ma.a;
+			if (mb.$ === 1) {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var b = mb.a;
+				return $elm$core$Maybe$Just(
+					A2(func, a, b));
+			}
+		}
+	});
 var $author$project$KDDict$matchRange = F2(
 	function (_v0, _v1) {
 		var q = _v0.a;
 		var qs = _v0.b;
 		var k = _v1.a;
 		var ks = _v1.b;
-		var promote = function (_v6) {
-			var ma = _v6.a;
-			var b = _v6.b;
-			if (ma.$ === 1) {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var a = ma.a;
-				return $elm$core$Maybe$Just(
-					_Utils_Tuple2(a, b));
-			}
+		var promote = function (_v5) {
+			var ma = _v5.a;
+			var b = _v5.b;
+			return A3(
+				$elm$core$Maybe$map2,
+				$elm$core$Tuple$pair,
+				ma,
+				$elm$core$Maybe$Just(b));
 		};
 		var inRange = function (_v3) {
 			var _v4 = _v3.a;

@@ -194,13 +194,9 @@ matchRange (Key q qs) (Key k ks) =
                 Just a ->
                     a :: b
 
-        promote ( ma, b ) =
-            case ma of
-                Nothing ->
-                    Nothing
-
-                Just a ->
-                    Just ( a, b )
+        promote ( ma, b ) = 
+            Maybe.map2 Tuple.pair ma (Just b) 
+        
 
         inRange ( ( s, l ), i ) =
             s <= i && i <= l
