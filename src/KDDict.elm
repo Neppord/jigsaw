@@ -1,4 +1,25 @@
-module KDDict exposing (KDDict, Key(..), addAxis, empty, findAll, findAllInRange, fromList, fromListBy, get, insert, key, makeRangeQuery, merge, remove, removeAll, toList)
+module KDDict exposing
+    ( KDDict
+    , Key(..)
+    , addAxis
+    , addCoordinateAxis
+    , addCoordinateQuery
+    , empty
+    , findAll
+    , findAllInRange
+    , fromList
+    , fromListBy
+    , get
+    , insert
+    , insertAll
+    , insertAllBy
+    , key
+    , makeRangeQuery
+    , merge
+    , remove
+    , removeAll
+    , toList
+    )
 
 
 type KDDict comparable v
@@ -47,6 +68,21 @@ key a =
 addAxis : a -> Key a -> Key a
 addAxis a (Key head tail) =
     Key a (head :: tail)
+
+
+addCoordinateAxis : ( a, a ) -> Key a -> Key a
+addCoordinateAxis ( x, y ) (Key head tail) =
+    Key x (y :: head :: tail)
+
+
+addCoordinateQuery : Maybe ( a, a ) -> Query a -> Query a
+addCoordinateQuery mp (Key head tail) =
+    case mp of
+        Just ( x, y ) ->
+            Key (Just x) (Just y :: head :: tail)
+
+        Nothing ->
+            Key Nothing (Nothing :: head :: tail)
 
 
 getIndex : Int -> Key a -> a
@@ -194,9 +230,8 @@ matchRange (Key q qs) (Key k ks) =
                 Just a ->
                     a :: b
 
-        promote ( ma, b ) = 
-            Maybe.map2 Tuple.pair ma (Just b) 
-        
+        promote ( ma, b ) =
+            Maybe.map2 Tuple.pair ma (Just b)
 
         inRange ( ( s, l ), i ) =
             s <= i && i <= l
@@ -300,6 +335,22 @@ insert_ i key_ value dict =
 
             else
                 Deleted i s (insert_ (i + 1) key_ value l)
+
+
+insertAll : List ( Key comparable, v ) -> KDDict comparable v -> KDDict comparable v
+insertAll items db =
+    List.foldl (\( a, b ) -> insert a b) db items
+
+
+insertAllBy : (v -> Key comparable) -> List v -> KDDict comparable v -> KDDict comparable v
+insertAllBy keyWith values db =
+    insertAll
+        (List.map2
+            Tuple.pair
+            (List.map keyWith values)
+            values
+        )
+        db
 
 
 merge : KDDict comparable v -> KDDict comparable v -> KDDict comparable v
