@@ -176,23 +176,24 @@ updateMouseUp model =
     case model.ui of
         UI.Boxing mode drag ->
             let
-                { x, y, w, h } =
-                    Drag.getDimensions drag
-
-                topLeft =
-                    Point x y
-
-                bottomRight =
-                    Point (x + w) (y + h)
-
-                isWithin =
-                    PieceGroup.isPieceGroupInsideBox topLeft bottomRight
-
-                shouldBeSelected pg =
-                    Set.member pg.visibilityGroup model.visibleGroups
-                        && isWithin pg
-
                 db =
+                    let
+                        { x, y, w, h } =
+                            Drag.getDimensions drag
+
+                        topLeft =
+                            Point x y
+
+                        bottomRight =
+                            Point (x + w) (y + h)
+
+                        isWithin =
+                            PieceGroup.isPieceGroupInsideBox topLeft bottomRight
+
+                        shouldBeSelected pg =
+                            Set.member pg.visibilityGroup model.visibleGroups
+                                && isWithin pg
+                    in
                     case mode of
                         UI.Add ->
                             model.db
