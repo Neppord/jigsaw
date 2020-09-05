@@ -4,7 +4,7 @@
     "build-elm": "elm make --optimize src/Main.elm --output=docs/index.html",
     "build-resources": "cp -r src/*.png docs" ,
     "clean": "rm -rf docs/*",
-    "analyse": "elm-analyse"
+    "analyse": "elm-analyse | grep -v '^INFO: '"
   },
   "devDependencies": {
     "elm": "^0.19.1-3",
