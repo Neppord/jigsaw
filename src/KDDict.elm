@@ -368,10 +368,10 @@ merge d1 d2 =
                     Node i (merge s1 s2) ( k1, v1 ) (insert_ (i + 1) k2 v2 (merge l1 l2))
 
                 LT ->
-                    toList d1 ++ toList d2 |> fromList
+                    toList d1 ++ toList d2 |> fromList_ i
 
                 GT ->
-                    toList d1 ++ toList d2 |> fromList
+                    toList d1 ++ toList d2 |> fromList_ i
 
-        ( _, _ ) ->
-            toList d1 ++ toList d2 |> fromList
+        ( Deleted i _ _, _ ) ->
+            toList d1 ++ toList d2 |> fromList_ i
