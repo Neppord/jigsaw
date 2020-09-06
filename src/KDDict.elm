@@ -375,3 +375,6 @@ merge d1 d2 =
 
         ( Deleted i _ _, _ ) ->
             toList d1 ++ toList d2 |> fromList_ i
+
+        ( _, Deleted i _ _ ) ->
+            toList d1 ++ toList d2 |> fromList_ i
