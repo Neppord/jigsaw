@@ -1,12 +1,18 @@
 module KD exposing
     ( Tree(..)
     , insert
+    , singleton
     )
 
 
 type Tree k
     = Empty
     | Node (Tree k) k (Tree k)
+
+
+singleton : k -> Tree k
+singleton k =
+    Node Empty k Empty
 
 
 insert : comparable -> Tree comparable -> Tree comparable

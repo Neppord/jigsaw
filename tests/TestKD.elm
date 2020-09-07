@@ -1,14 +1,23 @@
 module TestKD exposing (..)
 
 import Expect exposing (all, equal)
-import KD exposing (Tree(..), insert)
+import KD
+    exposing
+        ( Tree(..)
+        , insert
+        , singleton
+        )
 import Test exposing (Test, describe, test)
 
 
 suite : Test
 suite =
     describe "Tree"
-        [ describe "insert"
+        [ test "singleton return a tree with only the value" <|
+            \_ ->
+                singleton 1
+                    |> equal (Node Empty 1 Empty)
+        , describe "insert"
             [ test "replaces empty trees with non empty when inserting" <|
                 \_ ->
                     Empty
