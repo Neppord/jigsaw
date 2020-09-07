@@ -19,7 +19,7 @@ insert : comparable -> Tree comparable -> Tree comparable
 insert k tree =
     case tree of
         Empty ->
-            Node Empty k Empty
+            singleton k
 
         Node smaller k1 larger ->
             if k < k1 then
