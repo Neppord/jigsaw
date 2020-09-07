@@ -2,12 +2,26 @@ module KD exposing
     ( Tree(..)
     , insert
     , singleton
+    , smallest
     )
 
 
 type Tree k
     = Empty
     | Node (Tree k) k (Tree k)
+
+
+smallest : Tree k -> Maybe k
+smallest tree =
+    case tree of
+        Empty ->
+            Nothing
+
+        Node Empty k _ ->
+            Just k
+
+        Node smaller _ _ ->
+            smallest smaller
 
 
 singleton : k -> Tree k

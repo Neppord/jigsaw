@@ -1,12 +1,7 @@
 module TestKD exposing (..)
 
 import Expect exposing (all, equal)
-import KD
-    exposing
-        ( Tree(..)
-        , insert
-        , singleton
-        )
+import KD exposing (Tree(..), insert, singleton, smallest)
 import Test exposing (Test, describe, test)
 
 
@@ -44,5 +39,23 @@ suite =
                             |> insert 4
                             |> equal (Node Empty 2 (Node Empty 3 (singleton 4)))
                     ]
+            ]
+        , describe "smallest"
+            [ test "returns Nothing when the tree is empty" <|
+                \_ ->
+                    Empty
+                        |> smallest
+                        |> equal Nothing
+            , test "if there is only one value it returns it" <|
+                \_ ->
+                    singleton 1
+                        |> smallest
+                        |> equal (Just 1)
+            , test "it looks for smallest in the smaller branch" <|
+                \_ ->
+                    singleton 2
+                        |> insert 1
+                        |> smallest
+                        |> equal (Just 1)
             ]
         ]
