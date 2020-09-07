@@ -22,27 +22,27 @@ suite =
                 \_ ->
                     Empty
                         |> insert 1
-                        |> equal (Node Empty 1 Empty)
+                        |> equal (singleton 1)
             , test "insert smaller values to the left" <|
                 \_ ->
-                    Node Empty 2 Empty
+                    singleton 2
                         |> insert 1
-                        |> equal (Node (Node Empty 1 Empty) 2 Empty)
+                        |> equal (Node (singleton 1) 2 Empty)
             , test "insert larger values to the right" <|
                 \_ ->
-                    Node Empty 2 Empty
+                    singleton 2
                         |> insert 3
-                        |> equal (Node Empty 2 (Node Empty 3 Empty))
+                        |> equal (Node Empty 2 (singleton 3))
             , test "dont discard subtrees, insert into them" <|
                 all
                     [ \_ ->
-                        Node (Node Empty 2 Empty) 3 Empty
+                        Node (singleton 2) 3 Empty
                             |> insert 1
-                            |> equal (Node (Node (Node Empty 1 Empty) 2 Empty) 3 Empty)
+                            |> equal (Node (Node (singleton 1) 2 Empty) 3 Empty)
                     , \_ ->
-                        Node Empty 2 (Node Empty 3 Empty)
+                        Node Empty 2 (singleton 3)
                             |> insert 4
-                            |> equal (Node Empty 2 (Node Empty 3 (Node Empty 4 Empty)))
+                            |> equal (Node Empty 2 (Node Empty 3 (singleton 4)))
                     ]
             ]
         ]
