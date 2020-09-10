@@ -11,7 +11,13 @@ suite =
         [ test "singleton return a tree with only the value" <|
             \_ ->
                 singleton 1
-                    |> equal (Node Empty 1 Empty)
+                    |> equal
+                        (Node
+                            { smaller = Empty
+                            , key = 1
+                            , larger = Empty
+                            }
+                        )
         , describe "insert"
             [ test "replaces empty trees with non empty when inserting" <|
                 \_ ->
@@ -22,22 +28,60 @@ suite =
                 \_ ->
                     singleton 2
                         |> insert 1
-                        |> equal (Node (singleton 1) 2 Empty)
+                        |> equal
+                            (Node
+                                { smaller = singleton 1
+                                , key = 2
+                                , larger = Empty
+                                }
+                            )
             , test "insert larger values to the right" <|
                 \_ ->
                     singleton 2
                         |> insert 3
-                        |> equal (Node Empty 2 (singleton 3))
+                        |> equal
+                            (Node
+                                { smaller = Empty
+                                , key = 2
+                                , larger = singleton 3
+                                }
+                            )
             , test "dont discard subtrees, insert into them" <|
                 all
                     [ \_ ->
-                        Node (singleton 2) 3 Empty
+                        Node
+                            { smaller = singleton 2
+                            , key = 3
+                            , larger = Empty
+                            }
                             |> insert 1
-                            |> equal (Node (Node (singleton 1) 2 Empty) 3 Empty)
+                            |> equal
+                                (Node
+                                    { smaller =
+                                        Node
+                                            { smaller = singleton 1
+                                            , key = 2
+                                            , larger = Empty
+                                            }
+                                    , key = 3
+                                    , larger = Empty
+                                    }
+                                )
                     , \_ ->
-                        Node Empty 2 (singleton 3)
+                        Node { smaller = Empty, key = 2, larger = singleton 3 }
                             |> insert 4
-                            |> equal (Node Empty 2 (Node Empty 3 (singleton 4)))
+                            |> equal
+                                (Node
+                                    { key = 2
+                                    , smaller = Empty
+                                    , larger =
+                                        Node
+                                            { key = 3
+                                            , smaller = Empty
+                                            , larger = singleton 4
+                                            }
+                                    }
+                                )
                     ]
             ]
         , describe "smallest"
@@ -76,22 +120,34 @@ suite =
                         |> equal Empty
             , test "it removes from smaller subtree if value is smaller" <|
                 \_ ->
-                    Node (singleton 1) 2 Empty
+                    Node { smaller = singleton 1, key = 2, larger = Empty }
                         |> delete 1
                         |> equal (singleton 2)
             , test "it removes from larger subtree if value is larger" <|
                 \_ ->
-                    Node Empty 2 (singleton 3)
+                    Node
+                        { smaller = Empty
+                        , key = 2
+                        , larger = singleton 3
+                        }
                         |> delete 3
                         |> equal (singleton 2)
             , test "it replaces root element with smaller from larger" <|
                 \_ ->
-                    Node Empty 2 (singleton 3)
+                    Node
+                        { smaller = Empty
+                        , key = 2
+                        , larger = singleton 3
+                        }
                         |> delete 2
                         |> equal (singleton 3)
             , test "it replaces root element smaller branch if larger is empty" <|
                 \_ ->
-                    Node (singleton 1) 2 Empty
+                    Node
+                        { smaller = singleton 1
+                        , key = 2
+                        , larger = Empty
+                        }
                         |> delete 2
                         |> equal (singleton 1)
             ]

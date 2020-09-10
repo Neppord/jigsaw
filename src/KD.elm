@@ -9,7 +9,11 @@ module KD exposing
 
 type Tree k
     = Empty
-    | Node (Tree k) k (Tree k)
+    | Node
+        { smaller : Tree k
+        , key : k
+        , larger : Tree k
+        }
 
 
 delete : comparable -> Tree comparable -> Tree comparable
@@ -18,21 +22,33 @@ delete k tree =
         Empty ->
             tree
 
-        Node smaller k1 larger ->
-            case compare k k1 of
+        Node { key, smaller, larger } ->
+            case compare k key of
                 EQ ->
                     case smallest larger of
                         Just a ->
-                            Node smaller a (delete a larger)
+                            Node
+                                { smaller = smaller
+                                , key = a
+                                , larger = delete a larger
+                                }
 
                         Nothing ->
                             smaller
 
                 LT ->
-                    Node (delete k smaller) k1 larger
+                    Node
+                        { smaller = delete k smaller
+                        , key = key
+                        , larger = larger
+                        }
 
                 GT ->
-                    Node smaller k1 (delete k larger)
+                    Node
+                        { smaller = smaller
+                        , key = key
+                        , larger = delete k larger
+                        }
 
 
 smallest : Tree k -> Maybe k
@@ -41,16 +57,18 @@ smallest tree =
         Empty ->
             Nothing
 
-        Node Empty k _ ->
-            Just k
+        Node { smaller, key } ->
+            case smaller of
+                Empty ->
+                    Just key
 
-        Node smaller _ _ ->
-            smallest smaller
+                _ ->
+                    smallest smaller
 
 
 singleton : k -> Tree k
 singleton k =
-    Node Empty k Empty
+    Node { smaller = Empty, key = k, larger = Empty }
 
 
 insert : comparable -> Tree comparable -> Tree comparable
@@ -59,12 +77,20 @@ insert k tree =
         Empty ->
             singleton k
 
-        Node smaller k1 larger ->
-            if k < k1 then
-                Node (insert k smaller) k1 larger
+        Node { smaller, key, larger } ->
+            if k < key then
+                Node
+                    { smaller = insert k smaller
+                    , key = key
+                    , larger = larger
+                    }
 
             else
-                Node smaller k1 (insert k larger)
+                Node
+                    { smaller = smaller
+                    , key = key
+                    , larger = insert k larger
+                    }
 
 
 
