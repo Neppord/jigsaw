@@ -76,6 +76,7 @@ getSelected db =
                 |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
             )
+        |> List.sortBy .id
 
 
 getUnSelected : DB -> List PieceGroup
@@ -88,6 +89,7 @@ getUnSelected db =
                 |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
             )
+        |> List.sortBy .id
 
 
 modifySelected : (PieceGroup -> PieceGroup) -> DB -> DB
