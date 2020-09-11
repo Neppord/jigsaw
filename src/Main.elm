@@ -4,7 +4,6 @@ import Browser
 import DB
 import Drag
 import Keyboard exposing (Keyboard)
-import List
 import Model
     exposing
         ( Key(..)
@@ -126,13 +125,6 @@ updateMouseDown coordinate keyboard model =
         { image } =
             model.configuration
 
-        clickedPieceGroup =
-            db
-                |> DB.findBy
-                    (PieceGroup.isPointInsidePieceGroup visibleGroups image coordinate)
-                |> List.reverse
-                |> List.head
-
         mode =
             if keyboard.shift then
                 UI.Add
@@ -143,7 +135,7 @@ updateMouseDown coordinate keyboard model =
             else
                 UI.Replace
     in
-    case clickedPieceGroup of
+    case DB.clickedPieceGroup visibleGroups image db coordinate of
         Nothing ->
             { model | ui = UI.Boxing mode (Drag.from coordinate) }
 

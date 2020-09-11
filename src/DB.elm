@@ -1,6 +1,7 @@
 module DB exposing
     ( DB
     , boxSelect
+    , clickedPieceGroup
     , findBy
     , getSelected
     , getUnSelected
@@ -13,6 +14,7 @@ module DB exposing
     )
 
 import Drag
+import JigsawImage exposing (JigsawImage)
 import KD.Match exposing (Match(..))
 import KDDict exposing (KDDict, MatchKey)
 import PieceGroup exposing (PieceGroup)
@@ -264,3 +266,12 @@ boxSelect visibleGroups mode drag db =
                 |> KDDict.removeAll (List.map makeKey targets)
                 |> map PieceGroup.deselect
                 |> KDDict.insertAllBy makeKey (List.map PieceGroup.select targets)
+
+
+clickedPieceGroup : Set.Set Int -> JigsawImage -> DB -> Point.Point -> Maybe PieceGroup
+clickedPieceGroup visibleGroups_ image_ db_ coordinate_ =
+    db_
+        |> findBy
+            (PieceGroup.isPointInsidePieceGroup visibleGroups_ image_ coordinate_)
+        |> List.reverse
+        |> List.head
