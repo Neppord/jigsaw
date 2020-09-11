@@ -1,4 +1,4 @@
-module KD exposing
+module KD.Tree exposing
     ( Tree(..)
     , delete
     , insert

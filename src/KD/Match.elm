@@ -1,4 +1,4 @@
-module Match exposing (Match(..), compareWithMatch, match)
+module KD.Match exposing (Match(..), compareWithMatch, match)
 
 {-| Match are used to create search criteria.
 

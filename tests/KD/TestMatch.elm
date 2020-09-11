@@ -1,7 +1,7 @@
-module TestMatch exposing (..)
+module KD.TestMatch exposing (..)
 
 import Expect exposing (all, equal)
-import Match exposing (Match(..), compareWithMatch)
+import KD.Match exposing (Match(..), compareWithMatch)
 import Test exposing (Test, describe, test)
 
 
