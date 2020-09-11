@@ -35,11 +35,6 @@ tests =
                 KDDict.fromListBy KDDict.key list
                     |> KDDict.get (KDDict.key el)
                     |> equal (Just el)
-        , test "finding all" <|
-            \_ ->
-                KDDict.fromListBy KDDict.key [ 1, 1, 2, 1 ]
-                    |> KDDict.findAll (KDDict.key <| Just 1)
-                    |> equal [ 1, 1, 1 ]
         , test "remove" <|
             \_ ->
                 KDDict.fromListBy KDDict.key [ 1, 2 ]

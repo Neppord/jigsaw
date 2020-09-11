@@ -4,9 +4,7 @@ module KDDict exposing
     , MatchKey
     , addAxis
     , addCoordinateAxis
-    , addCoordinateQuery
     , empty
-    , findAll
     , findMatching
     , fromList
     , fromListBy
@@ -15,7 +13,6 @@ module KDDict exposing
     , insertAll
     , insertAllBy
     , key
-    , makeRangeQuery
     , merge
     , remove
     , removeAll
@@ -39,34 +36,6 @@ type alias MatchKey a =
     Key (Match a)
 
 
-type alias Query a =
-    Key (Maybe a)
-
-
-type alias RangeQuery a =
-    Query ( a, a )
-
-
-makeRangeQuery : Query a -> Query a -> RangeQuery a
-makeRangeQuery (Key x xs) (Key y ys) =
-    let
-        combine x_ y_ =
-            case ( x_, y_ ) of
-                ( Nothing, Nothing ) ->
-                    Nothing
-
-                ( Nothing, Just y__ ) ->
-                    Just ( y__, y__ )
-
-                ( Just x__, Nothing ) ->
-                    Just ( x__, x__ )
-
-                ( Just x__, Just y__ ) ->
-                    Just ( x__, y__ )
-    in
-    Key (combine x y) (List.map2 combine xs ys)
-
-
 key : a -> Key a
 key a =
     Key a []
@@ -80,16 +49,6 @@ addAxis a (Key head tail) =
 addCoordinateAxis : ( a, a ) -> Key a -> Key a
 addCoordinateAxis ( x, y ) (Key head tail) =
     Key x (y :: head :: tail)
-
-
-addCoordinateQuery : Maybe ( a, a ) -> Query a -> Query a
-addCoordinateQuery mp (Key head tail) =
-    case mp of
-        Just ( x, y ) ->
-            Key (Just x) (Just y :: head :: tail)
-
-        Nothing ->
-            Key Nothing (Nothing :: head :: tail)
 
 
 getIndex : Int -> Key a -> a
@@ -185,51 +144,10 @@ get query dict =
                     a
 
 
-match : Query comparable -> Key comparable -> Bool
-match (Key q qs) (Key k ks) =
-    List.map2 Tuple.pair (q :: qs) (k :: ks)
-        |> List.filter (Tuple.first >> (/=) Nothing)
-        |> List.all (\( query, key_ ) -> query == Just key_)
-
-
 mMatch : Key (Match comparable) -> Key comparable -> Bool
 mMatch (Key q qs) (Key k ks) =
     List.map2 Tuple.pair (q :: qs) (k :: ks)
         |> List.all (\( q_, k_ ) -> KD.Match.match q_ k_)
-
-
-findAll : Query comparable -> KDDict comparable v -> List v
-findAll query dict =
-    case dict of
-        Empty ->
-            []
-
-        Node index smaller ( key_, value ) larger ->
-            let
-                rest =
-                    case getIndex index query of
-                        Nothing ->
-                            findAll query smaller ++ findAll query larger
-
-                        Just thing ->
-                            case compare thing <| getIndex index key_ of
-                                EQ ->
-                                    findAll query smaller ++ findAll query larger
-
-                                LT ->
-                                    findAll query smaller
-
-                                GT ->
-                                    findAll query larger
-            in
-            if match query key_ then
-                value :: rest
-
-            else
-                rest
-
-        Deleted _ smaller larger ->
-            findAll query smaller ++ findAll query larger
 
 
 remove : Key comparable -> KDDict comparable v -> KDDict comparable v
