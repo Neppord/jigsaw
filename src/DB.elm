@@ -243,22 +243,6 @@ snap snapDistance db =
 boxSelect : Set.Set Int -> UI.SelectionMode -> Drag.Drag -> DB -> DB
 boxSelect visibleGroups mode drag db =
     let
-        { x, y, w, h } =
-            Drag.getDimensions drag
-
-        topLeft =
-            Point.Point x y
-
-        bottomRight =
-            Point.Point (x + w) (y + h)
-
-        isWithin =
-            PieceGroup.isPieceGroupInsideBox topLeft bottomRight
-
-        shouldBeSelected pg =
-            Set.member pg.visibilityGroup visibleGroups
-                && isWithin pg
-
         targets =
             db
                 |> KDDict.findMatching (matchBox <| Drag.getDimensions drag)
