@@ -272,17 +272,11 @@ boxSelect visibleGroups mode drag db =
 
         UI.Remove ->
             db
-                |> modifyBy
-                    (\pg -> shouldBeSelected pg || not pg.isSelected)
-                    PieceGroup.deselect
+                |> KDDict.removeAll (List.map makeKey targets)
+                |> KDDict.insertAllBy makeKey (List.map PieceGroup.deselect targets)
 
         UI.Replace ->
             db
-                |> map
-                    (\pg ->
-                        if pg |> shouldBeSelected then
-                            PieceGroup.select pg
-
-                        else
-                            PieceGroup.deselect pg
-                    )
+                |> KDDict.removeAll (List.map makeKey targets)
+                |> map PieceGroup.deselect
+                |> KDDict.insertAllBy makeKey (List.map PieceGroup.select targets)
