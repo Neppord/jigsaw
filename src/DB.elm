@@ -258,13 +258,17 @@ boxSelect visibleGroups mode drag db =
         shouldBeSelected pg =
             Set.member pg.visibilityGroup visibleGroups
                 && isWithin pg
+
+        targets =
+            db
+                |> KDDict.findMatching (matchBox <| Drag.getDimensions drag)
+                |> List.filter (\pg -> Set.member pg.visibilityGroup visibleGroups)
     in
     case mode of
         UI.Add ->
             db
-                |> modifyBy
-                    (\pg -> shouldBeSelected pg || pg.isSelected)
-                    PieceGroup.select
+                |> KDDict.removeAll (List.map makeKey targets)
+                |> KDDict.insertAllBy makeKey (List.map PieceGroup.select targets)
 
         UI.Remove ->
             db
