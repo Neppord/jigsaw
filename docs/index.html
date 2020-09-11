@@ -6598,6 +6598,10 @@ var $author$project$KD$Match$Anything = {$: 0};
 var $author$project$KD$Match$EqualTo = function (a) {
 	return {$: 1, a: a};
 };
+var $author$project$KDDict$Deleted = F3(
+	function (a, b, c) {
+		return {$: 2, a: a, b: b, c: c};
+	});
 var $author$project$KD$Match$compareWithMatch = F2(
 	function (k, m) {
 		switch (m.$) {
@@ -6683,55 +6687,87 @@ var $author$project$KDDict$mMatch = F2(
 				A2($elm$core$List$cons, q, qs),
 				A2($elm$core$List$cons, k, ks)));
 	});
+var $author$project$KDDict$find = F2(
+	function (query, dict) {
+		switch (dict.$) {
+			case 0:
+				return $author$project$KDDict$Empty;
+			case 1:
+				var level = dict.a;
+				var smaller = dict.b;
+				var _v1 = dict.c;
+				var key_ = _v1.a;
+				var v = _v1.b;
+				var larger = dict.d;
+				var _v2 = A2(
+					$author$project$KD$Match$compareWithMatch,
+					A2($author$project$KDDict$getIndex, level, key_),
+					A2($author$project$KDDict$getIndex, level, query));
+				switch (_v2) {
+					case 1:
+						return A2($author$project$KDDict$mMatch, query, key_) ? A4(
+							$author$project$KDDict$Node,
+							level,
+							A2($author$project$KDDict$find, query, smaller),
+							_Utils_Tuple2(key_, v),
+							A2($author$project$KDDict$find, query, larger)) : A3(
+							$author$project$KDDict$Deleted,
+							level,
+							A2($author$project$KDDict$find, query, smaller),
+							A2($author$project$KDDict$find, query, larger));
+					case 0:
+						return A3(
+							$author$project$KDDict$Deleted,
+							level,
+							$author$project$KDDict$Empty,
+							A2($author$project$KDDict$find, query, larger));
+					default:
+						return A3(
+							$author$project$KDDict$Deleted,
+							level,
+							A2($author$project$KDDict$find, query, smaller),
+							$author$project$KDDict$Empty);
+				}
+			default:
+				var level = dict.a;
+				var smaller = dict.b;
+				var larger = dict.c;
+				return A3(
+					$author$project$KDDict$Deleted,
+					level,
+					A2($author$project$KDDict$find, query, smaller),
+					A2($author$project$KDDict$find, query, larger));
+		}
+	});
+var $author$project$KDDict$toList = function (dict) {
+	switch (dict.$) {
+		case 0:
+			return _List_Nil;
+		case 1:
+			var smaller = dict.b;
+			var item = dict.c;
+			var larger = dict.d;
+			return _Utils_ap(
+				$author$project$KDDict$toList(smaller),
+				A2(
+					$elm$core$List$cons,
+					item,
+					$author$project$KDDict$toList(larger)));
+		default:
+			var smaller = dict.b;
+			var larger = dict.c;
+			return _Utils_ap(
+				$author$project$KDDict$toList(smaller),
+				$author$project$KDDict$toList(larger));
+	}
+};
 var $author$project$KDDict$findMatching = F2(
 	function (query, dict) {
-		findMatching:
-		while (true) {
-			switch (dict.$) {
-				case 0:
-					return _List_Nil;
-				case 1:
-					var level = dict.a;
-					var smaller = dict.b;
-					var _v1 = dict.c;
-					var key_ = _v1.a;
-					var v = _v1.b;
-					var larger = dict.d;
-					var _v2 = A2(
-						$author$project$KD$Match$compareWithMatch,
-						A2($author$project$KDDict$getIndex, level, key_),
-						A2($author$project$KDDict$getIndex, level, query));
-					switch (_v2) {
-						case 1:
-							return A2($author$project$KDDict$mMatch, query, key_) ? A2(
-								$elm$core$List$cons,
-								v,
-								_Utils_ap(
-									A2($author$project$KDDict$findMatching, query, smaller),
-									A2($author$project$KDDict$findMatching, query, larger))) : _Utils_ap(
-								A2($author$project$KDDict$findMatching, query, smaller),
-								A2($author$project$KDDict$findMatching, query, larger));
-						case 0:
-							var $temp$query = query,
-								$temp$dict = larger;
-							query = $temp$query;
-							dict = $temp$dict;
-							continue findMatching;
-						default:
-							var $temp$query = query,
-								$temp$dict = smaller;
-							query = $temp$query;
-							dict = $temp$dict;
-							continue findMatching;
-					}
-				default:
-					var smaller = dict.b;
-					var larger = dict.c;
-					return _Utils_ap(
-						A2($author$project$KDDict$findMatching, query, smaller),
-						A2($author$project$KDDict$findMatching, query, larger));
-			}
-		}
+		return A2(
+			$elm$core$List$map,
+			$elm$core$Tuple$second,
+			$author$project$KDDict$toList(
+				A2($author$project$KDDict$find, query, dict)));
 	});
 var $author$project$DB$getSelected = function (db) {
 	return A2(
@@ -7241,28 +7277,6 @@ var $author$project$PieceGroup$deselect = function (x) {
 		x,
 		{ac: false});
 };
-var $author$project$KDDict$toList = function (dict) {
-	switch (dict.$) {
-		case 0:
-			return _List_Nil;
-		case 1:
-			var smaller = dict.b;
-			var item = dict.c;
-			var larger = dict.d;
-			return _Utils_ap(
-				$author$project$KDDict$toList(smaller),
-				A2(
-					$elm$core$List$cons,
-					item,
-					$author$project$KDDict$toList(larger)));
-		default:
-			var smaller = dict.b;
-			var larger = dict.c;
-			return _Utils_ap(
-				$author$project$KDDict$toList(smaller),
-				$author$project$KDDict$toList(larger));
-	}
-};
 var $author$project$DB$all = function (db) {
 	return A2(
 		$elm$core$List$map,
@@ -7476,10 +7490,6 @@ var $author$project$PieceGroup$move = F2(
 			{
 				aR: A2($author$project$Point$add, offset, pg.aR)
 			});
-	});
-var $author$project$KDDict$Deleted = F3(
-	function (a, b, c) {
-		return {$: 2, a: a, b: b, c: c};
 	});
 var $author$project$KDDict$insert_ = F4(
 	function (i, key_, value, dict) {

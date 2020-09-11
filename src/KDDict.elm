@@ -326,26 +326,33 @@ sortByAxis_ numberOfLevels level dict =
             merge_ sortedSmaller sortedLarger
 
 
-findMatching : MatchKey comparable -> KDDict comparable v -> List v
-findMatching query dict =
+find : MatchKey comparable -> KDDict comparable v -> KDDict comparable v
+find query dict =
     case dict of
         Empty ->
-            []
+            Empty
 
         Node level smaller ( key_, v ) larger ->
             case compareWithMatch (getIndex level key_) (getIndex level query) of
                 EQ ->
                     if mMatch query key_ then
-                        v :: (findMatching query smaller ++ findMatching query larger)
+                        Node level (find query smaller) ( key_, v ) (find query larger)
 
                     else
-                        findMatching query smaller ++ findMatching query larger
+                        Deleted level (find query smaller) (find query larger)
 
                 LT ->
-                    findMatching query larger
+                    Deleted level Empty (find query larger)
 
                 GT ->
-                    findMatching query smaller
+                    Deleted level (find query smaller) Empty
 
-        Deleted _ smaller larger ->
-            findMatching query smaller ++ findMatching query larger
+        Deleted level smaller larger ->
+            Deleted level (find query smaller) (find query larger)
+
+
+findMatching : MatchKey comparable -> KDDict comparable v -> List v
+findMatching query dict =
+    find query dict
+        |> toList
+        |> List.map Tuple.second
