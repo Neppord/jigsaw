@@ -15,7 +15,6 @@ module DB exposing
 import Drag
 import KD.Match exposing (Match(..))
 import KDDict exposing (KDDict, MatchKey)
-import Maybe
 import PieceGroup exposing (PieceGroup)
 import Point
 import Set
@@ -28,10 +27,6 @@ type alias DB =
 
 type alias DbKey =
     KDDict.Key Int
-
-
-type alias DbQuery =
-    KDDict.Key (Maybe Int)
 
 
 keyBool : Bool -> Int
@@ -55,13 +50,6 @@ makeKey { id, isSelected, position } =
         |> KDDict.addAxis (Tuple.first id)
         |> KDDict.addAxis (Tuple.second position_)
         |> KDDict.addAxis (Tuple.first position_)
-
-
-type alias QueryConst =
-    { id : Maybe ( Int, Int )
-    , isSelected : Maybe Bool
-    , position : Maybe ( Int, Int )
-    }
 
 
 matchWithin : { x : Int, y : Int, w : Int, h : Int } -> MatchKey Int
