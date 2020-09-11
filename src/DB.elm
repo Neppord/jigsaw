@@ -13,7 +13,8 @@ module DB exposing
     )
 
 import Drag
-import KDDict exposing (KDDict)
+import KD.Match exposing (Match(..))
+import KDDict exposing (KDDict, MatchKey)
 import Maybe
 import PieceGroup exposing (PieceGroup)
 import Point
@@ -78,6 +79,15 @@ makeQuery { id, isSelected, position } =
         |> KDDict.addAxis (Maybe.map Tuple.first id)
         |> KDDict.addAxis (Maybe.map Tuple.second position)
         |> KDDict.addAxis (Maybe.map Tuple.first position)
+
+
+matchWithin : { x : Int, y : Int, w : Int, h : Int } -> MatchKey Int
+matchWithin { x, y, w, h } =
+    KDDict.key Anything
+        |> KDDict.addAxis Anything
+        |> KDDict.addAxis Anything
+        |> KDDict.addAxis (WithinRange y (y + h))
+        |> KDDict.addAxis (WithinRange x (x + w))
 
 
 makeDb : List PieceGroup -> DB
@@ -164,36 +174,31 @@ snap snapDistance db =
                 memberIds =
                     Set.fromList <| List.map .id pg.members
 
-                shouldBeMerged x =
-                    (x.id == pg.id)
-                        || (Set.intersect memberIds x.neighbours
+                shouldBeMerged other =
+                    (other.id == pg.id)
+                        || (Set.intersect memberIds other.neighbours
                                 |> Set.isEmpty
                                 |> not
                            )
 
-                position =
-                    pg.position
+                dimensions =
+                    let
+                        { x, y } =
+                            pg.position
 
-                radius =
-                    floor snapDistance
-
-                topLeft =
-                    position
-                        |> Point.add (Point.Point -radius -radius)
-                        |> Point.toPair
-
-                bottomRight =
-                    position
-                        |> Point.add (Point.Point radius radius)
-                        |> Point.toPair
+                        radius =
+                            floor snapDistance
+                    in
+                    { x = x - radius
+                    , w = radius * 2
+                    , y = y - radius
+                    , h = radius * 2
+                    }
 
                 targets =
                     db
-                        |> KDDict.findAllInRange
-                            (KDDict.makeRangeQuery
-                                (makeQuery { emptyQuery | position = Just topLeft })
-                                (makeQuery { emptyQuery | position = Just bottomRight })
-                            )
+                        |> KDDict.findMatching
+                            (matchWithin dimensions)
                         |> List.filter shouldBeMerged
 
                 merge list =

@@ -69,7 +69,7 @@ tests =
         , test "range" <|
             \_ ->
                 KDDict.fromListBy KDDict.key [ 1, 2, 3, 4, 5 ]
-                    |> KDDict.findAllInRange (KDDict.key <| Just ( 2, 3 ))
+                    |> KDDict.findMatching (KDDict.key <| KD.Match.WithinRange 2 3)
                     |> equal [ 2, 3 ]
         , test "matching" <|
             \_ ->

@@ -1,12 +1,12 @@
 module KDDict exposing
     ( KDDict
     , Key(..)
+    , MatchKey
     , addAxis
     , addCoordinateAxis
     , addCoordinateQuery
     , empty
     , findAll
-    , findAllInRange
     , findMatching
     , fromList
     , fromListBy
@@ -192,6 +192,12 @@ match (Key q qs) (Key k ks) =
         |> List.all (\( query, key_ ) -> query == Just key_)
 
 
+mMatch : Key (Match comparable) -> Key comparable -> Bool
+mMatch (Key q qs) (Key k ks) =
+    List.map2 Tuple.pair (q :: qs) (k :: ks)
+        |> List.all (\( q_, k_ ) -> KD.Match.match q_ k_)
+
+
 findAll : Query comparable -> KDDict comparable v -> List v
 findAll query dict =
     case dict of
@@ -224,68 +230,6 @@ findAll query dict =
 
         Deleted _ smaller larger ->
             findAll query smaller ++ findAll query larger
-
-
-matchRange : RangeQuery comparable -> Key comparable -> Bool
-matchRange (Key q qs) (Key k ks) =
-    let
-        concat ma b =
-            case ma of
-                Nothing ->
-                    b
-
-                Just a ->
-                    a :: b
-
-        promote ( ma, b ) =
-            Maybe.map2 Tuple.pair ma (Just b)
-
-        inRange ( ( s, l ), i ) =
-            s <= i && i <= l
-    in
-    List.map2 Tuple.pair (q :: qs) (k :: ks)
-        |> List.map promote
-        |> List.foldl concat []
-        |> List.all inRange
-
-
-findAllInRange : RangeQuery comparable -> KDDict comparable v -> List v
-findAllInRange query dict =
-    case dict of
-        Empty ->
-            []
-
-        Node index smaller ( key_, value ) larger ->
-            let
-                rest =
-                    case getIndex index query of
-                        Nothing ->
-                            findAllInRange query smaller ++ findAllInRange query larger
-
-                        Just ( s, l ) ->
-                            let
-                                toCompare =
-                                    getIndex index key_
-                            in
-                            case ( toCompare < s, l < toCompare ) of
-                                ( True, _ ) ->
-                                    findAllInRange query larger
-
-                                ( _, True ) ->
-                                    findAllInRange query smaller
-
-                                ( _, _ ) ->
-                                    {- s < toCompare < l -}
-                                    findAllInRange query smaller ++ findAllInRange query larger
-            in
-            if matchRange query key_ then
-                value :: rest
-
-            else
-                rest
-
-        Deleted _ smaller larger ->
-            findAllInRange query smaller ++ findAllInRange query larger
 
 
 remove : Key comparable -> KDDict comparable v -> KDDict comparable v
@@ -396,7 +340,11 @@ findMatching query dict =
         Node level smaller ( key_, v ) larger ->
             case compareWithMatch (getIndex level key_) (getIndex level query) of
                 EQ ->
-                    v :: (findMatching query smaller ++ findMatching query larger)
+                    if mMatch query key_ then
+                        v :: (findMatching query smaller ++ findMatching query larger)
+
+                    else
+                        findMatching query smaller ++ findMatching query larger
 
                 LT ->
                     findMatching query larger
@@ -404,5 +352,5 @@ findMatching query dict =
                 GT ->
                     findMatching query smaller
 
-        Deleted level smaller larger ->
+        Deleted _ smaller larger ->
             findMatching query smaller ++ findMatching query larger
