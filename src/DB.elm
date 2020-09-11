@@ -64,23 +64,6 @@ type alias QueryConst =
     }
 
 
-emptyQuery : QueryConst
-emptyQuery =
-    { id = Nothing
-    , isSelected = Nothing
-    , position = Nothing
-    }
-
-
-makeQuery : QueryConst -> DbQuery
-makeQuery { id, isSelected, position } =
-    KDDict.key (Maybe.map keyBool isSelected)
-        |> KDDict.addAxis (Maybe.map Tuple.second id)
-        |> KDDict.addAxis (Maybe.map Tuple.first id)
-        |> KDDict.addAxis (Maybe.map Tuple.second position)
-        |> KDDict.addAxis (Maybe.map Tuple.first position)
-
-
 matchWithin : { x : Int, y : Int, w : Int, h : Int } -> MatchKey Int
 matchWithin { x, y, w, h } =
     KDDict.key Anything
@@ -98,15 +81,25 @@ makeDb list =
 getSelected : DB -> List PieceGroup
 getSelected db =
     db
-        |> KDDict.findAll
-            (makeQuery { emptyQuery | isSelected = Just True })
+        |> KDDict.findMatching
+            (KDDict.key (EqualTo (keyBool True))
+                |> KDDict.addAxis Anything
+                |> KDDict.addAxis Anything
+                |> KDDict.addAxis Anything
+                |> KDDict.addAxis Anything
+            )
 
 
 getUnSelected : DB -> List PieceGroup
 getUnSelected db =
     db
-        |> KDDict.findAll
-            (makeQuery { emptyQuery | isSelected = Just False })
+        |> KDDict.findMatching
+            (KDDict.key (EqualTo (keyBool False))
+                |> KDDict.addAxis Anything
+                |> KDDict.addAxis Anything
+                |> KDDict.addAxis Anything
+                |> KDDict.addAxis Anything
+            )
 
 
 modifySelected : (PieceGroup -> PieceGroup) -> DB -> DB
