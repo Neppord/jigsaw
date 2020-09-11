@@ -2,6 +2,7 @@ module TestKDDict exposing (..)
 
 import Expect exposing (equal)
 import Fuzz exposing (Fuzzer)
+import KD.Match
 import KDDict exposing (KDDict)
 import Test exposing (describe, fuzz, test)
 
@@ -70,4 +71,9 @@ tests =
                 KDDict.fromListBy KDDict.key [ 1, 2, 3, 4, 5 ]
                     |> KDDict.findAllInRange (KDDict.key <| Just ( 2, 3 ))
                     |> equal [ 2, 3 ]
+        , test "matching" <|
+            \_ ->
+                KDDict.fromListBy KDDict.key [ 1, 2, 3, 4, 5 ]
+                    |> KDDict.findMatching (KDDict.key <| KD.Match.LargerThan 4)
+                    |> equal [ 4, 5 ]
         ]

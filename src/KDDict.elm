@@ -7,6 +7,7 @@ module KDDict exposing
     , empty
     , findAll
     , findAllInRange
+    , findMatching
     , fromList
     , fromListBy
     , get
@@ -21,6 +22,8 @@ module KDDict exposing
     , toList
     )
 
+import KD.Match exposing (Match, compareWithMatch)
+
 
 type KDDict comparable v
     = Empty
@@ -30,6 +33,10 @@ type KDDict comparable v
 
 type Key a
     = Key a (List a)
+
+
+type alias MatchKey a =
+    Key (Match a)
 
 
 type alias Query a =
@@ -378,3 +385,24 @@ merge d1 d2 =
 
         ( _, Deleted i _ _ ) ->
             toList d1 ++ toList d2 |> fromList_ i
+
+
+findMatching : MatchKey comparable -> KDDict comparable v -> List v
+findMatching query dict =
+    case dict of
+        Empty ->
+            []
+
+        Node level smaller ( key_, v ) larger ->
+            case compareWithMatch (getIndex level key_) (getIndex level query) of
+                EQ ->
+                    v :: (findMatching query smaller ++ findMatching query larger)
+
+                LT ->
+                    findMatching query larger
+
+                GT ->
+                    findMatching query smaller
+
+        Deleted level smaller larger ->
+            findMatching query smaller ++ findMatching query larger
