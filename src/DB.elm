@@ -39,17 +39,27 @@ keyBool v =
 
 
 makeKey : PieceGroup -> DbKey
-makeKey { id, isSelected, position } =
+makeKey { id, isSelected, position, minOffset, maxOffset } =
     let
         position_ =
             position
                 |> Point.toPair
+
+        ( x1, x2 ) =
+            ( position.x + minOffset.x, position.x + maxOffset.x )
+
+        ( y1, y2 ) =
+            ( position.y + minOffset.y, position.y + maxOffset.y )
     in
     KDDict.key (keyBool isSelected)
         |> KDDict.addAxis (Tuple.second id)
         |> KDDict.addAxis (Tuple.first id)
         |> KDDict.addAxis (Tuple.second position_)
         |> KDDict.addAxis (Tuple.first position_)
+        |> KDDict.addAxis x2
+        |> KDDict.addAxis x1
+        |> KDDict.addAxis y2
+        |> KDDict.addAxis y1
 
 
 matchWithin : { x : Int, y : Int, w : Int, h : Int } -> MatchKey Int
@@ -59,6 +69,23 @@ matchWithin { x, y, w, h } =
         |> KDDict.addAxis Anything
         |> KDDict.addAxis (WithinRange y (y + h))
         |> KDDict.addAxis (WithinRange x (x + w))
+        |> KDDict.addAxis Anything
+        |> KDDict.addAxis Anything
+        |> KDDict.addAxis Anything
+        |> KDDict.addAxis Anything
+
+
+matchBox : { x : Int, y : Int, w : Int, h : Int } -> MatchKey Int
+matchBox { x, y, w, h } =
+    KDDict.key Anything
+        |> KDDict.addAxis Anything
+        |> KDDict.addAxis Anything
+        |> KDDict.addAxis Anything
+        |> KDDict.addAxis Anything
+        {- max x -} |> KDDict.addAxis (SmallerThan (x + w))
+        {- min x -} |> KDDict.addAxis (LargerThan x)
+        {- max y -} |> KDDict.addAxis (SmallerThan (y + h))
+        {- min y -} |> KDDict.addAxis (LargerThan y)
 
 
 makeDb : List PieceGroup -> DB
@@ -75,6 +102,10 @@ getSelected db =
                 |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
+                |> KDDict.addAxis Anything
+                |> KDDict.addAxis Anything
+                |> KDDict.addAxis Anything
+                |> KDDict.addAxis Anything
             )
         |> List.sortBy .id
 
@@ -84,6 +115,10 @@ getUnSelected db =
     db
         |> KDDict.findMatching
             (KDDict.key (EqualTo (keyBool False))
+                |> KDDict.addAxis Anything
+                |> KDDict.addAxis Anything
+                |> KDDict.addAxis Anything
+                |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
