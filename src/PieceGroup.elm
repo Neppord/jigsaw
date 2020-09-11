@@ -109,8 +109,8 @@ createPieceGroup image id pos =
     , members = [ Piece id offset size ]
     , neighbours = neighbours id
     , visibilityGroup = -1
-    , maxOffset = offset
     , minOffset = offset
+    , maxOffset = Point.add size offset
     }
 
 
