@@ -18,7 +18,7 @@ import JigsawImage exposing (JigsawImage)
 import KD.Match exposing (Match(..))
 import KDDict exposing (KDDict, MatchKey)
 import PieceGroup exposing (PieceGroup)
-import Point
+import Point exposing (Point)
 import Set
 import UI
 
@@ -90,9 +90,31 @@ matchBox { x, y, w, h } =
         {- min y -} |> KDDict.addAxis (LargerThan y)
 
 
+matchPoint : Point -> MatchKey Int
+matchPoint { x, y } =
+    let
+        radius =
+            1
+    in
+    KDDict.key Anything
+        |> KDDict.addAxis Anything
+        |> KDDict.addAxis Anything
+        |> KDDict.addAxis Anything
+        |> KDDict.addAxis Anything
+        {- max x -} |> KDDict.addAxis (LargerThan (x - radius))
+        {- min x -} |> KDDict.addAxis (SmallerThan (x + radius))
+        {- max y -} |> KDDict.addAxis (LargerThan (y - radius))
+        {- min y -} |> KDDict.addAxis (SmallerThan (y + radius))
+
+
 makeDb : List PieceGroup -> DB
 makeDb list =
     KDDict.fromListBy makeKey list
+
+
+order : List PieceGroup -> List PieceGroup
+order =
+    List.sortBy (\pg -> ( keyBool pg.isSelected, pg.id ))
 
 
 getSelected : DB -> List PieceGroup
@@ -109,7 +131,7 @@ getSelected db =
                 |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
             )
-        |> List.sortBy .id
+        |> order
 
 
 getUnSelected : DB -> List PieceGroup
@@ -126,7 +148,7 @@ getUnSelected db =
                 |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
             )
-        |> List.sortBy .id
+        |> order
 
 
 modifySelected : (PieceGroup -> PieceGroup) -> DB -> DB
@@ -269,9 +291,11 @@ boxSelect visibleGroups mode drag db =
 
 
 clickedPieceGroup : Set.Set Int -> JigsawImage -> DB -> Point.Point -> Maybe PieceGroup
-clickedPieceGroup visibleGroups_ image_ db_ coordinate_ =
+clickedPieceGroup visibleGroups_ _ db_ point =
     db_
-        |> findBy
-            (PieceGroup.isPointInsidePieceGroup visibleGroups_ image_ coordinate_)
+        |> KDDict.findMatching
+            (matchPoint point)
+        |> List.filter (\pg -> Set.member pg.visibilityGroup visibleGroups_)
+        |> order
         |> List.reverse
         |> List.head
