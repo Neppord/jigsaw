@@ -16,6 +16,7 @@ module KDDict exposing
     , merge
     , remove
     , removeAll
+    , sortByAxis
     , toList
     )
 
@@ -247,6 +248,82 @@ merge d1 d2 =
 
         ( _, Deleted i _ _ ) ->
             toList d1 ++ toList d2 |> fromList_ i
+
+
+compareKey : Int -> Key comparable -> Key comparable -> Order
+compareKey level k1 k2 =
+    compare (getIndex level k1) (getIndex level k2)
+
+
+sortByAxis : Int -> Int -> KDDict comparable b -> List b
+sortByAxis numberOfLevels level dict =
+    dict
+        |> sortByAxis_ numberOfLevels level
+        |> List.map Tuple.second
+
+
+sortByAxis_ : Int -> Int -> KDDict comparable b -> List ( Key comparable, b )
+sortByAxis_ numberOfLevels level dict =
+    let
+        merge_ : List ( Key comparable, b ) -> List ( Key comparable, b ) -> List ( Key comparable, b )
+        merge_ x y =
+            case ( x, y ) of
+                ( [], ys ) ->
+                    ys
+
+                ( xs, [] ) ->
+                    xs
+
+                ( ( k1, v1 ) :: xs, ( k2, v2 ) :: ys ) ->
+                    case compareKey level k1 k2 of
+                        LT ->
+                            ( k1, v1 ) :: merge_ xs (( k2, v2 ) :: ys)
+
+                        _ ->
+                            ( k2, v2 ) :: merge_ (( k1, v1 ) :: xs) ys
+
+        insert__ : ( Key comparable, b ) -> List ( Key comparable, b ) -> List ( Key comparable, b )
+        insert__ ( k1, v1 ) x =
+            case x of
+                [] ->
+                    [ ( k1, v1 ) ]
+
+                ( k2, v2 ) :: xs ->
+                    case compareKey level k1 k2 of
+                        LT ->
+                            ( k1, v1 ) :: x
+
+                        _ ->
+                            ( k2, v2 ) :: insert__ ( k1, v1 ) xs
+    in
+    case dict of
+        Empty ->
+            []
+
+        Node nodeLevel smaller ( key_, v ) larger ->
+            let
+                sortedSmaller =
+                    sortByAxis_ numberOfLevels level smaller
+
+                sortedLarger =
+                    sortByAxis_ numberOfLevels level larger
+            in
+            if modBy numberOfLevels nodeLevel == level then
+                sortedSmaller ++ (( key_, v ) :: sortedLarger)
+
+            else
+                merge_ sortedSmaller sortedLarger
+                    |> insert__ ( key_, v )
+
+        Deleted _ smaller larger ->
+            let
+                sortedSmaller =
+                    sortByAxis_ numberOfLevels level smaller
+
+                sortedLarger =
+                    sortByAxis_ numberOfLevels level larger
+            in
+            merge_ sortedSmaller sortedLarger
 
 
 findMatching : MatchKey comparable -> KDDict comparable v -> List v
