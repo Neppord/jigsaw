@@ -5,6 +5,7 @@ module KDDict exposing
     , addAxis
     , addCoordinateAxis
     , empty
+    , find
     , findMatching
     , fromList
     , fromListBy
