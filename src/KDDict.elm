@@ -438,6 +438,7 @@ sortByAxis_ numberOfLevels level dict =
             merge_ sortedSmaller sortedLarger
 
 
+compareWithMatchKey : Int -> Key comparable -> Key (Match comparable) -> Order
 compareWithMatchKey index k1 k2 =
     compareWithMatch (getIndex index k1) (getIndex index k2)
 
@@ -474,6 +475,7 @@ findMatching query dict =
         |> List.map Tuple.second
 
 
+unsafeMap : (v -> a) -> KDDict comparable v -> KDDict comparable a
 unsafeMap f dict =
     case dict of
         Empty ->
