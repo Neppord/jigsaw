@@ -13,6 +13,7 @@ module KDDict exposing
     , fromListBy
     , get
     , height
+    , heightDifference
     , insert
     , insertAll
     , insertAllBy
@@ -172,6 +173,37 @@ height dict =
 
         Deleted _ smaller larger ->
             1 + max (height smaller) (height larger)
+
+
+heightDifference : KDDict comparable v -> Int
+heightDifference dict =
+    case dict of
+        Empty ->
+            0
+
+        Node _ smaller _ larger ->
+            let
+                diff =
+                    abs (height smaller - height larger)
+            in
+            max
+                diff
+                (max
+                    (heightDifference smaller)
+                    (heightDifference larger)
+                )
+
+        Deleted _ smaller larger ->
+            let
+                diff =
+                    abs (height smaller - height larger)
+            in
+            max
+                diff
+                (max
+                    (heightDifference smaller)
+                    (heightDifference larger)
+                )
 
 
 size : KDDict comparable v -> number

@@ -6,6 +6,7 @@ module DB exposing
     , getSelected
     , getUnSelected
     , height
+    , heightDifference
     , makeDb
     , modifySelected
     , optimalHeight
@@ -308,3 +309,8 @@ select mode pg db =
 countDeleted : DB -> Int
 countDeleted =
     KDDict.countDeleted
+
+
+heightDifference : DB -> Int
+heightDifference =
+    KDDict.heightDifference

@@ -84,6 +84,7 @@ renderStats { db, configuration } =
         [ item <| "puzzle size: " ++ String.fromInt size
         , item <| "pieces left: " ++ String.fromInt (DB.size db)
         , item <| "seek time: " ++ String.fromInt (DB.height db)
+        , item <| "seek diff time: " ++ String.fromInt (DB.heightDifference db)
         , item <| "optimal seek time: " ++ String.fromInt (DB.optimalHeight db)
         , item <| "perf: " ++ perf
         , item <| "deleted nodes: " ++ String.fromInt (DB.countDeleted db)
