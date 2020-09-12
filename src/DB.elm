@@ -6,7 +6,6 @@ module DB exposing
     , getUnSelected
     , height
     , makeDb
-    , modify
     , modifySelected
     , optimalHeight
     , select
@@ -146,19 +145,6 @@ all db =
     db
         |> KDDict.toList
         |> List.map Tuple.second
-
-
-modify : PieceGroup.ID -> (PieceGroup -> PieceGroup) -> DB -> DB
-modify id action db =
-    let
-        toMap x =
-            if x.id == id then
-                action x
-
-            else
-                x
-    in
-    db |> KDDict.unsafeMap toMap
 
 
 insert : PieceGroup -> DB -> DB
