@@ -4,6 +4,7 @@ module KDDict exposing
     , MatchKey
     , addAxis
     , addCoordinateAxis
+    , coordinateKey
     , empty
     , find
     , findMatching
@@ -44,6 +45,11 @@ type alias MatchKey a =
 key : a -> Key a
 key a =
     Key a []
+
+
+coordinateKey : ( a, a ) -> Key a
+coordinateKey ( x, y ) =
+    Key x [ y ]
 
 
 addAxis : a -> Key a -> Key a
