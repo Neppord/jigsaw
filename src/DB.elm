@@ -76,8 +76,6 @@ makeKey { id, isSelected, position, minOffset, maxOffset } =
             ( position.y + minOffset.y, position.y + maxOffset.y )
     in
     KDDict.key (keyBool isSelected)
-        |> KDDict.addAxis (Tuple.second id)
-        |> KDDict.addAxis (Tuple.first id)
         |> KDDict.addAxis (Tuple.second position_)
         |> KDDict.addAxis (Tuple.first position_)
         |> KDDict.addAxis x2
@@ -89,8 +87,6 @@ makeKey { id, isSelected, position, minOffset, maxOffset } =
 matchWithin : { x : Int, y : Int, w : Int, h : Int } -> MatchKey Int
 matchWithin { x, y, w, h } =
     KDDict.key Anything
-        |> KDDict.addAxis Anything
-        |> KDDict.addAxis Anything
         |> KDDict.addAxis (WithinRange y (y + h))
         |> KDDict.addAxis (WithinRange x (x + w))
         |> KDDict.addAxis Anything
@@ -102,8 +98,6 @@ matchWithin { x, y, w, h } =
 matchBox : { x : Int, y : Int, w : Int, h : Int } -> MatchKey Int
 matchBox { x, y, w, h } =
     KDDict.key Anything
-        |> KDDict.addAxis Anything
-        |> KDDict.addAxis Anything
         |> KDDict.addAxis Anything
         |> KDDict.addAxis Anything
         {- max x -} |> KDDict.addAxis (SmallerThan (x + w))
@@ -119,8 +113,6 @@ matchPoint { x, y } =
             1
     in
     KDDict.key Anything
-        |> KDDict.addAxis Anything
-        |> KDDict.addAxis Anything
         |> KDDict.addAxis Anything
         |> KDDict.addAxis Anything
         {- max x -} |> KDDict.addAxis (LargerThan (x - radius))
@@ -150,8 +142,6 @@ getSelected db =
                 |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
-                |> KDDict.addAxis Anything
-                |> KDDict.addAxis Anything
             )
         |> order
 
@@ -161,8 +151,6 @@ getUnSelected db =
     db
         |> KDDict.findMatching
             (KDDict.key (EqualTo (keyBool False))
-                |> KDDict.addAxis Anything
-                |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
                 |> KDDict.addAxis Anything
