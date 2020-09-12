@@ -46,7 +46,7 @@ height =
 optimalHeight : DB -> Int
 optimalHeight db =
     db
-        |> height
+        |> size
         |> toFloat
         |> logBase 2
         |> floor
