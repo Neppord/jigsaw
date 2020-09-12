@@ -10,6 +10,7 @@ module KDDict exposing
     , fromList
     , fromListBy
     , get
+    , height
     , insert
     , insertAll
     , insertAllBy
@@ -119,6 +120,19 @@ toList dict =
 
         Deleted _ smaller larger ->
             toList smaller ++ toList larger
+
+
+height : KDDict comparable v -> number
+height dict =
+    case dict of
+        Empty ->
+            0
+
+        Node _ smaller _ larger ->
+            1 + max (height smaller) (height larger)
+
+        Deleted _ smaller larger ->
+            1 + max (height smaller) (height larger)
 
 
 get : Key comparable -> KDDict comparable v -> Maybe v
