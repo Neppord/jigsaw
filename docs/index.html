@@ -7818,8 +7818,8 @@ var $author$project$PieceGroup$merge = F2(
 			A2($elm$core$Basics$min, a.bs.t, b.bs.t));
 		var maxOffset = A2(
 			$author$project$Point$Point,
-			A2($elm$core$Basics$max, a.bs.s, b.bs.s),
-			A2($elm$core$Basics$max, a.bs.t, b.bs.t));
+			A2($elm$core$Basics$max, a.bq.s, b.bq.s),
+			A2($elm$core$Basics$max, a.bq.t, b.bq.t));
 		return {D: a.D, aG: false, bq: maxOffset, br: newMembers, bs: minOffset, bw: newNeighbours, aP: a.aP, a4: a.a4};
 	});
 var $author$project$DB$snap = F2(
@@ -8074,10 +8074,96 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 			$elm$json$Json$Encode$string(string));
 	});
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
+var $elm$core$String$fromFloat = _String_fromNumber;
+var $author$project$KDDict$height = function (dict) {
+	switch (dict.$) {
+		case 0:
+			return 0;
+		case 1:
+			var smaller = dict.b;
+			var larger = dict.d;
+			return 1 + A2(
+				$elm$core$Basics$max,
+				$author$project$KDDict$height(smaller),
+				$author$project$KDDict$height(larger));
+		default:
+			var smaller = dict.b;
+			var larger = dict.c;
+			return 1 + A2(
+				$elm$core$Basics$max,
+				$author$project$KDDict$height(smaller),
+				$author$project$KDDict$height(larger));
+	}
+};
+var $author$project$DB$height = $author$project$KDDict$height;
+var $elm$html$Html$li = _VirtualDom_node('li');
+var $author$project$DB$optimalHeight = function (db) {
+	return $elm$core$Basics$floor(
+		A2(
+			$elm$core$Basics$logBase,
+			2,
+			$author$project$DB$height(db)));
+};
+var $elm$core$List$singleton = function (value) {
+	return _List_fromArray(
+		[value]);
+};
+var $author$project$KDDict$size = function (dict) {
+	switch (dict.$) {
+		case 0:
+			return 0;
+		case 1:
+			var smaller = dict.b;
+			var larger = dict.d;
+			return (1 + $author$project$KDDict$size(smaller)) + $author$project$KDDict$size(larger);
+		default:
+			var smaller = dict.b;
+			var larger = dict.c;
+			return $author$project$KDDict$size(smaller) + $author$project$KDDict$size(larger);
+	}
+};
+var $author$project$DB$size = $author$project$KDDict$size;
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $elm$html$Html$ul = _VirtualDom_node('ul');
+var $author$project$View$renderStats = function (_v0) {
+	var db = _v0.n;
+	var configuration = _v0.K;
+	var size = configuration.U.am * configuration.U.an;
+	var perf = $elm$core$String$fromFloat(
+		$author$project$DB$height(db) / $author$project$DB$optimalHeight(db));
+	var item = function (string) {
+		return A2(
+			$elm$html$Html$li,
+			_List_Nil,
+			$elm$core$List$singleton(
+				$elm$html$Html$text(string)));
+	};
+	return A2(
+		$elm$html$Html$ul,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'background-color', 'rgba(100%, 100%, 100%, 50%)'),
+				A2($elm$html$Html$Attributes$style, 'margin', '0')
+			]),
+		_List_fromArray(
+			[
+				item(
+				'puzzle size: ' + $elm$core$String$fromInt(size)),
+				item(
+				'pieces left: ' + $elm$core$String$fromInt(
+					$author$project$DB$size(db))),
+				item(
+				'seek time: ' + $elm$core$String$fromInt(
+					$author$project$DB$height(db))),
+				item(
+				'optimal seek time: ' + $elm$core$String$fromInt(
+					$author$project$DB$optimalHeight(db))),
+				item('perf: ' + perf)
+			]));
+};
 var $elm$html$Html$Attributes$draggable = _VirtualDom_attribute('draggable');
 var $author$project$View$turnOffTheBloodyImageDragging = _List_fromArray(
 	[
@@ -8092,7 +8178,6 @@ var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('
 var $elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
 var $elm$svg$Svg$clipPath = $elm$svg$Svg$trustedNode('clipPath');
 var $elm$svg$Svg$Attributes$d = _VirtualDom_attribute('d');
-var $elm$core$String$fromFloat = _String_fromNumber;
 var $elm$svg$Svg$Attributes$id = _VirtualDom_attribute('id');
 var $elm$svg$Svg$path = $elm$svg$Svg$trustedNode('path');
 var $author$project$View$pieceClipId = function (_v0) {
@@ -8206,10 +8291,6 @@ var $elm$html$Html$Attributes$height = function (n) {
 };
 var $elm$virtual_dom$VirtualDom$lazy2 = _VirtualDom_lazy2;
 var $elm$svg$Svg$Lazy$lazy2 = $elm$virtual_dom$VirtualDom$lazy2;
-var $elm$core$List$singleton = function (value) {
-	return _List_fromArray(
-		[value]);
-};
 var $elm$svg$Svg$svg = $elm$svg$Svg$trustedNode('svg');
 var $elm$html$Html$Attributes$width = function (n) {
 	return A2(
@@ -8358,19 +8439,6 @@ var $author$project$View$viewDiv = function (model) {
 	var unSelected = _v1.b;
 	return _List_fromArray(
 		[
-			A2(
-			$elm$html$Html$div,
-			_List_fromArray(
-				[
-					A2($elm$html$Html$Attributes$style, 'bottom', '0'),
-					A2($elm$html$Html$Attributes$style, 'position', 'absolute')
-				]),
-			_List_fromArray(
-				[
-					$elm$html$Html$text(
-					'pieces: ' + $elm$core$String$fromInt(
-						$elm$core$List$length(unSelected) + $elm$core$List$length(selected)))
-				])),
 			A2(
 			$author$project$View$keyedDiv,
 			_List_Nil,
@@ -8528,7 +8596,8 @@ var $author$project$View$view = function (model) {
 								$elm$html$Html$Attributes$value(model.K.U.bI),
 								$elm$html$Html$Events$onInput($author$project$Model$ChangeImageUrl)
 							]),
-						_List_Nil)
+						_List_Nil),
+						$author$project$View$renderStats(model)
 					]))
 			]));
 };
