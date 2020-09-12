@@ -134,10 +134,15 @@ getUnSelected db =
 modifySelected : (PieceGroup -> PieceGroup) -> DB -> DB
 modifySelected f db =
     let
+        selected =
+            getSelected db
+
         modified =
-            List.map f (getSelected db)
+            List.map f selected
     in
-    makeDb (modified ++ getUnSelected db)
+    db
+        |> KDDict.removeAll (List.map makeKey selected)
+        |> KDDict.insertAllBy makeKey modified
 
 
 all : DB -> List PieceGroup
