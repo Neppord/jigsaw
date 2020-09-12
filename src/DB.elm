@@ -73,25 +73,22 @@ makeKey { id, isSelected, position, minOffset, maxOffset } =
         y =
             ( position.y + minOffset.y, position.y + maxOffset.y )
     in
-    KDDict.key (keyBool isSelected)
-        |> KDDict.addCoordinateAxis position_
+    KDDict.coordinateKey position_
         |> KDDict.addCoordinateAxis x
         |> KDDict.addCoordinateAxis y
 
 
 matchWithin : { x : Int, y : Int, w : Int, h : Int } -> MatchKey Int
 matchWithin { x, y, w, h } =
-    KDDict.key Anything
-        |> KDDict.addCoordinateAxis
-            ( WithinRange x (x + w), WithinRange y (y + h) )
+    KDDict.coordinateKey
+        ( WithinRange x (x + w), WithinRange y (y + h) )
         |> KDDict.addCoordinateAxis ( Anything, Anything )
         |> KDDict.addCoordinateAxis ( Anything, Anything )
 
 
 matchBox : { x : Int, y : Int, w : Int, h : Int } -> MatchKey Int
 matchBox { x, y, w, h } =
-    KDDict.key Anything
-        |> KDDict.addCoordinateAxis ( Anything, Anything )
+    KDDict.coordinateKey ( Anything, Anything )
         |> KDDict.addCoordinateAxis ( LargerThan x, SmallerThan (x + w) )
         |> KDDict.addCoordinateAxis ( LargerThan y, SmallerThan (y + h) )
 
@@ -102,9 +99,7 @@ matchPoint { x, y } =
         radius =
             1
     in
-    KDDict.key Anything
-        |> KDDict.addAxis Anything
-        |> KDDict.addAxis Anything
+    KDDict.coordinateKey ( Anything, Anything )
         |> KDDict.addCoordinateAxis
             ( SmallerThan (x + radius), LargerThan (x - radius) )
         |> KDDict.addCoordinateAxis
@@ -124,24 +119,16 @@ order =
 getSelected : DB -> List PieceGroup
 getSelected db =
     db
-        |> KDDict.findMatching
-            (KDDict.key (EqualTo (keyBool True))
-                |> KDDict.addCoordinateAxis ( Anything, Anything )
-                |> KDDict.addCoordinateAxis ( Anything, Anything )
-                |> KDDict.addCoordinateAxis ( Anything, Anything )
-            )
+        |> all
+        |> List.filter .isSelected
         |> order
 
 
 getUnSelected : DB -> List PieceGroup
 getUnSelected db =
     db
-        |> KDDict.findMatching
-            (KDDict.key (EqualTo (keyBool False))
-                |> KDDict.addCoordinateAxis ( Anything, Anything )
-                |> KDDict.addCoordinateAxis ( Anything, Anything )
-                |> KDDict.addCoordinateAxis ( Anything, Anything )
-            )
+        |> all
+        |> List.filter (not << .isSelected)
         |> order
 
 
