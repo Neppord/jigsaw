@@ -9,6 +9,7 @@ module DB exposing
     , modify
     , modifySelected
     , optimalHeight
+    , select
     , size
     , snap
     )
@@ -157,7 +158,7 @@ modify id action db =
             else
                 x
     in
-    makeDb (List.map toMap (all db))
+    db |> KDDict.unsafeMap toMap
 
 
 insert : PieceGroup -> DB -> DB
@@ -273,3 +274,40 @@ clickedPieceGroup visibleGroups_ _ db_ point =
         |> order
         |> List.reverse
         |> List.head
+
+
+select : UI.SelectionMode -> PieceGroup -> DB -> DB
+select mode pg db =
+    case mode of
+        UI.Add ->
+            db
+                |> KDDict.unsafeMap
+                    (\other ->
+                        if other.id == pg.id then
+                            PieceGroup.select other
+
+                        else
+                            other
+                    )
+
+        UI.Replace ->
+            db
+                |> KDDict.unsafeMap
+                    (\other ->
+                        if other.id == pg.id then
+                            PieceGroup.select other
+
+                        else
+                            PieceGroup.deselect other
+                    )
+
+        UI.Remove ->
+            db
+                |> KDDict.unsafeMap
+                    (\other ->
+                        if other.id == pg.id then
+                            PieceGroup.deselect other
+
+                        else
+                            other
+                    )

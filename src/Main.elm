@@ -144,22 +144,13 @@ updateMouseDown coordinate keyboard model =
                 ui =
                     UI.Moving UI.Snap (Drag.from coordinate)
             in
-            if pg.isSelected then
+            if pg.isSelected && mode /= UI.Remove then
                 { model | ui = ui }
-
-            else if keyboard.shift then
-                { model
-                    | ui = ui
-                    , db = model.db |> DB.modify pg.id PieceGroup.select
-                }
 
             else
                 { model
                     | ui = ui
-                    , db =
-                        model.db
-                            |> DB.modifySelected PieceGroup.deselect
-                            |> DB.modify pg.id PieceGroup.select
+                    , db = model.db |> DB.select mode pg
                 }
 
 
