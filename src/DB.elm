@@ -2,14 +2,12 @@ module DB exposing
     ( DB
     , boxSelect
     , clickedPieceGroup
-    , findBy
     , getSelected
     , getUnSelected
     , height
     , makeDb
     , map
     , modify
-    , modifyBy
     , modifySelected
     , optimalHeight
     , size
@@ -176,19 +174,6 @@ modify id action db =
     makeDb (List.map toMap (all db))
 
 
-modifyBy : (PieceGroup -> Bool) -> (PieceGroup -> PieceGroup) -> DB -> DB
-modifyBy test action db =
-    let
-        toMap x =
-            if test x then
-                action x
-
-            else
-                x
-    in
-    makeDb (List.map toMap (all db))
-
-
 map : (PieceGroup -> PieceGroup) -> DB -> DB
 map action db =
     makeDb (List.map action (all db))
@@ -197,11 +182,6 @@ map action db =
 insert : PieceGroup -> DB -> DB
 insert pg =
     KDDict.insert (makeKey pg) pg
-
-
-findBy : (PieceGroup -> Bool) -> DB -> List PieceGroup
-findBy filter db =
-    List.filter filter (all db)
 
 
 snap : Float -> DB -> DB
