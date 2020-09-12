@@ -5,11 +5,14 @@ module DB exposing
     , findBy
     , getSelected
     , getUnSelected
+    , height
     , makeDb
     , map
     , modify
     , modifyBy
     , modifySelected
+    , optimalHeight
+    , size
     , snap
     )
 
@@ -29,6 +32,25 @@ type alias DB =
 
 type alias DbKey =
     KDDict.Key Int
+
+
+size : DB -> Int
+size =
+    KDDict.size
+
+
+height : DB -> Int
+height =
+    KDDict.height
+
+
+optimalHeight : DB -> Int
+optimalHeight db =
+    db
+        |> height
+        |> toFloat
+        |> logBase 2
+        |> floor
 
 
 keyBool : Bool -> Int
