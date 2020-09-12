@@ -69,41 +69,33 @@ makeKey { id, isSelected, position, minOffset, maxOffset } =
             position
                 |> Point.toPair
 
-        ( x1, x2 ) =
+        x =
             ( position.x + minOffset.x, position.x + maxOffset.x )
 
-        ( y1, y2 ) =
+        y =
             ( position.y + minOffset.y, position.y + maxOffset.y )
     in
     KDDict.key (keyBool isSelected)
-        |> KDDict.addAxis (Tuple.second position_)
-        |> KDDict.addAxis (Tuple.first position_)
-        |> KDDict.addAxis x2
-        |> KDDict.addAxis x1
-        |> KDDict.addAxis y2
-        |> KDDict.addAxis y1
+        |> KDDict.addCoordinateAxis position_
+        |> KDDict.addCoordinateAxis x
+        |> KDDict.addCoordinateAxis y
 
 
 matchWithin : { x : Int, y : Int, w : Int, h : Int } -> MatchKey Int
 matchWithin { x, y, w, h } =
     KDDict.key Anything
-        |> KDDict.addAxis (WithinRange y (y + h))
-        |> KDDict.addAxis (WithinRange x (x + w))
-        |> KDDict.addAxis Anything
-        |> KDDict.addAxis Anything
-        |> KDDict.addAxis Anything
-        |> KDDict.addAxis Anything
+        |> KDDict.addCoordinateAxis
+            ( WithinRange x (x + w), WithinRange y (y + h) )
+        |> KDDict.addCoordinateAxis ( Anything, Anything )
+        |> KDDict.addCoordinateAxis ( Anything, Anything )
 
 
 matchBox : { x : Int, y : Int, w : Int, h : Int } -> MatchKey Int
 matchBox { x, y, w, h } =
     KDDict.key Anything
-        |> KDDict.addAxis Anything
-        |> KDDict.addAxis Anything
-        {- max x -} |> KDDict.addAxis (SmallerThan (x + w))
-        {- min x -} |> KDDict.addAxis (LargerThan x)
-        {- max y -} |> KDDict.addAxis (SmallerThan (y + h))
-        {- min y -} |> KDDict.addAxis (LargerThan y)
+        |> KDDict.addCoordinateAxis ( Anything, Anything )
+        |> KDDict.addCoordinateAxis ( LargerThan x, SmallerThan (x + w) )
+        |> KDDict.addCoordinateAxis ( LargerThan y, SmallerThan (y + h) )
 
 
 matchPoint : Point -> MatchKey Int
@@ -115,10 +107,10 @@ matchPoint { x, y } =
     KDDict.key Anything
         |> KDDict.addAxis Anything
         |> KDDict.addAxis Anything
-        {- max x -} |> KDDict.addAxis (LargerThan (x - radius))
-        {- min x -} |> KDDict.addAxis (SmallerThan (x + radius))
-        {- max y -} |> KDDict.addAxis (LargerThan (y - radius))
-        {- min y -} |> KDDict.addAxis (SmallerThan (y + radius))
+        |> KDDict.addCoordinateAxis
+            ( SmallerThan (x + radius), LargerThan (x - radius) )
+        |> KDDict.addCoordinateAxis
+            ( SmallerThan (y + radius), LargerThan (y - radius) )
 
 
 makeDb : List PieceGroup -> DB
@@ -136,12 +128,9 @@ getSelected db =
     db
         |> KDDict.findMatching
             (KDDict.key (EqualTo (keyBool True))
-                |> KDDict.addAxis Anything
-                |> KDDict.addAxis Anything
-                |> KDDict.addAxis Anything
-                |> KDDict.addAxis Anything
-                |> KDDict.addAxis Anything
-                |> KDDict.addAxis Anything
+                |> KDDict.addCoordinateAxis ( Anything, Anything )
+                |> KDDict.addCoordinateAxis ( Anything, Anything )
+                |> KDDict.addCoordinateAxis ( Anything, Anything )
             )
         |> order
 
@@ -151,12 +140,9 @@ getUnSelected db =
     db
         |> KDDict.findMatching
             (KDDict.key (EqualTo (keyBool False))
-                |> KDDict.addAxis Anything
-                |> KDDict.addAxis Anything
-                |> KDDict.addAxis Anything
-                |> KDDict.addAxis Anything
-                |> KDDict.addAxis Anything
-                |> KDDict.addAxis Anything
+                |> KDDict.addCoordinateAxis ( Anything, Anything )
+                |> KDDict.addCoordinateAxis ( Anything, Anything )
+                |> KDDict.addCoordinateAxis ( Anything, Anything )
             )
         |> order
 
