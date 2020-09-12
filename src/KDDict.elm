@@ -21,6 +21,7 @@ module KDDict exposing
     , size
     , sortByAxis
     , toList
+    , unsafeMap
     )
 
 import KD.Match exposing (Match, compareWithMatch)
@@ -415,3 +416,15 @@ findMatching query dict =
     find query dict
         |> toList
         |> List.map Tuple.second
+
+
+unsafeMap f dict =
+    case dict of
+        Empty ->
+            Empty
+
+        Node level smaller ( key_, v ) larger ->
+            Node level (unsafeMap f smaller) ( key_, f v ) (unsafeMap f larger)
+
+        Deleted level smaller larger ->
+            Deleted level (unsafeMap f smaller) (unsafeMap f larger)
