@@ -2673,7 +2673,7 @@ var _VirtualDom_mapEventTuple = F2(function(func, tuple)
 var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
-		v: func(record.v),
+		w: func(record.w),
 		ai: record.ai,
 		ag: record.ag
 	}
@@ -2943,7 +2943,7 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 		// 3 = Custom
 
 		var value = result.a;
-		var message = !tag ? value : tag < 3 ? value.a : value.v;
+		var message = !tag ? value : tag < 3 ? value.a : value.w;
 		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.ai;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
@@ -4203,8 +4203,8 @@ function _Browser_getViewport()
 	return {
 		aY: _Browser_getScene(),
 		a3: {
-			s: _Browser_window.pageXOffset,
-			t: _Browser_window.pageYOffset,
+			t: _Browser_window.pageXOffset,
+			u: _Browser_window.pageYOffset,
 			a5: _Browser_doc.documentElement.clientWidth,
 			aE: _Browser_doc.documentElement.clientHeight
 		}
@@ -4245,8 +4245,8 @@ function _Browser_getViewportOf(id)
 				aE: node.scrollHeight
 			},
 			a3: {
-				s: node.scrollLeft,
-				t: node.scrollTop,
+				t: node.scrollLeft,
+				u: node.scrollTop,
 				a5: node.clientWidth,
 				aE: node.clientHeight
 			}
@@ -4280,14 +4280,14 @@ function _Browser_getElement(id)
 		return {
 			aY: _Browser_getScene(),
 			a3: {
-				s: x,
-				t: y,
+				t: x,
+				u: y,
 				a5: _Browser_doc.documentElement.clientWidth,
 				aE: _Browser_doc.documentElement.clientHeight
 			},
 			bh: {
-				s: x + rect.left,
-				t: y + rect.top,
+				t: x + rect.left,
+				u: y + rect.top,
 				a5: rect.width,
 				aE: rect.height
 			}
@@ -5336,6 +5336,21 @@ var $author$project$KDDict$getIndex = F2(
 						index - 1),
 					rest)));
 	});
+var $author$project$KDDict$compareKey = F3(
+	function (level, k1, k2) {
+		return A2(
+			$elm$core$Basics$compare,
+			A2($author$project$KDDict$getIndex, level, k1),
+			A2($author$project$KDDict$getIndex, level, k2));
+	});
+var $elm$core$Tuple$mapFirst = F2(
+	function (func, _v0) {
+		var x = _v0.a;
+		var y = _v0.b;
+		return _Utils_Tuple2(
+			func(x),
+			y);
+	});
 var $elm$core$List$partition = F2(
 	function (pred, list) {
 		var step = F2(
@@ -5354,28 +5369,188 @@ var $elm$core$List$partition = F2(
 			_Utils_Tuple2(_List_Nil, _List_Nil),
 			list);
 	});
+var $elm$core$List$sortWith = _List_sortWith;
+var $elm$core$List$takeReverse = F3(
+	function (n, list, kept) {
+		takeReverse:
+		while (true) {
+			if (n <= 0) {
+				return kept;
+			} else {
+				if (!list.b) {
+					return kept;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs,
+						$temp$kept = A2($elm$core$List$cons, x, kept);
+					n = $temp$n;
+					list = $temp$list;
+					kept = $temp$kept;
+					continue takeReverse;
+				}
+			}
+		}
+	});
+var $elm$core$List$takeTailRec = F2(
+	function (n, list) {
+		return $elm$core$List$reverse(
+			A3($elm$core$List$takeReverse, n, list, _List_Nil));
+	});
+var $elm$core$List$takeFast = F3(
+	function (ctr, n, list) {
+		if (n <= 0) {
+			return _List_Nil;
+		} else {
+			var _v0 = _Utils_Tuple2(n, list);
+			_v0$1:
+			while (true) {
+				_v0$5:
+				while (true) {
+					if (!_v0.b.b) {
+						return list;
+					} else {
+						if (_v0.b.b.b) {
+							switch (_v0.a) {
+								case 1:
+									break _v0$1;
+								case 2:
+									var _v2 = _v0.b;
+									var x = _v2.a;
+									var _v3 = _v2.b;
+									var y = _v3.a;
+									return _List_fromArray(
+										[x, y]);
+								case 3:
+									if (_v0.b.b.b.b) {
+										var _v4 = _v0.b;
+										var x = _v4.a;
+										var _v5 = _v4.b;
+										var y = _v5.a;
+										var _v6 = _v5.b;
+										var z = _v6.a;
+										return _List_fromArray(
+											[x, y, z]);
+									} else {
+										break _v0$5;
+									}
+								default:
+									if (_v0.b.b.b.b && _v0.b.b.b.b.b) {
+										var _v7 = _v0.b;
+										var x = _v7.a;
+										var _v8 = _v7.b;
+										var y = _v8.a;
+										var _v9 = _v8.b;
+										var z = _v9.a;
+										var _v10 = _v9.b;
+										var w = _v10.a;
+										var tl = _v10.b;
+										return (ctr > 1000) ? A2(
+											$elm$core$List$cons,
+											x,
+											A2(
+												$elm$core$List$cons,
+												y,
+												A2(
+													$elm$core$List$cons,
+													z,
+													A2(
+														$elm$core$List$cons,
+														w,
+														A2($elm$core$List$takeTailRec, n - 4, tl))))) : A2(
+											$elm$core$List$cons,
+											x,
+											A2(
+												$elm$core$List$cons,
+												y,
+												A2(
+													$elm$core$List$cons,
+													z,
+													A2(
+														$elm$core$List$cons,
+														w,
+														A3($elm$core$List$takeFast, ctr + 1, n - 4, tl)))));
+									} else {
+										break _v0$5;
+									}
+							}
+						} else {
+							if (_v0.a === 1) {
+								break _v0$1;
+							} else {
+								break _v0$5;
+							}
+						}
+					}
+				}
+				return list;
+			}
+			var _v1 = _v0.b;
+			var x = _v1.a;
+			return _List_fromArray(
+				[x]);
+		}
+	});
+var $elm$core$List$take = F2(
+	function (n, list) {
+		return A3($elm$core$List$takeFast, 0, n, list);
+	});
+var $author$project$KDDict$splitOn = F2(
+	function (n, l) {
+		return _Utils_Tuple2(
+			A2($elm$core$List$take, n, l),
+			A2($elm$core$List$drop, n, l));
+	});
 var $author$project$KDDict$fromList_ = F2(
 	function (index, list) {
-		if (!list.b) {
+		var lookAhead = 5;
+		var getKey = F2(
+			function (_v7, _v8) {
+				var k1 = _v7.a;
+				var k2 = _v8.a;
+				return A3($author$project$KDDict$compareKey, index, k1, k2);
+			});
+		var median = function (l) {
+			return function (_v5) {
+				var l1 = _v5.a;
+				var l2 = _v5.b;
+				var amount = ($elm$core$List$length(l1) / 2) | 0;
+				var _v6 = A2($author$project$KDDict$splitOn, amount, l1);
+				var a = _v6.a;
+				var b = _v6.b;
+				return _Utils_Tuple2(
+					$elm$core$List$head(b),
+					_Utils_ap(
+						a,
+						_Utils_ap(
+							A2($elm$core$List$drop, 1, b),
+							l2)));
+			}(
+				A2(
+					$elm$core$Tuple$mapFirst,
+					$elm$core$List$sortWith(getKey),
+					A2($author$project$KDDict$splitOn, lookAhead, l)));
+		};
+		var _v0 = median(list);
+		if (_v0.a.$ === 1) {
+			var _v1 = _v0.a;
 			return $author$project$KDDict$Empty;
 		} else {
-			var _v1 = list.a;
-			var key_ = _v1.a;
-			var value = _v1.b;
-			var rest = list.b;
-			var toCompare = A2($author$project$KDDict$getIndex, index, key_);
+			var _v2 = _v0.a.a;
+			var key_ = _v2.a;
+			var value = _v2.b;
+			var rest = _v0.b;
 			var nextIndex = index + 1;
-			var _v2 = A2(
+			var _v3 = A2(
 				$elm$core$List$partition,
-				function (_v3) {
-					var otherKey = _v3.a;
-					return _Utils_cmp(
-						toCompare,
-						A2($author$project$KDDict$getIndex, index, otherKey)) < 0;
+				function (_v4) {
+					var otherKey = _v4.a;
+					return !A3($author$project$KDDict$compareKey, index, key_, otherKey);
 				},
 				rest);
-			var larger = _v2.a;
-			var smaller = _v2.b;
+			var larger = _v3.a;
+			var smaller = _v3.b;
 			return A4(
 				$author$project$KDDict$Node,
 				index,
@@ -5401,67 +5576,46 @@ var $author$project$KDDict$Key = F2(
 	function (a, b) {
 		return {$: 0, a: a, b: b};
 	});
-var $author$project$KDDict$addAxis = F2(
-	function (a, _v0) {
-		var head = _v0.a;
-		var tail = _v0.b;
+var $author$project$KDDict$addCoordinateAxis = F2(
+	function (_v0, _v1) {
+		var x = _v0.a;
+		var y = _v0.b;
+		var head = _v1.a;
+		var tail = _v1.b;
 		return A2(
 			$author$project$KDDict$Key,
-			a,
-			A2($elm$core$List$cons, head, tail));
+			x,
+			A2(
+				$elm$core$List$cons,
+				y,
+				A2($elm$core$List$cons, head, tail)));
 	});
-var $author$project$KDDict$key = function (a) {
-	return A2($author$project$KDDict$Key, a, _List_Nil);
-};
-var $author$project$DB$keyBool = function (v) {
-	return v ? 1 : 0;
-};
-var $elm$core$Tuple$second = function (_v0) {
+var $author$project$KDDict$coordinateKey = function (_v0) {
+	var x = _v0.a;
 	var y = _v0.b;
-	return y;
+	return A2(
+		$author$project$KDDict$Key,
+		x,
+		_List_fromArray(
+			[y]));
 };
 var $author$project$Point$toPair = function (point) {
-	return _Utils_Tuple2(point.s, point.t);
+	return _Utils_Tuple2(point.t, point.u);
 };
 var $author$project$DB$makeKey = function (_v0) {
-	var id = _v0.D;
-	var isSelected = _v0.aG;
 	var position = _v0.aP;
 	var minOffset = _v0.bs;
 	var maxOffset = _v0.bq;
+	var y = _Utils_Tuple2(position.u + minOffset.u, position.u + maxOffset.u);
+	var x = _Utils_Tuple2(position.t + minOffset.t, position.t + maxOffset.t);
 	var position_ = $author$project$Point$toPair(position);
-	var _v1 = _Utils_Tuple2(position.t + minOffset.t, position.t + maxOffset.t);
-	var y1 = _v1.a;
-	var y2 = _v1.b;
-	var _v2 = _Utils_Tuple2(position.s + minOffset.s, position.s + maxOffset.s);
-	var x1 = _v2.a;
-	var x2 = _v2.b;
 	return A2(
-		$author$project$KDDict$addAxis,
-		y1,
+		$author$project$KDDict$addCoordinateAxis,
+		y,
 		A2(
-			$author$project$KDDict$addAxis,
-			y2,
-			A2(
-				$author$project$KDDict$addAxis,
-				x1,
-				A2(
-					$author$project$KDDict$addAxis,
-					x2,
-					A2(
-						$author$project$KDDict$addAxis,
-						position_.a,
-						A2(
-							$author$project$KDDict$addAxis,
-							position_.b,
-							A2(
-								$author$project$KDDict$addAxis,
-								id.a,
-								A2(
-									$author$project$KDDict$addAxis,
-									id.b,
-									$author$project$KDDict$key(
-										$author$project$DB$keyBool(isSelected))))))))));
+			$author$project$KDDict$addCoordinateAxis,
+			x,
+			$author$project$KDDict$coordinateKey(position_)));
 };
 var $author$project$DB$makeDb = function (list) {
 	return A2($author$project$KDDict$fromListBy, $author$project$DB$makeKey, list);
@@ -5473,9 +5627,9 @@ var $author$project$Model$buildModel = F3(
 	function (image, pieceGroups, edges) {
 		return {
 			K: {U: image, bM: 30.0},
-			n: $author$project$DB$makeDb(pieceGroups),
+			o: $author$project$DB$makeDb(pieceGroups),
 			ay: edges,
-			p: $author$project$UI$WaitingForInput,
+			r: $author$project$UI$WaitingForInput,
 			Y: $elm$core$Set$fromList(
 				_List_fromArray(
 					[-1]))
@@ -5483,15 +5637,15 @@ var $author$project$Model$buildModel = F3(
 	});
 var $author$project$PieceGroup$Piece = F3(
 	function (id, offset, size) {
-		return {D: id, aM: offset, aZ: size};
+		return {p: id, aM: offset, aZ: size};
 	});
 var $author$project$Point$Point = F2(
 	function (x, y) {
-		return {s: x, t: y};
+		return {t: x, u: y};
 	});
 var $author$project$Point$add = F2(
 	function (a, b) {
-		return A2($author$project$Point$Point, a.s + b.s, a.t + b.t);
+		return A2($author$project$Point$Point, a.t + b.t, a.u + b.u);
 	});
 var $author$project$PieceGroup$neighbours = function (_v0) {
 	var x = _v0.a;
@@ -5513,14 +5667,14 @@ var $author$project$JigsawImage$pieceIdToOffset = F2(
 	});
 var $author$project$Point$sub = F2(
 	function (a, b) {
-		return A2($author$project$Point$Point, a.s - b.s, a.t - b.t);
+		return A2($author$project$Point$Point, a.t - b.t, a.u - b.u);
 	});
 var $author$project$PieceGroup$createPieceGroup = F3(
 	function (image, id, pos) {
 		var size = A2($author$project$Point$Point, image.af, image.ae);
 		var offset = A2($author$project$JigsawImage$pieceIdToOffset, image, id);
 		return {
-			D: id,
+			p: id,
 			aG: false,
 			bq: A2($author$project$Point$add, size, offset),
 			br: _List_fromArray(
@@ -5601,7 +5755,7 @@ var $author$project$Edge$defaultPoints = _List_fromArray(
 	]);
 var $author$project$Point$dot = F2(
 	function (a, b) {
-		return A2($author$project$Point$Point, a.s * b.s, a.t * b.t);
+		return A2($author$project$Point$Point, a.t * b.t, a.u * b.u);
 	});
 var $elm$random$Random$map = F2(
 	function (func, _v0) {
@@ -6013,11 +6167,11 @@ var $author$project$Edge$makeEdge = F2(
 				A2($author$project$Point$Point, 0, 200));
 		};
 		var rotate = function (p) {
-			return A2($author$project$Point$Point, p.t, p.s);
+			return A2($author$project$Point$Point, p.u, p.t);
 		};
 		var flip = F2(
 			function (p, q) {
-				return A2($author$project$Point$Point, (2 * q.s) - p.s, (2 * q.t) - p.t);
+				return A2($author$project$Point$Point, (2 * q.t) - p.t, (2 * q.u) - p.u);
 			});
 		var reverse = function (ps) {
 			if (((((((((ps.b && ps.b.b) && ps.b.b.b) && ps.b.b.b.b) && ps.b.b.b.b.b) && ps.b.b.b.b.b.b) && ps.b.b.b.b.b.b.b) && ps.b.b.b.b.b.b.b.b) && ps.b.b.b.b.b.b.b.b.b) && (!ps.b.b.b.b.b.b.b.b.b.b)) {
@@ -6594,7 +6748,7 @@ var $elm$browser$Browser$Events$onMouseUp = A2($elm$browser$Browser$Events$on, 0
 var $author$project$Subscription$trackMouseUp = $elm$browser$Browser$Events$onMouseUp(
 	$elm$json$Json$Decode$succeed($author$project$Model$MouseUp));
 var $author$project$Subscription$subscriptions = function (newModel) {
-	var _v0 = newModel.p;
+	var _v0 = newModel.r;
 	switch (_v0.$) {
 		case 0:
 			return $elm$core$Platform$Sub$batch(
@@ -6614,151 +6768,10 @@ var $author$project$Seeded$unwrap = function (_v0) {
 	var a = _v0.b;
 	return a;
 };
-var $author$project$KD$Match$Anything = {$: 0};
-var $author$project$KD$Match$EqualTo = function (a) {
-	return {$: 1, a: a};
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
 };
-var $author$project$KDDict$Deleted = F3(
-	function (a, b, c) {
-		return {$: 2, a: a, b: b, c: c};
-	});
-var $author$project$KD$Match$compareWithMatch = F2(
-	function (k, m) {
-		switch (m.$) {
-			case 0:
-				return 1;
-			case 1:
-				var k1 = m.a;
-				return A2($elm$core$Basics$compare, k, k1);
-			case 2:
-				var k1 = m.a;
-				var _v1 = A2($elm$core$Basics$compare, k, k1);
-				if (_v1 === 2) {
-					return 2;
-				} else {
-					return 1;
-				}
-			case 3:
-				var k1 = m.a;
-				var _v2 = A2($elm$core$Basics$compare, k, k1);
-				if (!_v2) {
-					return 0;
-				} else {
-					return 1;
-				}
-			default:
-				var k1 = m.a;
-				var k2 = m.b;
-				var res = A2($elm$core$Basics$compare, k, k1);
-				return _Utils_eq(
-					res,
-					A2($elm$core$Basics$compare, k, k2)) ? res : 1;
-		}
-	});
-var $elm$core$List$any = F2(
-	function (isOkay, list) {
-		any:
-		while (true) {
-			if (!list.b) {
-				return false;
-			} else {
-				var x = list.a;
-				var xs = list.b;
-				if (isOkay(x)) {
-					return true;
-				} else {
-					var $temp$isOkay = isOkay,
-						$temp$list = xs;
-					isOkay = $temp$isOkay;
-					list = $temp$list;
-					continue any;
-				}
-			}
-		}
-	});
-var $elm$core$Basics$not = _Basics_not;
-var $elm$core$List$all = F2(
-	function (isOkay, list) {
-		return !A2(
-			$elm$core$List$any,
-			A2($elm$core$Basics$composeL, $elm$core$Basics$not, isOkay),
-			list);
-	});
-var $author$project$KD$Match$match = F2(
-	function (m, k) {
-		return A2($author$project$KD$Match$compareWithMatch, k, m) === 1;
-	});
-var $author$project$KDDict$mMatch = F2(
-	function (_v0, _v1) {
-		var q = _v0.a;
-		var qs = _v0.b;
-		var k = _v1.a;
-		var ks = _v1.b;
-		return A2(
-			$elm$core$List$all,
-			function (_v2) {
-				var q_ = _v2.a;
-				var k_ = _v2.b;
-				return A2($author$project$KD$Match$match, q_, k_);
-			},
-			A3(
-				$elm$core$List$map2,
-				$elm$core$Tuple$pair,
-				A2($elm$core$List$cons, q, qs),
-				A2($elm$core$List$cons, k, ks)));
-	});
-var $author$project$KDDict$find = F2(
-	function (query, dict) {
-		switch (dict.$) {
-			case 0:
-				return $author$project$KDDict$Empty;
-			case 1:
-				var level = dict.a;
-				var smaller = dict.b;
-				var _v1 = dict.c;
-				var key_ = _v1.a;
-				var v = _v1.b;
-				var larger = dict.d;
-				var _v2 = A2(
-					$author$project$KD$Match$compareWithMatch,
-					A2($author$project$KDDict$getIndex, level, key_),
-					A2($author$project$KDDict$getIndex, level, query));
-				switch (_v2) {
-					case 1:
-						return A2($author$project$KDDict$mMatch, query, key_) ? A4(
-							$author$project$KDDict$Node,
-							level,
-							A2($author$project$KDDict$find, query, smaller),
-							_Utils_Tuple2(key_, v),
-							A2($author$project$KDDict$find, query, larger)) : A3(
-							$author$project$KDDict$Deleted,
-							level,
-							A2($author$project$KDDict$find, query, smaller),
-							A2($author$project$KDDict$find, query, larger));
-					case 0:
-						return A3(
-							$author$project$KDDict$Deleted,
-							level,
-							$author$project$KDDict$Empty,
-							A2($author$project$KDDict$find, query, larger));
-					default:
-						return A3(
-							$author$project$KDDict$Deleted,
-							level,
-							A2($author$project$KDDict$find, query, smaller),
-							$author$project$KDDict$Empty);
-				}
-			default:
-				var level = dict.a;
-				var smaller = dict.b;
-				var larger = dict.c;
-				return A3(
-					$author$project$KDDict$Deleted,
-					level,
-					A2($author$project$KDDict$find, query, smaller),
-					A2($author$project$KDDict$find, query, larger));
-		}
-	});
 var $author$project$KDDict$toList = function (dict) {
 	switch (dict.$) {
 		case 0:
@@ -6781,97 +6794,172 @@ var $author$project$KDDict$toList = function (dict) {
 				$author$project$KDDict$toList(larger));
 	}
 };
-var $author$project$KDDict$findMatching = F2(
-	function (query, dict) {
-		return A2(
-			$elm$core$List$map,
-			$elm$core$Tuple$second,
-			$author$project$KDDict$toList(
-				A2($author$project$KDDict$find, query, dict)));
-	});
-var $elm$core$List$sortBy = _List_sortBy;
-var $author$project$DB$order = $elm$core$List$sortBy(
-	function (pg) {
-		return _Utils_Tuple2(
-			$author$project$DB$keyBool(pg.aG),
-			pg.D);
+var $author$project$DB$all = function (db) {
+	return A2(
+		$elm$core$List$map,
+		$elm$core$Tuple$second,
+		$author$project$KDDict$toList(db));
+};
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
 	});
 var $author$project$DB$getSelected = function (db) {
-	return $author$project$DB$order(
-		A2(
-			$author$project$KDDict$findMatching,
-			A2(
-				$author$project$KDDict$addAxis,
-				$author$project$KD$Match$Anything,
-				A2(
-					$author$project$KDDict$addAxis,
-					$author$project$KD$Match$Anything,
-					A2(
-						$author$project$KDDict$addAxis,
-						$author$project$KD$Match$Anything,
-						A2(
-							$author$project$KDDict$addAxis,
-							$author$project$KD$Match$Anything,
-							A2(
-								$author$project$KDDict$addAxis,
-								$author$project$KD$Match$Anything,
-								A2(
-									$author$project$KDDict$addAxis,
-									$author$project$KD$Match$Anything,
-									A2(
-										$author$project$KDDict$addAxis,
-										$author$project$KD$Match$Anything,
-										A2(
-											$author$project$KDDict$addAxis,
-											$author$project$KD$Match$Anything,
-											$author$project$KDDict$key(
-												$author$project$KD$Match$EqualTo(
-													$author$project$DB$keyBool(true))))))))))),
-			db));
+	return A2(
+		$elm$core$List$filter,
+		function ($) {
+			return $.aG;
+		},
+		$author$project$DB$all(db));
 };
-var $author$project$DB$getUnSelected = function (db) {
-	return $author$project$DB$order(
-		A2(
-			$author$project$KDDict$findMatching,
-			A2(
-				$author$project$KDDict$addAxis,
-				$author$project$KD$Match$Anything,
-				A2(
-					$author$project$KDDict$addAxis,
-					$author$project$KD$Match$Anything,
-					A2(
-						$author$project$KDDict$addAxis,
-						$author$project$KD$Match$Anything,
-						A2(
-							$author$project$KDDict$addAxis,
-							$author$project$KD$Match$Anything,
-							A2(
-								$author$project$KDDict$addAxis,
-								$author$project$KD$Match$Anything,
-								A2(
-									$author$project$KDDict$addAxis,
-									$author$project$KD$Match$Anything,
-									A2(
-										$author$project$KDDict$addAxis,
-										$author$project$KD$Match$Anything,
-										A2(
-											$author$project$KDDict$addAxis,
-											$author$project$KD$Match$Anything,
-											$author$project$KDDict$key(
-												$author$project$KD$Match$EqualTo(
-													$author$project$DB$keyBool(false))))))))))),
-			db));
-};
+var $author$project$KDDict$Deleted = F3(
+	function (a, b, c) {
+		return {$: 2, a: a, b: b, c: c};
+	});
+var $author$project$KDDict$insert_ = F4(
+	function (i, key_, value, dict) {
+		switch (dict.$) {
+			case 0:
+				return A4(
+					$author$project$KDDict$Node,
+					i,
+					$author$project$KDDict$Empty,
+					_Utils_Tuple2(key_, value),
+					$author$project$KDDict$Empty);
+			case 1:
+				var s = dict.b;
+				var _v1 = dict.c;
+				var k = _v1.a;
+				var v = _v1.b;
+				var l = dict.d;
+				var _v2 = A3($author$project$KDDict$compareKey, i, key_, k);
+				if (!_v2) {
+					return A4(
+						$author$project$KDDict$Node,
+						i,
+						A4($author$project$KDDict$insert_, i + 1, key_, value, s),
+						_Utils_Tuple2(k, v),
+						l);
+				} else {
+					return A4(
+						$author$project$KDDict$Node,
+						i,
+						s,
+						_Utils_Tuple2(k, v),
+						A4($author$project$KDDict$insert_, i + 1, key_, value, l));
+				}
+			default:
+				var s = dict.b;
+				var l = dict.c;
+				return (!A2($elm$core$Basics$modBy, 2, i)) ? A3(
+					$author$project$KDDict$Deleted,
+					i,
+					A4($author$project$KDDict$insert_, i + 1, key_, value, s),
+					l) : A3(
+					$author$project$KDDict$Deleted,
+					i,
+					s,
+					A4($author$project$KDDict$insert_, i + 1, key_, value, l));
+		}
+	});
+var $author$project$KDDict$insert = $author$project$KDDict$insert_(0);
+var $author$project$KDDict$insertAll = F2(
+	function (items, db) {
+		return A3(
+			$elm$core$List$foldl,
+			function (_v0) {
+				var a = _v0.a;
+				var b = _v0.b;
+				return A2($author$project$KDDict$insert, a, b);
+			},
+			db,
+			items);
+	});
+var $author$project$KDDict$insertAllBy = F3(
+	function (keyWith, values, db) {
+		return A2(
+			$author$project$KDDict$insertAll,
+			A3(
+				$elm$core$List$map2,
+				$elm$core$Tuple$pair,
+				A2($elm$core$List$map, keyWith, values),
+				values),
+			db);
+	});
+var $author$project$KDDict$remove = F2(
+	function (q, dict) {
+		switch (dict.$) {
+			case 0:
+				return $author$project$KDDict$Empty;
+			case 1:
+				var i = dict.a;
+				var s = dict.b;
+				var _v1 = dict.c;
+				var key_ = _v1.a;
+				var v = _v1.b;
+				var l = dict.d;
+				if (_Utils_eq(q, key_)) {
+					return A3($author$project$KDDict$Deleted, i, s, l);
+				} else {
+					var _v2 = A3($author$project$KDDict$compareKey, i, q, key_);
+					switch (_v2) {
+						case 0:
+							return A4(
+								$author$project$KDDict$Node,
+								i,
+								A2($author$project$KDDict$remove, q, s),
+								_Utils_Tuple2(key_, v),
+								l);
+						case 2:
+							return A4(
+								$author$project$KDDict$Node,
+								i,
+								A2($author$project$KDDict$remove, q, s),
+								_Utils_Tuple2(key_, v),
+								A2($author$project$KDDict$remove, q, l));
+						default:
+							return A4(
+								$author$project$KDDict$Node,
+								i,
+								A2($author$project$KDDict$remove, q, s),
+								_Utils_Tuple2(key_, v),
+								A2($author$project$KDDict$remove, q, l));
+					}
+				}
+			default:
+				var i = dict.a;
+				var s = dict.b;
+				var l = dict.c;
+				return A3(
+					$author$project$KDDict$Deleted,
+					i,
+					A2($author$project$KDDict$remove, q, s),
+					A2($author$project$KDDict$remove, q, l));
+		}
+	});
+var $author$project$KDDict$removeAll = F2(
+	function (keys, db) {
+		return A3($elm$core$List$foldl, $author$project$KDDict$remove, db, keys);
+	});
 var $author$project$DB$modifySelected = F2(
 	function (f, db) {
-		var modified = A2(
-			$elm$core$List$map,
-			f,
-			$author$project$DB$getSelected(db));
-		return $author$project$DB$makeDb(
-			_Utils_ap(
-				modified,
-				$author$project$DB$getUnSelected(db)));
+		var selected = $author$project$DB$getSelected(db);
+		var modified = A2($elm$core$List$map, f, selected);
+		return A3(
+			$author$project$KDDict$insertAllBy,
+			$author$project$DB$makeKey,
+			modified,
+			A2(
+				$author$project$KDDict$removeAll,
+				A2($elm$core$List$map, $author$project$DB$makeKey, selected),
+				db));
 	});
 var $elm$core$Dict$get = F2(
 	function (targetKey, dict) {
@@ -7296,14 +7384,14 @@ var $author$project$Main$updateKeyChange = F3(
 			return keyboard.bf ? _Utils_update(
 				model,
 				{
-					n: A2(
+					o: A2(
 						$author$project$DB$modifySelected,
 						function (pg) {
 							return _Utils_update(
 								pg,
 								{aG: true, a4: x});
 						},
-						model.n)
+						model.o)
 				}) : _Utils_update(
 				model,
 				{
@@ -7325,17 +7413,156 @@ var $author$project$UI$Moving = F2(
 var $author$project$UI$Remove = 2;
 var $author$project$UI$Replace = 0;
 var $author$project$UI$Snap = 0;
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
+var $author$project$KD$Match$compareWithMatch = F2(
+	function (k, m) {
+		switch (m.$) {
+			case 0:
+				return 1;
+			case 1:
+				var k1 = m.a;
+				return A2($elm$core$Basics$compare, k, k1);
+			case 2:
+				var k1 = m.a;
+				var _v1 = A2($elm$core$Basics$compare, k, k1);
+				if (_v1 === 2) {
+					return 2;
+				} else {
+					return 1;
+				}
+			case 3:
+				var k1 = m.a;
+				var _v2 = A2($elm$core$Basics$compare, k, k1);
+				if (!_v2) {
+					return 0;
+				} else {
+					return 1;
+				}
+			default:
+				var k1 = m.a;
+				var k2 = m.b;
+				var res = A2($elm$core$Basics$compare, k, k1);
+				return _Utils_eq(
+					res,
+					A2($elm$core$Basics$compare, k, k2)) ? res : 1;
+		}
+	});
+var $author$project$KDDict$compareWithMatchKey = F3(
+	function (index, k1, k2) {
+		return A2(
+			$author$project$KD$Match$compareWithMatch,
+			A2($author$project$KDDict$getIndex, index, k1),
+			A2($author$project$KDDict$getIndex, index, k2));
+	});
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
+var $elm$core$Basics$not = _Basics_not;
+var $elm$core$List$all = F2(
+	function (isOkay, list) {
+		return !A2(
+			$elm$core$List$any,
+			A2($elm$core$Basics$composeL, $elm$core$Basics$not, isOkay),
 			list);
 	});
+var $author$project$KD$Match$match = F2(
+	function (m, k) {
+		return A2($author$project$KD$Match$compareWithMatch, k, m) === 1;
+	});
+var $author$project$KDDict$mMatch = F2(
+	function (_v0, _v1) {
+		var q = _v0.a;
+		var qs = _v0.b;
+		var k = _v1.a;
+		var ks = _v1.b;
+		return A2(
+			$elm$core$List$all,
+			function (_v2) {
+				var q_ = _v2.a;
+				var k_ = _v2.b;
+				return A2($author$project$KD$Match$match, q_, k_);
+			},
+			A3(
+				$elm$core$List$map2,
+				$elm$core$Tuple$pair,
+				A2($elm$core$List$cons, q, qs),
+				A2($elm$core$List$cons, k, ks)));
+	});
+var $author$project$KDDict$find = F2(
+	function (query, dict) {
+		switch (dict.$) {
+			case 0:
+				return $author$project$KDDict$Empty;
+			case 1:
+				var level = dict.a;
+				var smaller = dict.b;
+				var _v1 = dict.c;
+				var key_ = _v1.a;
+				var v = _v1.b;
+				var larger = dict.d;
+				var _v2 = A3($author$project$KDDict$compareWithMatchKey, level, key_, query);
+				switch (_v2) {
+					case 1:
+						return A2($author$project$KDDict$mMatch, query, key_) ? A4(
+							$author$project$KDDict$Node,
+							level,
+							A2($author$project$KDDict$find, query, smaller),
+							_Utils_Tuple2(key_, v),
+							A2($author$project$KDDict$find, query, larger)) : A3(
+							$author$project$KDDict$Deleted,
+							level,
+							A2($author$project$KDDict$find, query, smaller),
+							A2($author$project$KDDict$find, query, larger));
+					case 0:
+						return A3(
+							$author$project$KDDict$Deleted,
+							level,
+							$author$project$KDDict$Empty,
+							A2($author$project$KDDict$find, query, larger));
+					default:
+						return A3(
+							$author$project$KDDict$Deleted,
+							level,
+							A2($author$project$KDDict$find, query, smaller),
+							$author$project$KDDict$Empty);
+				}
+			default:
+				var level = dict.a;
+				var smaller = dict.b;
+				var larger = dict.c;
+				return A3(
+					$author$project$KDDict$Deleted,
+					level,
+					A2($author$project$KDDict$find, query, smaller),
+					A2($author$project$KDDict$find, query, larger));
+		}
+	});
+var $author$project$KDDict$findMatching = F2(
+	function (query, dict) {
+		return A2(
+			$elm$core$List$map,
+			$elm$core$Tuple$second,
+			$author$project$KDDict$toList(
+				A2($author$project$KDDict$find, query, dict)));
+	});
+var $author$project$KD$Match$Anything = {$: 0};
 var $author$project$KD$Match$LargerThan = function (a) {
 	return {$: 3, a: a};
 };
@@ -7343,86 +7570,113 @@ var $author$project$KD$Match$SmallerThan = function (a) {
 	return {$: 2, a: a};
 };
 var $author$project$DB$matchPoint = function (_v0) {
-	var x = _v0.s;
-	var y = _v0.t;
+	var x = _v0.t;
+	var y = _v0.u;
 	var radius = 1;
 	return A2(
-		$author$project$KDDict$addAxis,
-		$author$project$KD$Match$SmallerThan(y + radius),
+		$author$project$KDDict$addCoordinateAxis,
+		_Utils_Tuple2(
+			$author$project$KD$Match$SmallerThan(y + radius),
+			$author$project$KD$Match$LargerThan(y - radius)),
 		A2(
-			$author$project$KDDict$addAxis,
-			$author$project$KD$Match$LargerThan(y - radius),
-			A2(
-				$author$project$KDDict$addAxis,
+			$author$project$KDDict$addCoordinateAxis,
+			_Utils_Tuple2(
 				$author$project$KD$Match$SmallerThan(x + radius),
-				A2(
-					$author$project$KDDict$addAxis,
-					$author$project$KD$Match$LargerThan(x - radius),
-					A2(
-						$author$project$KDDict$addAxis,
-						$author$project$KD$Match$Anything,
-						A2(
-							$author$project$KDDict$addAxis,
-							$author$project$KD$Match$Anything,
-							A2(
-								$author$project$KDDict$addAxis,
-								$author$project$KD$Match$Anything,
-								A2(
-									$author$project$KDDict$addAxis,
-									$author$project$KD$Match$Anything,
-									$author$project$KDDict$key($author$project$KD$Match$Anything)))))))));
+				$author$project$KD$Match$LargerThan(x - radius)),
+			$author$project$KDDict$coordinateKey(
+				_Utils_Tuple2($author$project$KD$Match$Anything, $author$project$KD$Match$Anything))));
 };
 var $author$project$DB$clickedPieceGroup = F4(
 	function (visibleGroups_, _v0, db_, point) {
 		return $elm$core$List$head(
 			$elm$core$List$reverse(
-				$author$project$DB$order(
+				A2(
+					$elm$core$List$filter,
+					function (pg) {
+						return A2($elm$core$Set$member, pg.a4, visibleGroups_);
+					},
 					A2(
-						$elm$core$List$filter,
-						function (pg) {
-							return A2($elm$core$Set$member, pg.a4, visibleGroups_);
-						},
-						A2(
-							$author$project$KDDict$findMatching,
-							$author$project$DB$matchPoint(point),
-							db_)))));
+						$author$project$KDDict$findMatching,
+						$author$project$DB$matchPoint(point),
+						db_))));
 	});
+var $author$project$Drag$Drag = $elm$core$Basics$identity;
+var $author$project$Drag$from = function (p) {
+	return {L: p, H: p};
+};
+var $elm$core$Basics$neq = _Utils_notEqual;
 var $author$project$PieceGroup$deselect = function (x) {
 	return _Utils_update(
 		x,
 		{aG: false});
 };
-var $author$project$Drag$Drag = $elm$core$Basics$identity;
-var $author$project$Drag$from = function (p) {
-	return {L: p, H: p};
-};
-var $author$project$DB$all = function (db) {
-	return A2(
-		$elm$core$List$map,
-		$elm$core$Tuple$second,
-		$author$project$KDDict$toList(db));
-};
-var $author$project$DB$modify = F3(
-	function (id, action, db) {
-		var toMap = function (x) {
-			return _Utils_eq(x.D, id) ? action(x) : x;
-		};
-		return $author$project$DB$makeDb(
-			A2(
-				$elm$core$List$map,
-				toMap,
-				$author$project$DB$all(db)));
-	});
 var $author$project$PieceGroup$select = function (x) {
 	return _Utils_update(
 		x,
 		{aG: true});
 };
+var $author$project$KDDict$unsafeMap = F2(
+	function (f, dict) {
+		switch (dict.$) {
+			case 0:
+				return $author$project$KDDict$Empty;
+			case 1:
+				var level = dict.a;
+				var smaller = dict.b;
+				var _v1 = dict.c;
+				var key_ = _v1.a;
+				var v = _v1.b;
+				var larger = dict.d;
+				return A4(
+					$author$project$KDDict$Node,
+					level,
+					A2($author$project$KDDict$unsafeMap, f, smaller),
+					_Utils_Tuple2(
+						key_,
+						f(v)),
+					A2($author$project$KDDict$unsafeMap, f, larger));
+			default:
+				var level = dict.a;
+				var smaller = dict.b;
+				var larger = dict.c;
+				return A3(
+					$author$project$KDDict$Deleted,
+					level,
+					A2($author$project$KDDict$unsafeMap, f, smaller),
+					A2($author$project$KDDict$unsafeMap, f, larger));
+		}
+	});
+var $author$project$DB$select = F3(
+	function (mode, pg, db) {
+		switch (mode) {
+			case 1:
+				return A2(
+					$author$project$KDDict$unsafeMap,
+					function (other) {
+						return _Utils_eq(other.p, pg.p) ? $author$project$PieceGroup$select(other) : other;
+					},
+					db);
+			case 0:
+				return A2(
+					$author$project$KDDict$unsafeMap,
+					function (other) {
+						return _Utils_eq(other.p, pg.p) ? $author$project$PieceGroup$select(other) : $author$project$PieceGroup$deselect(other);
+					},
+					db);
+			default:
+				return A2(
+					$author$project$KDDict$unsafeMap,
+					function (other) {
+						return _Utils_eq(other.p, pg.p) ? $author$project$PieceGroup$deselect(other) : other;
+					},
+					db);
+		}
+	});
 var $author$project$Main$updateMouseDown = F3(
 	function (coordinate, keyboard, model) {
 		var mode = keyboard.bL ? 1 : (keyboard.bf ? 2 : 0);
 		var _v0 = model;
-		var db = _v0.n;
+		var db = _v0.o;
 		var visibleGroups = _v0.Y;
 		var _v1 = model.K;
 		var image = _v1.U;
@@ -7431,7 +7685,7 @@ var $author$project$Main$updateMouseDown = F3(
 			return _Utils_update(
 				model,
 				{
-					p: A2(
+					r: A2(
 						$author$project$UI$Boxing,
 						mode,
 						$author$project$Drag$from(coordinate))
@@ -7442,23 +7696,14 @@ var $author$project$Main$updateMouseDown = F3(
 				$author$project$UI$Moving,
 				0,
 				$author$project$Drag$from(coordinate));
-			return pg.aG ? _Utils_update(
+			return (pg.aG && (mode !== 2)) ? _Utils_update(
 				model,
-				{p: ui}) : (keyboard.bL ? _Utils_update(
-				model,
-				{
-					n: A3($author$project$DB$modify, pg.D, $author$project$PieceGroup$select, model.n),
-					p: ui
-				}) : _Utils_update(
+				{r: ui}) : _Utils_update(
 				model,
 				{
-					n: A3(
-						$author$project$DB$modify,
-						pg.D,
-						$author$project$PieceGroup$select,
-						A2($author$project$DB$modifySelected, $author$project$PieceGroup$deselect, model.n)),
-					p: ui
-				}));
+					o: A3($author$project$DB$select, mode, pg, model.o),
+					r: ui
+				});
 		}
 	});
 var $elm$core$Basics$min = F2(
@@ -7469,175 +7714,38 @@ var $author$project$Drag$getDimensions = function (_v0) {
 	var start = _v0.H;
 	var current = _v0.L;
 	return {
-		_: $elm$core$Basics$abs(start.t - current.t),
-		al: $elm$core$Basics$abs(start.s - current.s),
-		s: A2($elm$core$Basics$min, start.s, current.s),
-		t: A2($elm$core$Basics$min, start.t, current.t)
+		_: $elm$core$Basics$abs(start.u - current.u),
+		al: $elm$core$Basics$abs(start.t - current.t),
+		t: A2($elm$core$Basics$min, start.t, current.t),
+		u: A2($elm$core$Basics$min, start.u, current.u)
 	};
 };
-var $author$project$KDDict$insert_ = F4(
-	function (i, key_, value, dict) {
-		switch (dict.$) {
-			case 0:
-				return A4(
-					$author$project$KDDict$Node,
-					i,
-					$author$project$KDDict$Empty,
-					_Utils_Tuple2(key_, value),
-					$author$project$KDDict$Empty);
-			case 1:
-				var s = dict.b;
-				var _v1 = dict.c;
-				var k = _v1.a;
-				var v = _v1.b;
-				var l = dict.d;
-				return (_Utils_cmp(
-					A2($author$project$KDDict$getIndex, i, key_),
-					A2($author$project$KDDict$getIndex, i, k)) < 0) ? A4(
-					$author$project$KDDict$Node,
-					i,
-					A4($author$project$KDDict$insert_, i + 1, key_, value, s),
-					_Utils_Tuple2(k, v),
-					l) : A4(
-					$author$project$KDDict$Node,
-					i,
-					s,
-					_Utils_Tuple2(k, v),
-					A4($author$project$KDDict$insert_, i + 1, key_, value, l));
-			default:
-				var s = dict.b;
-				var l = dict.c;
-				return (!A2($elm$core$Basics$modBy, 2, i)) ? A3(
-					$author$project$KDDict$Deleted,
-					i,
-					A4($author$project$KDDict$insert_, i + 1, key_, value, s),
-					l) : A3(
-					$author$project$KDDict$Deleted,
-					i,
-					s,
-					A4($author$project$KDDict$insert_, i + 1, key_, value, l));
-		}
-	});
-var $author$project$KDDict$insert = $author$project$KDDict$insert_(0);
-var $author$project$KDDict$insertAll = F2(
-	function (items, db) {
-		return A3(
-			$elm$core$List$foldl,
-			function (_v0) {
-				var a = _v0.a;
-				var b = _v0.b;
-				return A2($author$project$KDDict$insert, a, b);
-			},
-			db,
-			items);
-	});
-var $author$project$KDDict$insertAllBy = F3(
-	function (keyWith, values, db) {
-		return A2(
-			$author$project$KDDict$insertAll,
-			A3(
-				$elm$core$List$map2,
-				$elm$core$Tuple$pair,
-				A2($elm$core$List$map, keyWith, values),
-				values),
-			db);
-	});
-var $author$project$DB$map = F2(
-	function (action, db) {
-		return $author$project$DB$makeDb(
-			A2(
-				$elm$core$List$map,
-				action,
-				$author$project$DB$all(db)));
-	});
 var $author$project$DB$matchBox = function (_v0) {
-	var x = _v0.s;
-	var y = _v0.t;
+	var x = _v0.t;
+	var y = _v0.u;
 	var w = _v0.al;
 	var h = _v0._;
 	return A2(
-		$author$project$KDDict$addAxis,
-		$author$project$KD$Match$LargerThan(y),
+		$author$project$KDDict$addCoordinateAxis,
+		_Utils_Tuple2(
+			$author$project$KD$Match$LargerThan(y),
+			$author$project$KD$Match$SmallerThan(y + h)),
 		A2(
-			$author$project$KDDict$addAxis,
-			$author$project$KD$Match$SmallerThan(y + h),
-			A2(
-				$author$project$KDDict$addAxis,
+			$author$project$KDDict$addCoordinateAxis,
+			_Utils_Tuple2(
 				$author$project$KD$Match$LargerThan(x),
-				A2(
-					$author$project$KDDict$addAxis,
-					$author$project$KD$Match$SmallerThan(x + w),
-					A2(
-						$author$project$KDDict$addAxis,
-						$author$project$KD$Match$Anything,
-						A2(
-							$author$project$KDDict$addAxis,
-							$author$project$KD$Match$Anything,
-							A2(
-								$author$project$KDDict$addAxis,
-								$author$project$KD$Match$Anything,
-								A2(
-									$author$project$KDDict$addAxis,
-									$author$project$KD$Match$Anything,
-									$author$project$KDDict$key($author$project$KD$Match$Anything)))))))));
+				$author$project$KD$Match$SmallerThan(x + w)),
+			$author$project$KDDict$coordinateKey(
+				_Utils_Tuple2($author$project$KD$Match$Anything, $author$project$KD$Match$Anything))));
 };
-var $author$project$KDDict$remove = F2(
-	function (q, dict) {
-		switch (dict.$) {
-			case 0:
-				return $author$project$KDDict$Empty;
-			case 1:
-				var i = dict.a;
-				var s = dict.b;
-				var _v1 = dict.c;
-				var key_ = _v1.a;
-				var v = _v1.b;
-				var l = dict.d;
-				if (_Utils_eq(q, key_)) {
-					return A3($author$project$KDDict$Deleted, i, s, l);
-				} else {
-					var _v2 = A2(
-						$elm$core$Basics$compare,
-						A2($author$project$KDDict$getIndex, i, q),
-						A2($author$project$KDDict$getIndex, i, key_));
-					switch (_v2) {
-						case 0:
-							return A4(
-								$author$project$KDDict$Node,
-								i,
-								A2($author$project$KDDict$remove, q, s),
-								_Utils_Tuple2(key_, v),
-								l);
-						case 2:
-							return A4(
-								$author$project$KDDict$Node,
-								i,
-								A2($author$project$KDDict$remove, q, s),
-								_Utils_Tuple2(key_, v),
-								A2($author$project$KDDict$remove, q, l));
-						default:
-							return A4(
-								$author$project$KDDict$Node,
-								i,
-								A2($author$project$KDDict$remove, q, s),
-								_Utils_Tuple2(key_, v),
-								A2($author$project$KDDict$remove, q, l));
-					}
-				}
-			default:
-				var i = dict.a;
-				var s = dict.b;
-				var l = dict.c;
-				return A3(
-					$author$project$KDDict$Deleted,
-					i,
-					A2($author$project$KDDict$remove, q, s),
-					A2($author$project$KDDict$remove, q, l));
-		}
-	});
-var $author$project$KDDict$removeAll = F2(
-	function (keys, db) {
-		return A3($elm$core$List$foldl, $author$project$KDDict$remove, db, keys);
+var $elm$core$List$member = F2(
+	function (x, xs) {
+		return A2(
+			$elm$core$List$any,
+			function (a) {
+				return _Utils_eq(a, x);
+			},
+			xs);
 	});
 var $author$project$DB$boxSelect = F4(
 	function (visibleGroups, mode, drag, db) {
@@ -7653,35 +7761,26 @@ var $author$project$DB$boxSelect = F4(
 				db));
 		switch (mode) {
 			case 1:
-				return A3(
-					$author$project$KDDict$insertAllBy,
-					$author$project$DB$makeKey,
-					A2($elm$core$List$map, $author$project$PieceGroup$select, targets),
-					A2(
-						$author$project$KDDict$removeAll,
-						A2($elm$core$List$map, $author$project$DB$makeKey, targets),
-						db));
+				return A2(
+					$author$project$KDDict$unsafeMap,
+					function (pg) {
+						return A2($elm$core$List$member, pg, targets) ? $author$project$PieceGroup$select(pg) : pg;
+					},
+					db);
 			case 2:
-				return A3(
-					$author$project$KDDict$insertAllBy,
-					$author$project$DB$makeKey,
-					A2($elm$core$List$map, $author$project$PieceGroup$deselect, targets),
-					A2(
-						$author$project$KDDict$removeAll,
-						A2($elm$core$List$map, $author$project$DB$makeKey, targets),
-						db));
+				return A2(
+					$author$project$KDDict$unsafeMap,
+					function (pg) {
+						return A2($elm$core$List$member, pg, targets) ? $author$project$PieceGroup$deselect(pg) : pg;
+					},
+					db);
 			default:
-				return A3(
-					$author$project$KDDict$insertAllBy,
-					$author$project$DB$makeKey,
-					A2($elm$core$List$map, $author$project$PieceGroup$select, targets),
-					A2(
-						$author$project$DB$map,
-						$author$project$PieceGroup$deselect,
-						A2(
-							$author$project$KDDict$removeAll,
-							A2($elm$core$List$map, $author$project$DB$makeKey, targets),
-							db)));
+				return A2(
+					$author$project$KDDict$unsafeMap,
+					function (pg) {
+						return A2($elm$core$List$member, pg, targets) ? $author$project$PieceGroup$select(pg) : $author$project$PieceGroup$deselect(pg);
+					},
+					db);
 		}
 	});
 var $author$project$Drag$distance = function (_v0) {
@@ -7697,6 +7796,21 @@ var $author$project$PieceGroup$move = F2(
 				aP: A2($author$project$Point$add, offset, pg.aP)
 			});
 	});
+var $author$project$KDDict$countDeleted = function (dict) {
+	switch (dict.$) {
+		case 0:
+			return 0;
+		case 1:
+			var smaller = dict.b;
+			var larger = dict.d;
+			return $author$project$KDDict$countDeleted(smaller) + $author$project$KDDict$countDeleted(larger);
+		default:
+			var smaller = dict.b;
+			var larger = dict.c;
+			return (1 + $author$project$KDDict$countDeleted(smaller)) + $author$project$KDDict$countDeleted(larger);
+	}
+};
+var $author$project$DB$countDeleted = $author$project$KDDict$countDeleted;
 var $author$project$DB$insert = function (pg) {
 	return A2(
 		$author$project$KDDict$insert,
@@ -7746,35 +7860,20 @@ var $author$project$KD$Match$WithinRange = F2(
 		return {$: 4, a: a, b: b};
 	});
 var $author$project$DB$matchWithin = function (_v0) {
-	var x = _v0.s;
-	var y = _v0.t;
+	var x = _v0.t;
+	var y = _v0.u;
 	var w = _v0.al;
 	var h = _v0._;
 	return A2(
-		$author$project$KDDict$addAxis,
-		$author$project$KD$Match$Anything,
+		$author$project$KDDict$addCoordinateAxis,
+		_Utils_Tuple2($author$project$KD$Match$Anything, $author$project$KD$Match$Anything),
 		A2(
-			$author$project$KDDict$addAxis,
-			$author$project$KD$Match$Anything,
-			A2(
-				$author$project$KDDict$addAxis,
-				$author$project$KD$Match$Anything,
-				A2(
-					$author$project$KDDict$addAxis,
-					$author$project$KD$Match$Anything,
-					A2(
-						$author$project$KDDict$addAxis,
-						A2($author$project$KD$Match$WithinRange, x, x + w),
-						A2(
-							$author$project$KDDict$addAxis,
-							A2($author$project$KD$Match$WithinRange, y, y + h),
-							A2(
-								$author$project$KDDict$addAxis,
-								$author$project$KD$Match$Anything,
-								A2(
-									$author$project$KDDict$addAxis,
-									$author$project$KD$Match$Anything,
-									$author$project$KDDict$key($author$project$KD$Match$Anything)))))))));
+			$author$project$KDDict$addCoordinateAxis,
+			_Utils_Tuple2($author$project$KD$Match$Anything, $author$project$KD$Match$Anything),
+			$author$project$KDDict$coordinateKey(
+				_Utils_Tuple2(
+					A2($author$project$KD$Match$WithinRange, x, x + w),
+					A2($author$project$KD$Match$WithinRange, y, y + h)))));
 };
 var $elm$core$Dict$diff = F2(
 	function (t1, t2) {
@@ -7809,19 +7908,34 @@ var $author$project$PieceGroup$merge = F2(
 				A2(
 					$elm$core$List$map,
 					function ($) {
-						return $.D;
+						return $.p;
 					},
 					newMembers)));
 		var minOffset = A2(
 			$author$project$Point$Point,
-			A2($elm$core$Basics$min, a.bs.s, b.bs.s),
-			A2($elm$core$Basics$min, a.bs.t, b.bs.t));
+			A2($elm$core$Basics$min, a.bs.t, b.bs.t),
+			A2($elm$core$Basics$min, a.bs.u, b.bs.u));
 		var maxOffset = A2(
 			$author$project$Point$Point,
-			A2($elm$core$Basics$max, a.bq.s, b.bq.s),
-			A2($elm$core$Basics$max, a.bq.t, b.bq.t));
-		return {D: a.D, aG: false, bq: maxOffset, br: newMembers, bs: minOffset, bw: newNeighbours, aP: a.aP, a4: a.a4};
+			A2($elm$core$Basics$max, a.bq.t, b.bq.t),
+			A2($elm$core$Basics$max, a.bq.u, b.bq.u));
+		return {p: a.p, aG: false, bq: maxOffset, br: newMembers, bs: minOffset, bw: newNeighbours, aP: a.aP, a4: a.a4};
 	});
+var $author$project$KDDict$size = function (dict) {
+	switch (dict.$) {
+		case 0:
+			return 0;
+		case 1:
+			var smaller = dict.b;
+			var larger = dict.d;
+			return (1 + $author$project$KDDict$size(smaller)) + $author$project$KDDict$size(larger);
+		default:
+			var smaller = dict.b;
+			var larger = dict.c;
+			return $author$project$KDDict$size(smaller) + $author$project$KDDict$size(larger);
+	}
+};
+var $author$project$DB$size = $author$project$KDDict$size;
 var $author$project$DB$snap = F2(
 	function (snapDistance, db) {
 		var _v0 = $author$project$DB$getSelected(db);
@@ -7841,19 +7955,19 @@ var $author$project$DB$snap = F2(
 				A2(
 					$elm$core$List$map,
 					function ($) {
-						return $.D;
+						return $.p;
 					},
 					pg.br));
 			var shouldBeMerged = function (other) {
-				return _Utils_eq(other.D, pg.D) || (!$elm$core$Set$isEmpty(
+				return _Utils_eq(other.p, pg.p) || (!$elm$core$Set$isEmpty(
 					A2($elm$core$Set$intersect, memberIds, other.bw)));
 			};
 			var dimensions = function () {
 				var radius = $elm$core$Basics$floor(snapDistance);
 				var _v2 = pg.aP;
-				var x = _v2.s;
-				var y = _v2.t;
-				return {_: radius * 2, al: radius * 2, s: x - radius, t: y - radius};
+				var x = _v2.t;
+				var y = _v2.u;
+				return {_: radius * 2, al: radius * 2, t: x - radius, u: y - radius};
 			}();
 			var targets = A2(
 				$elm$core$List$filter,
@@ -7876,11 +7990,14 @@ var $author$project$DB$snap = F2(
 						db));
 			}
 		} else {
-			return db;
+			return (_Utils_cmp(
+				$author$project$DB$countDeleted(db),
+				$author$project$DB$size(db)) > 0) ? $author$project$DB$makeDb(
+				$author$project$DB$all(db)) : db;
 		}
 	});
 var $author$project$Main$updateMouseUp = function (model) {
-	var _v0 = model.p;
+	var _v0 = model.r;
 	switch (_v0.$) {
 		case 1:
 			var mode = _v0.a;
@@ -7888,19 +8005,19 @@ var $author$project$Main$updateMouseUp = function (model) {
 			return _Utils_update(
 				model,
 				{
-					n: A4($author$project$DB$boxSelect, model.Y, mode, drag, model.n),
-					p: $author$project$UI$WaitingForInput
+					o: A4($author$project$DB$boxSelect, model.Y, mode, drag, model.o),
+					r: $author$project$UI$WaitingForInput
 				});
 		case 0:
 			var drag = _v0.b;
 			var move = $author$project$PieceGroup$move(
 				$author$project$Drag$distance(drag));
-			var updatedDb = A2($author$project$DB$modifySelected, move, model.n);
+			var updatedDb = A2($author$project$DB$modifySelected, move, model.o);
 			return _Utils_update(
 				model,
 				{
-					n: A2($author$project$DB$snap, model.K.bM, updatedDb),
-					p: $author$project$UI$WaitingForInput
+					o: A2($author$project$DB$snap, model.K.bM, updatedDb),
+					r: $author$project$UI$WaitingForInput
 				});
 		default:
 			return model;
@@ -7913,7 +8030,7 @@ var $author$project$Drag$to = F2(
 	});
 var $author$project$Main$updateMoveMouse = F2(
 	function (newPos, model) {
-		var _v0 = model.p;
+		var _v0 = model.r;
 		switch (_v0.$) {
 			case 0:
 				var mode = _v0.a;
@@ -7921,7 +8038,7 @@ var $author$project$Main$updateMoveMouse = F2(
 				return _Utils_update(
 					model,
 					{
-						p: A2(
+						r: A2(
 							$author$project$UI$Moving,
 							mode,
 							A2($author$project$Drag$to, newPos, drag))
@@ -7932,7 +8049,7 @@ var $author$project$Main$updateMoveMouse = F2(
 				return _Utils_update(
 					model,
 					{
-						p: A2(
+						r: A2(
 							$author$project$UI$Boxing,
 							mode,
 							A2($author$project$Drag$to, newPos, drag))
@@ -8096,40 +8213,56 @@ var $author$project$KDDict$height = function (dict) {
 	}
 };
 var $author$project$DB$height = $author$project$KDDict$height;
-var $elm$html$Html$li = _VirtualDom_node('li');
-var $author$project$DB$optimalHeight = function (db) {
-	return $elm$core$Basics$floor(
-		A2(
-			$elm$core$Basics$logBase,
-			2,
-			$author$project$DB$height(db)));
-};
-var $elm$core$List$singleton = function (value) {
-	return _List_fromArray(
-		[value]);
-};
-var $author$project$KDDict$size = function (dict) {
+var $author$project$KDDict$heightDifference = function (dict) {
 	switch (dict.$) {
 		case 0:
 			return 0;
 		case 1:
 			var smaller = dict.b;
 			var larger = dict.d;
-			return (1 + $author$project$KDDict$size(smaller)) + $author$project$KDDict$size(larger);
+			var diff = $elm$core$Basics$abs(
+				$author$project$KDDict$height(smaller) - $author$project$KDDict$height(larger));
+			return A2(
+				$elm$core$Basics$max,
+				diff,
+				A2(
+					$elm$core$Basics$max,
+					$author$project$KDDict$heightDifference(smaller),
+					$author$project$KDDict$heightDifference(larger)));
 		default:
 			var smaller = dict.b;
 			var larger = dict.c;
-			return $author$project$KDDict$size(smaller) + $author$project$KDDict$size(larger);
+			var diff = $elm$core$Basics$abs(
+				$author$project$KDDict$height(smaller) - $author$project$KDDict$height(larger));
+			return A2(
+				$elm$core$Basics$max,
+				diff,
+				A2(
+					$elm$core$Basics$max,
+					$author$project$KDDict$heightDifference(smaller),
+					$author$project$KDDict$heightDifference(larger)));
 	}
 };
-var $author$project$DB$size = $author$project$KDDict$size;
+var $author$project$DB$heightDifference = $author$project$KDDict$heightDifference;
+var $elm$html$Html$li = _VirtualDom_node('li');
+var $author$project$DB$optimalHeight = function (db) {
+	return $elm$core$Basics$floor(
+		A2(
+			$elm$core$Basics$logBase,
+			2,
+			$author$project$DB$size(db)));
+};
+var $elm$core$List$singleton = function (value) {
+	return _List_fromArray(
+		[value]);
+};
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$html$Html$ul = _VirtualDom_node('ul');
 var $author$project$View$renderStats = function (_v0) {
-	var db = _v0.n;
+	var db = _v0.o;
 	var configuration = _v0.K;
 	var size = configuration.U.am * configuration.U.an;
 	var perf = $elm$core$String$fromFloat(
@@ -8159,9 +8292,15 @@ var $author$project$View$renderStats = function (_v0) {
 				'seek time: ' + $elm$core$String$fromInt(
 					$author$project$DB$height(db))),
 				item(
+				'seek diff time: ' + $elm$core$String$fromInt(
+					$author$project$DB$heightDifference(db))),
+				item(
 				'optimal seek time: ' + $elm$core$String$fromInt(
 					$author$project$DB$optimalHeight(db))),
-				item('perf: ' + perf)
+				item('perf: ' + perf),
+				item(
+				'deleted nodes: ' + $elm$core$String$fromInt(
+					$author$project$DB$countDeleted(db)))
 			]));
 };
 var $elm$html$Html$Attributes$draggable = _VirtualDom_attribute('draggable');
@@ -8189,7 +8328,7 @@ var $elm$core$String$concat = function (strings) {
 	return A2($elm$core$String$join, '', strings);
 };
 var $author$project$Point$toString = function (p) {
-	return $elm$core$String$fromInt(p.s) + (' ' + $elm$core$String$fromInt(p.t));
+	return $elm$core$String$fromInt(p.t) + (' ' + $elm$core$String$fromInt(p.u));
 };
 var $author$project$SvgUtil$pointsToSvg = function (pts) {
 	return A2(
@@ -8317,6 +8456,17 @@ var $author$project$View$lazyclipPathDefs = $elm$svg$Svg$Lazy$lazy2(
 var $author$project$View$viewClipPath = function (model) {
 	return A2($author$project$View$lazyclipPathDefs, model.K.U, model.ay);
 };
+var $author$project$DB$getUnSelected = function (db) {
+	return A2(
+		$elm$core$List$filter,
+		A2(
+			$elm$core$Basics$composeL,
+			$elm$core$Basics$not,
+			function ($) {
+				return $.aG;
+			}),
+		$author$project$DB$all(db));
+};
 var $elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
 	return _VirtualDom_keyedNode(
 		_VirtualDom_noScript(tag));
@@ -8341,10 +8491,10 @@ var $author$project$View$clipPathRef = function (id) {
 };
 var $author$project$View$pieceDiv = F3(
 	function (backgroundUrl, pg, piece) {
-		var _v0 = _Utils_Tuple2((piece.aZ.s / 2) | 0, (piece.aZ.t / 2) | 0);
+		var _v0 = _Utils_Tuple2((piece.aZ.t / 2) | 0, (piece.aZ.u / 2) | 0);
 		var borderWidth = _v0.a;
 		var borderHeight = _v0.b;
-		var height = (borderHeight + piece.aZ.t) + borderHeight;
+		var height = (borderHeight + piece.aZ.u) + borderHeight;
 		var _v1 = $author$project$Point$toPair(
 			A2(
 				$author$project$Point$add,
@@ -8353,7 +8503,7 @@ var $author$project$View$pieceDiv = F3(
 		var left = _v1.a;
 		var top = _v1.b;
 		var translate = 'translate(' + ($elm$core$String$fromInt(left) + ('px,' + ($elm$core$String$fromInt(top) + 'px)')));
-		var width = (borderWidth + piece.aZ.s) + borderWidth;
+		var width = (borderWidth + piece.aZ.t) + borderWidth;
 		var _v2 = $author$project$Point$toPair(
 			A2(
 				$author$project$Point$sub,
@@ -8376,7 +8526,7 @@ var $author$project$View$pieceDiv = F3(
 					A2(
 					$elm$html$Html$Attributes$style,
 					'clipPath',
-					$author$project$View$clipPathRef(piece.D)),
+					$author$project$View$clipPathRef(piece.p)),
 					A2($elm$html$Html$Attributes$style, 'background-image', 'url(\'' + (backgroundUrl + '\')')),
 					A2(
 					$elm$html$Html$Attributes$style,
@@ -8392,7 +8542,7 @@ var $author$project$View$renderPieces = F2(
 	function (image, visiblePieces) {
 		var pieceGroupDiv = function (pg) {
 			var render = function (piece) {
-				var _v0 = piece.D;
+				var _v0 = piece.p;
 				var x = _v0.a;
 				var y = _v0.b;
 				return _Utils_Tuple2(
@@ -8427,7 +8577,7 @@ var $author$project$View$viewDiv = function (model) {
 	var shadowBlack = shadowWithColor('black');
 	var image = model.K.U;
 	var _v0 = model;
-	var db = _v0.n;
+	var db = _v0.o;
 	var visibleGroups = _v0.Y;
 	var isVisible = function (pieceGroup) {
 		return A2($elm$core$Set$member, pieceGroup.a4, visibleGroups);
@@ -8450,12 +8600,12 @@ var $author$project$View$viewDiv = function (model) {
 			A2(
 			$author$project$View$keyedDiv,
 			function () {
-				var _v2 = model.p;
+				var _v2 = model.r;
 				if (!_v2.$) {
 					var drag = _v2.b;
 					var _v3 = $author$project$Drag$distance(drag);
-					var x = _v3.s;
-					var y = _v3.t;
+					var x = _v3.t;
+					var y = _v3.u;
 					return _List_fromArray(
 						[
 							A2(
@@ -8513,13 +8663,13 @@ var $author$project$View$viewSelectionBox = function (model) {
 					$author$project$View$turnOffTheBloodyImageDragging),
 				_List_Nil);
 		});
-	var _v0 = model.p;
+	var _v0 = model.r;
 	if (_v0.$ === 1) {
 		var mode = _v0.a;
 		var drag = _v0.b;
 		var _v1 = $author$project$Drag$getDimensions(drag);
-		var x = _v1.s;
-		var y = _v1.t;
+		var x = _v1.t;
+		var y = _v1.u;
 		var w = _v1.al;
 		var h = _v1._;
 		return A5(
