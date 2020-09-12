@@ -2,6 +2,7 @@ module DB exposing
     ( DB
     , boxSelect
     , clickedPieceGroup
+    , countDeleted
     , getSelected
     , getUnSelected
     , height
@@ -302,3 +303,8 @@ select mode pg db =
                         else
                             other
                     )
+
+
+countDeleted : DB -> Int
+countDeleted =
+    KDDict.countDeleted

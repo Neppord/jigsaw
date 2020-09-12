@@ -86,6 +86,7 @@ renderStats { db, configuration } =
         , item <| "seek time: " ++ String.fromInt (DB.height db)
         , item <| "optimal seek time: " ++ String.fromInt (DB.optimalHeight db)
         , item <| "perf: " ++ perf
+        , item <| "deleted nodes: " ++ String.fromInt (DB.countDeleted db)
         ]
 
 
