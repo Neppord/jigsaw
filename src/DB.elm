@@ -52,15 +52,6 @@ optimalHeight db =
         |> floor
 
 
-keyBool : Bool -> Int
-keyBool v =
-    if v then
-        1
-
-    else
-        0
-
-
 makeKey : PieceGroup -> DbKey
 makeKey { position, minOffset, maxOffset } =
     let
