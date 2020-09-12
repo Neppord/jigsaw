@@ -23,3 +23,7 @@ Press number key to toggle visibility of that group. Pieces default to group -1,
 * Panning with WASD keys
 * Zooming
 * And more...
+
+## Images and Licenses
+* ship-1366926_1920.jpg is downloaded from pixabay.com and are under the pixabay license
+    - https://pixabay.com/illustrations/ship-shipwreck-adventure-setting-1366926/ 

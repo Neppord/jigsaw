@@ -2,7 +2,7 @@
   "scripts": {
     "build":  "npm run analyse && npm run clean && npm run build-elm && npm run build-resources",
     "build-elm": "elm make --optimize src/Main.elm --output=docs/index.html",
-    "build-resources": "cp -r src/*.png docs" ,
+    "build-resources": "cp -r src/*.png src/*.jpg docs" ,
     "clean": "rm -rf docs/*",
     "analyse": "elm-analyse | grep -v '^INFO: '"
   },

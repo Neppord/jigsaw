@@ -51,7 +51,7 @@ init : () -> ( Seeded NewModel, Cmd Msg )
 init () =
     let
         ( width, height ) =
-            ( 533, 538 )
+            ( 1920, 1080 )
 
         ( xpieces, ypieces ) =
             ( 20, 20 )
@@ -63,7 +63,7 @@ init () =
             height // ypieces
 
         image =
-            { path = "kitten.png"
+            { path = "ship-1366926_1920.jpg"
             , width = width
             , height = height
             , xpieces = xpieces
