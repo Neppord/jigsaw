@@ -123,7 +123,7 @@ toList dict =
             toList smaller ++ toList larger
 
 
-height : KDDict comparable v -> number
+height : KDDict comparable v -> Int
 height dict =
     case dict of
         Empty ->
