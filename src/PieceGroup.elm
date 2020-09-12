@@ -60,8 +60,8 @@ merge a b =
 
         maxOffset =
             Point
-                (max a.minOffset.x b.minOffset.x)
-                (max a.minOffset.y b.minOffset.y)
+                (max a.maxOffset.x b.maxOffset.x)
+                (max a.maxOffset.y b.maxOffset.y)
     in
     { id = a.id
     , minOffset = minOffset
