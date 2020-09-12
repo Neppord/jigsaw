@@ -18,6 +18,7 @@ module KDDict exposing
     , merge
     , remove
     , removeAll
+    , size
     , sortByAxis
     , toList
     )
@@ -133,6 +134,19 @@ height dict =
 
         Deleted _ smaller larger ->
             1 + max (height smaller) (height larger)
+
+
+size : KDDict comparable v -> number
+size dict =
+    case dict of
+        Empty ->
+            0
+
+        Node _ smaller _ larger ->
+            1 + size smaller + size larger
+
+        Deleted _ smaller larger ->
+            size smaller + size larger
 
 
 get : Key comparable -> KDDict comparable v -> Maybe v
