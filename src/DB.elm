@@ -6,7 +6,6 @@ module DB exposing
     , getUnSelected
     , height
     , makeDb
-    , map
     , modify
     , modifySelected
     , optimalHeight
@@ -159,11 +158,6 @@ modify id action db =
                 x
     in
     makeDb (List.map toMap (all db))
-
-
-map : (PieceGroup -> PieceGroup) -> DB -> DB
-map action db =
-    makeDb (List.map action (all db))
 
 
 insert : PieceGroup -> DB -> DB
