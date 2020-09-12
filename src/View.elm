@@ -56,7 +56,36 @@ view model =
                 , Html.Events.onInput ChangeImageUrl
                 ]
                 []
+            , renderStats model
             ]
+        ]
+
+
+renderStats : NewModel -> Html msg
+renderStats { db, configuration } =
+    let
+        item string =
+            string
+                |> text
+                |> List.singleton
+                |> Html.li []
+
+        size =
+            configuration.image.xpieces * configuration.image.ypieces
+
+        perf =
+            String.fromFloat
+                (toFloat (DB.height db) / toFloat (DB.optimalHeight db))
+    in
+    Html.ul
+        [ style "background-color" "rgba(100%, 100%, 100%, 50%)"
+        , style "margin" "0"
+        ]
+        [ item <| "puzzle size: " ++ String.fromInt size
+        , item <| "pieces left: " ++ String.fromInt (DB.size db)
+        , item <| "seek time: " ++ String.fromInt (DB.height db)
+        , item <| "optimal seek time: " ++ String.fromInt (DB.optimalHeight db)
+        , item <| "perf: " ++ perf
         ]
 
 
@@ -217,13 +246,7 @@ viewDiv model =
         shadowRed =
             shadowWithColor "red"
     in
-    [ div [ style "bottom" "0", style "position" "absolute" ]
-        [ text
-            ("pieces: "
-                ++ String.fromInt (List.length unSelected + List.length selected)
-            )
-        ]
-    , keyedDiv
+    [ keyedDiv
         []
         (unSelected
             |> List.filter isVisible
