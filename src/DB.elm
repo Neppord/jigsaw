@@ -62,7 +62,7 @@ keyBool v =
 
 
 makeKey : PieceGroup -> DbKey
-makeKey { id, isSelected, position, minOffset, maxOffset } =
+makeKey { position, minOffset, maxOffset } =
     let
         position_ =
             position
@@ -110,11 +110,6 @@ matchPoint { x, y } =
 makeDb : List PieceGroup -> DB
 makeDb list =
     KDDict.fromListBy makeKey list
-
-
-order : List PieceGroup -> List PieceGroup
-order =
-    List.sortBy (\pg -> ( keyBool pg.isSelected, pg.id ))
 
 
 getSelected : DB -> List PieceGroup
