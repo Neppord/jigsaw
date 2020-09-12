@@ -210,7 +210,11 @@ snap snapDistance db =
                         |> insert merged
 
         _ ->
-            db
+            if countDeleted db > size db then
+                db |> all |> makeDb
+
+            else
+                db
 
 
 boxSelect : Set.Set Int -> UI.SelectionMode -> Drag.Drag -> DB -> DB
