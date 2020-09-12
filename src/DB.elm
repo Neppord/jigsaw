@@ -238,19 +238,36 @@ boxSelect visibleGroups mode drag db =
     case mode of
         UI.Add ->
             db
-                |> KDDict.removeAll (List.map makeKey targets)
-                |> KDDict.insertAllBy makeKey (List.map PieceGroup.select targets)
+                |> KDDict.unsafeMap
+                    (\pg ->
+                        if List.member pg targets then
+                            PieceGroup.select pg
+
+                        else
+                            pg
+                    )
 
         UI.Remove ->
             db
-                |> KDDict.removeAll (List.map makeKey targets)
-                |> KDDict.insertAllBy makeKey (List.map PieceGroup.deselect targets)
+                |> KDDict.unsafeMap
+                    (\pg ->
+                        if List.member pg targets then
+                            PieceGroup.deselect pg
+
+                        else
+                            pg
+                    )
 
         UI.Replace ->
             db
-                |> KDDict.removeAll (List.map makeKey targets)
-                |> map PieceGroup.deselect
-                |> KDDict.insertAllBy makeKey (List.map PieceGroup.select targets)
+                |> KDDict.unsafeMap
+                    (\pg ->
+                        if List.member pg targets then
+                            PieceGroup.select pg
+
+                        else
+                            PieceGroup.deselect pg
+                    )
 
 
 clickedPieceGroup : Set.Set Int -> JigsawImage -> DB -> Point.Point -> Maybe PieceGroup
