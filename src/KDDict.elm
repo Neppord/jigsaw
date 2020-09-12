@@ -5,6 +5,7 @@ module KDDict exposing
     , addAxis
     , addCoordinateAxis
     , coordinateKey
+    , countDeleted
     , empty
     , find
     , findMatching
@@ -184,6 +185,19 @@ size dict =
 
         Deleted _ smaller larger ->
             size smaller + size larger
+
+
+countDeleted : KDDict comparable v -> Int
+countDeleted dict =
+    case dict of
+        Empty ->
+            0
+
+        Node _ smaller _ larger ->
+            countDeleted smaller + countDeleted larger
+
+        Deleted _ smaller larger ->
+            1 + countDeleted smaller + countDeleted larger
 
 
 get : Key comparable -> KDDict comparable v -> Maybe v
