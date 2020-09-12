@@ -107,7 +107,7 @@ fromList_ index list =
         median l =
             l
                 |> splitOn lookAhead
-                |> Tuple.mapFirst (List.sortBy getKey)
+                |> Tuple.mapFirst (List.sortWith getKey)
                 |> (\( l1, l2 ) ->
                         let
                             amount =
@@ -121,9 +121,9 @@ fromList_ index list =
                         )
                    )
 
-        getKey : ( Key a, b ) -> a
-        getKey ( k, _ ) =
-            getIndex index k
+        getKey : ( Key comparable, b ) -> ( Key comparable, b ) -> Order
+        getKey ( k1, _ ) ( k2, _ ) =
+            compareKey index k1 k2
     in
     case median list of
         ( Nothing, _ ) ->
@@ -131,12 +131,9 @@ fromList_ index list =
 
         ( Just ( key_, value ), rest ) ->
             let
-                toCompare =
-                    getIndex index key_
-
                 ( larger, smaller ) =
                     List.partition
-                        (\( otherKey, _ ) -> toCompare < getIndex index otherKey)
+                        (\( otherKey, _ ) -> compareKey index key_ otherKey == LT)
                         rest
 
                 nextIndex =
@@ -242,11 +239,13 @@ get query dict =
             if query == key_ then
                 Just value
 
-            else if getIndex index query < getIndex index key_ then
-                get query smaller
-
             else
-                get query larger
+                case compareKey index query key_ of
+                    LT ->
+                        get query smaller
+
+                    _ ->
+                        get query larger
 
         Deleted _ smaller larger ->
             case get query smaller of
@@ -274,7 +273,7 @@ remove q dict =
                 Deleted i s l
 
             else
-                case compare (getIndex i q) (getIndex i key_) of
+                case compareKey i q key_ of
                     LT ->
                         Node i (remove q s) ( key_, v ) l
 
@@ -305,11 +304,12 @@ insert_ i key_ value dict =
             Node i Empty ( key_, value ) Empty
 
         Node _ s ( k, v ) l ->
-            if getIndex i key_ < getIndex i k then
-                Node i (insert_ (i + 1) key_ value s) ( k, v ) l
+            case compareKey i key_ k of
+                LT ->
+                    Node i (insert_ (i + 1) key_ value s) ( k, v ) l
 
-            else
-                Node i s ( k, v ) (insert_ (i + 1) key_ value l)
+                _ ->
+                    Node i s ( k, v ) (insert_ (i + 1) key_ value l)
 
         Deleted _ s l ->
             if modBy 2 i == 0 then
@@ -345,7 +345,7 @@ merge d1 d2 =
             d1
 
         ( Node i s1 ( k1, v1 ) l1, Node _ s2 ( k2, v2 ) l2 ) ->
-            case compare (getIndex i k1) (getIndex i k2) of
+            case compareKey i k1 k2 of
                 EQ ->
                     Node i (merge s1 s2) ( k1, v1 ) (insert_ (i + 1) k2 v2 (merge l1 l2))
 
@@ -438,6 +438,10 @@ sortByAxis_ numberOfLevels level dict =
             merge_ sortedSmaller sortedLarger
 
 
+compareWithMatchKey index k1 k2 =
+    compareWithMatch (getIndex index k1) (getIndex index k2)
+
+
 find : MatchKey comparable -> KDDict comparable v -> KDDict comparable v
 find query dict =
     case dict of
@@ -445,7 +449,7 @@ find query dict =
             Empty
 
         Node level smaller ( key_, v ) larger ->
-            case compareWithMatch (getIndex level key_) (getIndex level query) of
+            case compareWithMatchKey level key_ query of
                 EQ ->
                     if mMatch query key_ then
                         Node level (find query smaller) ( key_, v ) (find query larger)
