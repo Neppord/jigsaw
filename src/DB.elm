@@ -122,7 +122,6 @@ getSelected db =
     db
         |> all
         |> List.filter .isSelected
-        |> order
 
 
 getUnSelected : DB -> List PieceGroup
@@ -130,7 +129,6 @@ getUnSelected db =
     db
         |> all
         |> List.filter (not << .isSelected)
-        |> order
 
 
 modifySelected : (PieceGroup -> PieceGroup) -> DB -> DB
@@ -264,7 +262,6 @@ clickedPieceGroup visibleGroups_ _ db_ point =
         |> KDDict.findMatching
             (matchPoint point)
         |> List.filter (\pg -> Set.member pg.visibilityGroup visibleGroups_)
-        |> order
         |> List.reverse
         |> List.head
 
