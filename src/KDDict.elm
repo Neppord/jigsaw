@@ -84,13 +84,43 @@ fromListBy by list =
         |> fromList
 
 
+splitOn : Int -> List a -> ( List a, List a )
+splitOn n l =
+    ( List.take n l, List.drop n l )
+
+
 fromList_ : Int -> List ( Key comparable, v ) -> KDDict comparable v
 fromList_ index list =
-    case list of
-        [] ->
+    let
+        lookAhead =
+            5
+
+        median l =
+            l
+                |> splitOn lookAhead
+                |> Tuple.mapFirst (List.sortBy getKey)
+                |> (\( l1, l2 ) ->
+                        let
+                            amount =
+                                List.length l1 // 2
+
+                            ( a, b ) =
+                                splitOn amount l1
+                        in
+                        ( b |> List.head
+                        , a ++ List.drop 1 b ++ l2
+                        )
+                   )
+
+        getKey : ( Key a, b ) -> a
+        getKey ( k, _ ) =
+            getIndex index k
+    in
+    case median list of
+        ( Nothing, _ ) ->
             Empty
 
-        ( key_, value ) :: rest ->
+        ( Just ( key_, value ), rest ) ->
             let
                 toCompare =
                     getIndex index key_
