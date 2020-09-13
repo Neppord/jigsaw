@@ -136,12 +136,30 @@ isPieceInsideBox pos boxTL boxBR piece =
         && (pieceBR.y >= boxTL.y)
 
 
-isPointInsidePieceGroup : Set Int -> JigsawImage -> Point -> PieceGroup -> Bool
-isPointInsidePieceGroup visibleGroups image point pieceGroup =
-    Set.member pieceGroup.visibilityGroup visibleGroups
-        && (List.any (JigsawImage.isPointInsidePiece image point pieceGroup.position) <|
-                List.map .id pieceGroup.members
-           )
+isPointInsidePieceGroup : Point -> PieceGroup -> Bool
+isPointInsidePieceGroup point pieceGroup =
+    let
+        relativePosition =
+            Point.sub point pieceGroup.position
+    in
+    List.any
+        (isPointInsidePiece relativePosition)
+        pieceGroup.members
+
+
+isPointInsidePiece : Point -> Piece -> Bool
+isPointInsidePiece point piece =
+    let
+        pieceTL =
+            piece.offset
+
+        pieceBR =
+            Point.add piece.offset piece.size
+    in
+    (pieceTL.x <= point.x)
+        && (pieceTL.y <= point.y)
+        && (pieceBR.x >= point.x)
+        && (pieceBR.y >= point.y)
 
 
 createPieceGroups : JigsawImage -> List Point -> List PieceGroup

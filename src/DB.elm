@@ -252,6 +252,7 @@ clickedPieceGroup visibleGroups_ _ db_ point =
         |> KDDict.findMatching
             (matchPoint point)
         |> List.filter (\pg -> Set.member pg.visibilityGroup visibleGroups_)
+        |> List.filter (PieceGroup.isPointInsidePieceGroup point)
         |> List.reverse
         |> List.head
 
