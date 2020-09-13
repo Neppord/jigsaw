@@ -27,3 +27,8 @@ Press number key to toggle visibility of that group. Pieces default to group -1,
 ## Images and Licenses
 * ship-1366926_1920.jpg is downloaded from pixabay.com and are under the pixabay license
     - https://pixabay.com/illustrations/ship-shipwreck-adventure-setting-1366926/ 
+* map-595794_1920.png is downloaded from pixabay.com and are under the pixabay license
+    - https://pixabay.com/illustrations/map-atlas-geography-earth-travel-595794/
+* map-595791_1920.png is downloaded from pixabay.com and are under the pixabay license
+    - https://pixabay.com/illustrations/map-atlas-geography-earth-travel-595791/
+    
