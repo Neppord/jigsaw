@@ -6,6 +6,7 @@ import DB
 import Drag
 import Html
 import Keyboard exposing (Keyboard)
+import Keyed exposing (Keyed)
 import Model
     exposing
         ( Key(..)
@@ -23,16 +24,18 @@ import Url
 import View
 
 
-main : Program () (Seeded NewModel) (Maybe Msg)
+main : Program () (Keyed (Seeded NewModel)) (Maybe Msg)
 main =
     Browser.application
         { init = init
         , update = update
         , view =
-            Seeded.unwrap
+            .value
+                >> Seeded.unwrap
                 >> view
         , subscriptions =
-            Seeded.unwrap
+            .value
+                >> Seeded.unwrap
                 >> subscriptions
                 >> Sub.map Just
         , onUrlChange = always Nothing
@@ -45,25 +48,25 @@ view model =
     Browser.Document "Jigsaw" [ View.view model |> Html.map Just ]
 
 
-init : () -> Url.Url -> Browser.Navigation.Key -> ( Seeded NewModel, Cmd (Maybe Msg) )
-init flags _ _ =
+init : () -> Url.Url -> Browser.Navigation.Key -> ( Keyed (Seeded NewModel), Cmd (Maybe Msg) )
+init flags _ key =
     Model.init flags
         |> Tuple.mapSecond (Cmd.map Just)
+        |> Tuple.mapFirst (Keyed key)
 
 
 
 -- UPDATE
 
 
-update : Maybe Msg -> Seeded NewModel -> ( Seeded NewModel, Cmd (Maybe Msg) )
-update maybeMsg seededModel =
+update : Maybe Msg -> Keyed (Seeded NewModel) -> ( Keyed (Seeded NewModel), Cmd (Maybe Msg) )
+update maybeMsg model =
     let
-        nextModel msg =
+        nextModel msg seededModel =
             case msg of
                 Scramble ->
                     seededModel
-                        |> Seeded.map (.configuration >> .image)
-                        |> Seeded.map generateModel
+                        |> Seeded.map (.configuration >> .image >> generateModel)
                         |> Seeded.step
 
                 KeyDown keyboard key ->
@@ -84,8 +87,8 @@ update maybeMsg seededModel =
 
                 ChangeImageUrl url ->
                     let
-                        updateModel model =
-                            { model | configuration = updateConfiguration model.configuration }
+                        updateModel m =
+                            { m | configuration = updateConfiguration m.configuration }
 
                         updateConfiguration configuration =
                             { configuration | image = updateImage configuration.image }
@@ -96,8 +99,12 @@ update maybeMsg seededModel =
                     seededModel
                         |> Seeded.map updateModel
     in
-    ( Maybe.map nextModel maybeMsg
-        |> Maybe.withDefault seededModel
+    ( case maybeMsg of
+        Nothing ->
+            model
+
+        Just msg ->
+            Keyed.map (nextModel msg) model
     , Cmd.none
     )
 
