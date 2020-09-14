@@ -1,8 +1,8 @@
-module Save exposing (..)
+module Save exposing (Save, load, save)
 
 import DB
 import Model exposing (NewModel)
-import PieceGroup exposing (ID, Piece)
+import PieceGroup exposing (ID)
 import Point exposing (Point)
 import Seeded exposing (Seeded)
 
