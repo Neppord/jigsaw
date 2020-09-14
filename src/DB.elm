@@ -3,6 +3,7 @@ module DB exposing
     , boxSelect
     , clickedPieceGroup
     , countDeleted
+    , getPieces
     , getSelected
     , getUnSelected
     , height
@@ -302,3 +303,15 @@ countDeleted =
 heightDifference : DB -> Int
 heightDifference =
     KDDict.heightDifference
+
+
+getPieces : DB -> List ( Point, PieceGroup.ID )
+getPieces db =
+    let
+        pgToP : PieceGroup -> List ( Point, PieceGroup.ID )
+        pgToP pg =
+            pg.members
+                |> List.map (\p -> ( pg.position, p.id ))
+    in
+    all db
+        |> List.concatMap pgToP
