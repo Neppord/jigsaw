@@ -311,7 +311,7 @@ getPieces db =
         pgToP : PieceGroup -> List ( Point, PieceGroup.ID )
         pgToP pg =
             pg.members
-                |> List.map (\p -> ( pg.position, p.id ))
+                |> List.map (\p -> ( Point.add p.offset pg.position, p.id ))
     in
     all db
         |> List.concatMap pgToP

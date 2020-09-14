@@ -47,7 +47,7 @@ type alias NewModel =
     }
 
 
-init : () -> ( Seeded NewModel, Cmd Msg )
+init : () -> Seeded NewModel
 init () =
     let
         ( width, height ) =
@@ -72,12 +72,10 @@ init () =
             , pieceHeight = pieceHeight
             }
     in
-    ( image
+    image
         |> Seeded (Random.initialSeed 0)
         |> Seeded.map generateModel
         |> Seeded.step
-    , Cmd.none
-    )
 
 
 buildModel :

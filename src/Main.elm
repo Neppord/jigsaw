@@ -5,6 +5,8 @@ import Browser.Navigation
 import DB
 import Drag
 import Html
+import Json.Decode
+import Json.Encode
 import Keyboard exposing (Keyboard)
 import Keyed exposing (Keyed)
 import Model
@@ -16,6 +18,7 @@ import Model
         )
 import PieceGroup
 import Point exposing (Point)
+import Save
 import Seeded exposing (Seeded(..))
 import Set exposing (Set)
 import Subscription exposing (subscriptions)
@@ -24,7 +27,11 @@ import Url
 import View
 
 
-main : Program () (Keyed (Seeded NewModel)) (Maybe Msg)
+type alias Model =
+    Keyed (Seeded NewModel)
+
+
+main : Program () Model (Maybe Msg)
 main =
     Browser.application
         { init = init
@@ -48,21 +55,32 @@ view model =
     Browser.Document "Jigsaw" [ View.view model |> Html.map Just ]
 
 
-init : () -> Url.Url -> Browser.Navigation.Key -> ( Keyed (Seeded NewModel), Cmd (Maybe Msg) )
-init flags _ key =
-    Model.init flags
-        |> Tuple.mapSecond (Cmd.map Just)
-        |> Tuple.mapFirst (Keyed key)
+init : () -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd (Maybe Msg) )
+init flags url key =
+    let
+        loaded =
+            url.fragment
+                |> Maybe.andThen Url.percentDecode
+                |> Maybe.andThen (Json.Decode.decodeString Save.decode >> Result.toMaybe)
+                |> Maybe.map Save.load
+
+        model =
+            loaded
+                |> Maybe.withDefault (Model.init flags)
+    in
+    ( Keyed key model
+    , Cmd.none
+    )
 
 
 
 -- UPDATE
 
 
-update : Maybe Msg -> Keyed (Seeded NewModel) -> ( Keyed (Seeded NewModel), Cmd (Maybe Msg) )
+update : Maybe Msg -> Model -> ( Model, Cmd (Maybe Msg) )
 update maybeMsg model =
     let
-        nextModel msg seededModel =
+        makeNextModel msg seededModel =
             case msg of
                 Scramble ->
                     seededModel
@@ -98,14 +116,24 @@ update maybeMsg model =
                     in
                     seededModel
                         |> Seeded.map updateModel
-    in
-    ( case maybeMsg of
-        Nothing ->
-            model
 
-        Just msg ->
-            Keyed.map (nextModel msg) model
-    , Cmd.none
+        nextModel =
+            case maybeMsg of
+                Nothing ->
+                    model
+
+                Just msg ->
+                    Keyed.map (makeNextModel msg) model
+    in
+    ( nextModel
+    , case maybeMsg of
+        Just MouseUp ->
+            Browser.Navigation.replaceUrl
+                model.key
+                ("#" ++ (Json.Encode.encode 0 << Save.encode << Save.save) nextModel.value)
+
+        _ ->
+            Cmd.none
     )
 
 
