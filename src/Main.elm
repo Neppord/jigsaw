@@ -1,8 +1,10 @@
 module Main exposing (main)
 
 import Browser
+import Browser.Navigation
 import DB
 import Drag
+import Html
 import Keyboard exposing (Keyboard)
 import Model
     exposing
@@ -10,7 +12,6 @@ import Model
         , Msg(..)
         , NewModel
         , generateModel
-        , init
         )
 import PieceGroup
 import Point exposing (Point)
@@ -18,61 +19,85 @@ import Seeded exposing (Seeded(..))
 import Set exposing (Set)
 import Subscription exposing (subscriptions)
 import UI
-import View exposing (view)
+import Url
+import View
 
 
-main : Program () (Seeded NewModel) Msg
+main : Program () (Seeded NewModel) (Maybe Msg)
 main =
-    Browser.element
+    Browser.application
         { init = init
         , update = update
-        , view = Seeded.unwrap >> view
-        , subscriptions = Seeded.unwrap >> subscriptions
+        , view =
+            Seeded.unwrap
+                >> view
+        , subscriptions =
+            Seeded.unwrap
+                >> subscriptions
+                >> Sub.map Just
+        , onUrlChange = always Nothing
+        , onUrlRequest = always Nothing
         }
+
+
+view : NewModel -> Browser.Document (Maybe Msg)
+view model =
+    Browser.Document "Jigsaw" [ View.view model |> Html.map Just ]
+
+
+init : () -> Url.Url -> Browser.Navigation.Key -> ( Seeded NewModel, Cmd (Maybe Msg) )
+init flags _ _ =
+    Model.init flags
+        |> Tuple.mapSecond (Cmd.map Just)
 
 
 
 -- UPDATE
 
 
-update : Msg -> Seeded NewModel -> ( Seeded NewModel, Cmd Msg )
-update msg seededModel =
-    ( case msg of
-        Scramble ->
-            seededModel
-                |> Seeded.map (.configuration >> .image)
-                |> Seeded.map generateModel
-                |> Seeded.step
+update : Maybe Msg -> Seeded NewModel -> ( Seeded NewModel, Cmd (Maybe Msg) )
+update maybeMsg seededModel =
+    let
+        nextModel msg =
+            case msg of
+                Scramble ->
+                    seededModel
+                        |> Seeded.map (.configuration >> .image)
+                        |> Seeded.map generateModel
+                        |> Seeded.step
 
-        KeyDown keyboard key ->
-            seededModel
-                |> Seeded.map (updateKeyChange keyboard key)
+                KeyDown keyboard key ->
+                    seededModel
+                        |> Seeded.map (updateKeyChange keyboard key)
 
-        MouseDown coordinate keyboard ->
-            seededModel
-                |> Seeded.map (updateMouseDown coordinate keyboard)
+                MouseDown coordinate keyboard ->
+                    seededModel
+                        |> Seeded.map (updateMouseDown coordinate keyboard)
 
-        MouseUp ->
-            seededModel
-                |> Seeded.map updateMouseUp
+                MouseUp ->
+                    seededModel
+                        |> Seeded.map updateMouseUp
 
-        MouseMove newPos ->
-            seededModel
-                |> Seeded.map (updateMoveMouse newPos)
+                MouseMove newPos ->
+                    seededModel
+                        |> Seeded.map (updateMoveMouse newPos)
 
-        ChangeImageUrl url ->
-            let
-                updateModel model =
-                    { model | configuration = updateConfiguration model.configuration }
+                ChangeImageUrl url ->
+                    let
+                        updateModel model =
+                            { model | configuration = updateConfiguration model.configuration }
 
-                updateConfiguration configuration =
-                    { configuration | image = updateImage configuration.image }
+                        updateConfiguration configuration =
+                            { configuration | image = updateImage configuration.image }
 
-                updateImage image =
-                    { image | path = url }
-            in
-            seededModel
-                |> Seeded.map updateModel
+                        updateImage image =
+                            { image | path = url }
+                    in
+                    seededModel
+                        |> Seeded.map updateModel
+    in
+    ( Maybe.map nextModel maybeMsg
+        |> Maybe.withDefault seededModel
     , Cmd.none
     )
 
