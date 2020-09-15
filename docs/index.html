@@ -9301,28 +9301,8 @@ var $author$project$Model$ChangeImageUrl = function (a) {
 };
 var $author$project$Model$Scramble = {$: 3};
 var $elm$html$Html$button = _VirtualDom_node('button');
-var $elm$json$Json$Encode$bool = _Json_wrap;
-var $elm$html$Html$Attributes$boolProperty = F2(
-	function (key, bool) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			$elm$json$Json$Encode$bool(bool));
-	});
-var $elm$html$Html$Attributes$checked = $elm$html$Html$Attributes$boolProperty('checked');
 var $elm$html$Html$div = _VirtualDom_node('div');
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			$elm$json$Json$Encode$string(string));
-	});
-var $elm$html$Html$Attributes$for = $elm$html$Html$Attributes$stringProperty('htmlFor');
 var $elm$html$Html$input = _VirtualDom_node('input');
-var $elm$html$Html$label = _VirtualDom_node('label');
-var $elm$html$Html$Attributes$name = $elm$html$Html$Attributes$stringProperty('name');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 0, a: a};
 };
@@ -9334,21 +9314,6 @@ var $elm$html$Html$Events$on = F2(
 			event,
 			$elm$virtual_dom$VirtualDom$Normal(decoder));
 	});
-var $elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
-	});
-var $elm$html$Html$Events$targetChecked = A2(
-	$elm$json$Json$Decode$at,
-	_List_fromArray(
-		['target', 'checked']),
-	$elm$json$Json$Decode$bool);
-var $elm$html$Html$Events$onCheck = function (tagger) {
-	return A2(
-		$elm$html$Html$Events$on,
-		'change',
-		A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetChecked));
-};
 var $elm$html$Html$Events$onClick = function (msg) {
 	return A2(
 		$elm$html$Html$Events$on,
@@ -9368,6 +9333,10 @@ var $elm$html$Html$Events$stopPropagationOn = F2(
 			event,
 			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
 	});
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
 var $elm$html$Html$Events$targetValue = A2(
 	$elm$json$Json$Decode$at,
 	_List_fromArray(
@@ -9382,6 +9351,14 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			$elm$html$Html$Events$alwaysStop,
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
 var $elm$core$String$fromFloat = _String_fromNumber;
 var $author$project$KDDict$height = function (dict) {
@@ -9470,7 +9447,6 @@ var $author$project$View$renderStats = function (_v0) {
 		$elm$html$Html$ul,
 		_List_fromArray(
 			[
-				A2($elm$html$Html$Attributes$style, 'background-color', 'rgba(100%, 100%, 100%, 50%)'),
 				A2($elm$html$Html$Attributes$style, 'margin', '0')
 			]),
 		_List_fromArray(
@@ -9505,7 +9481,6 @@ var $author$project$View$turnOffTheBloodyImageDragging = _List_fromArray(
 		A2($elm$html$Html$Attributes$style, 'user-select', 'none'),
 		$elm$html$Html$Attributes$draggable('false')
 	]);
-var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
 var $elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
 var $elm$svg$Svg$clipPath = $elm$svg$Svg$trustedNode('clipPath');
@@ -9885,6 +9860,64 @@ var $author$project$View$viewSelectionBox = function (model) {
 		return A5(box, -10, -10, 0, 0, 'rgba(0,255,0,0.2)');
 	}
 };
+var $elm$json$Json$Encode$bool = _Json_wrap;
+var $elm$html$Html$Attributes$boolProperty = F2(
+	function (key, bool) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$bool(bool));
+	});
+var $elm$html$Html$Attributes$checked = $elm$html$Html$Attributes$boolProperty('checked');
+var $elm$html$Html$Attributes$name = $elm$html$Html$Attributes$stringProperty('name');
+var $elm$html$Html$Events$targetChecked = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'checked']),
+	$elm$json$Json$Decode$bool);
+var $elm$html$Html$Events$onCheck = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'change',
+		A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetChecked));
+};
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $author$project$View$visibilityGroupName = function (x) {
+	return 'group-' + ($elm$core$String$fromInt(x) + '-visible');
+};
+var $author$project$View$visibilityCheckbox = F2(
+	function (x, model) {
+		return A2(
+			$elm$html$Html$input,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$type_('checkbox'),
+					$elm$html$Html$Attributes$checked(
+					A2($elm$core$Set$member, x, model.Y)),
+					$elm$html$Html$Attributes$name(
+					$author$project$View$visibilityGroupName(x)),
+					$elm$html$Html$Events$onCheck(
+					$elm$core$Basics$always(
+						$author$project$Model$ToggleVisibility(x)))
+				]),
+			_List_Nil);
+	});
+var $elm$html$Html$Attributes$for = $elm$html$Html$Attributes$stringProperty('htmlFor');
+var $elm$html$Html$label = _VirtualDom_node('label');
+var $author$project$View$visibilityLabel = function (x) {
+	return A2(
+		$elm$html$Html$label,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$for(
+				$author$project$View$visibilityGroupName(x))
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(
+				$elm$core$String$fromInt(x))
+			]));
+};
 var $author$project$View$view = function (model) {
 	var image = model.K;
 	return A2(
@@ -9915,9 +9948,10 @@ var $author$project$View$view = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'position', 'absolute'),
+						A2($elm$html$Html$Attributes$style, 'position', 'fixed'),
 						A2($elm$html$Html$Attributes$style, 'top', '0'),
-						A2($elm$html$Html$Attributes$style, 'left', '0')
+						A2($elm$html$Html$Attributes$style, 'left', '0'),
+						A2($elm$html$Html$Attributes$style, 'background-color', 'rgba(100%, 100%, 100%, 50%)')
 					]),
 				_List_fromArray(
 					[
@@ -9940,29 +9974,36 @@ var $author$project$View$view = function (model) {
 								$elm$html$Html$Events$onInput($author$project$Model$ChangeImageUrl)
 							]),
 						_List_Nil),
-						A2(
-						$elm$html$Html$input,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$type_('checkbox'),
-								$elm$html$Html$Attributes$checked(
-								A2($elm$core$Set$member, 1, model.Y)),
-								$elm$html$Html$Attributes$name('group-1-visible'),
-								$elm$html$Html$Events$onCheck(
-								$elm$core$Basics$always(
-									$author$project$Model$ToggleVisibility(1)))
-							]),
-						_List_Nil),
-						A2(
-						$elm$html$Html$label,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$for('group-1-visible')
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('1')
-							])),
+						A2($author$project$View$visibilityCheckbox, 1, model),
+						$author$project$View$visibilityLabel(1),
+						A2($author$project$View$visibilityCheckbox, 2, model),
+						$author$project$View$visibilityLabel(2),
+						A2($author$project$View$visibilityCheckbox, 3, model),
+						$author$project$View$visibilityLabel(3),
+						A2($author$project$View$visibilityCheckbox, 4, model),
+						$author$project$View$visibilityLabel(4),
+						A2($author$project$View$visibilityCheckbox, 5, model),
+						$author$project$View$visibilityLabel(5),
+						A2($author$project$View$visibilityCheckbox, 6, model),
+						$author$project$View$visibilityLabel(6),
+						A2($author$project$View$visibilityCheckbox, 7, model),
+						$author$project$View$visibilityLabel(7),
+						A2($author$project$View$visibilityCheckbox, 8, model),
+						$author$project$View$visibilityLabel(8),
+						A2($author$project$View$visibilityCheckbox, 9, model),
+						$author$project$View$visibilityLabel(9)
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						A2($elm$html$Html$Attributes$style, 'position', 'fixed'),
+						A2($elm$html$Html$Attributes$style, 'bottom', '0'),
+						A2($elm$html$Html$Attributes$style, 'left', '0'),
+						A2($elm$html$Html$Attributes$style, 'background-color', 'rgba(100%, 100%, 100%, 50%)')
+					]),
+				_List_fromArray(
+					[
 						$author$project$View$renderStats(model)
 					]))
 			]));

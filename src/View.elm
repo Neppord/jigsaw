@@ -43,9 +43,10 @@ view model =
             (viewDiv model)
         , viewSelectionBox model
         , Html.div
-            [ style "position" "absolute"
+            [ style "position" "fixed"
             , style "top" "0"
             , style "left" "0"
+            , style "background-color" "rgba(100%, 100%, 100%, 50%)"
             ]
             [ Html.button
                 [ Html.Events.onClick Scramble ]
@@ -56,19 +57,56 @@ view model =
                 , Html.Events.onInput ChangeImageUrl
                 ]
                 []
-            , Html.input
-                [ Html.Attributes.type_ "checkbox"
-                , Html.Attributes.checked (Set.member 1 model.visibleGroups)
-                , Html.Attributes.name "group-1-visible"
-                , Html.Events.onCheck (always <| ToggleVisibility 1)
-                ]
-                []
-            , Html.label
-                [ Html.Attributes.for "group-1-visible" ]
-                [ text "1" ]
-            , renderStats model
+            , visibilityCheckbox 1 model
+            , visibilityLabel 1
+            , visibilityCheckbox 2 model
+            , visibilityLabel 2
+            , visibilityCheckbox 3 model
+            , visibilityLabel 3
+            , visibilityCheckbox 4 model
+            , visibilityLabel 4
+            , visibilityCheckbox 5 model
+            , visibilityLabel 5
+            , visibilityCheckbox 6 model
+            , visibilityLabel 6
+            , visibilityCheckbox 7 model
+            , visibilityLabel 7
+            , visibilityCheckbox 8 model
+            , visibilityLabel 8
+            , visibilityCheckbox 9 model
+            , visibilityLabel 9
             ]
+        , Html.div
+            [ style "position" "fixed"
+            , style "bottom" "0"
+            , style "left" "0"
+            , style "background-color" "rgba(100%, 100%, 100%, 50%)"
+            ]
+            [ renderStats model ]
         ]
+
+
+visibilityGroupName : Int -> String
+visibilityGroupName x =
+    "group-" ++ String.fromInt x ++ "-visible"
+
+
+visibilityLabel : Int -> Html msg
+visibilityLabel x =
+    Html.label
+        [ Html.Attributes.for <| visibilityGroupName x ]
+        [ text <| String.fromInt x ]
+
+
+visibilityCheckbox : Int -> NewModel -> Html Msg
+visibilityCheckbox x model =
+    Html.input
+        [ Html.Attributes.type_ "checkbox"
+        , Html.Attributes.checked (Set.member x model.visibleGroups)
+        , Html.Attributes.name <| visibilityGroupName x
+        , Html.Events.onCheck (always <| ToggleVisibility x)
+        ]
+        []
 
 
 renderStats : NewModel -> Html msg
@@ -88,8 +126,7 @@ renderStats { db, image } =
                 (toFloat (DB.height db) / toFloat (DB.optimalHeight db))
     in
     Html.ul
-        [ style "background-color" "rgba(100%, 100%, 100%, 50%)"
-        , style "margin" "0"
+        [ style "margin" "0"
         ]
         [ item <| "puzzle size: " ++ String.fromInt size
         , item <| "pieces left: " ++ String.fromInt (DB.size db)
