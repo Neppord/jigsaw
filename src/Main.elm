@@ -128,9 +128,14 @@ update maybeMsg model =
     ( nextModel
     , case maybeMsg of
         Just MouseUp ->
-            Browser.Navigation.replaceUrl
-                model.key
-                ("#" ++ (Save.serialize << Save.save) nextModel.value)
+            case (Save.serialize << Save.save) nextModel.value of
+                Nothing ->
+                    Cmd.none
+
+                Just data ->
+                    Browser.Navigation.replaceUrl
+                        model.key
+                        ("#" ++ data)
 
         _ ->
             Cmd.none

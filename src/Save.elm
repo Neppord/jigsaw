@@ -6,12 +6,11 @@ module Save exposing
     , serialize
     )
 
+import Base64
 import Bytes exposing (Endianness(..))
 import Bytes.Decode
 import Bytes.Encode
 import DB
-import Json.Decode
-import Json.Encode
 import Model exposing (NewModel)
 import PieceGroup exposing (ID)
 import Point exposing (Point)
@@ -22,14 +21,17 @@ type alias Save =
     List (List Point)
 
 
-serialize : Save -> String
-serialize =
-    Json.Encode.encode 0 << jsonEncode
+serialize : Save -> Maybe String
+serialize save_ =
+    Bytes.Encode.encode (byteEncoder save_)
+        |> Base64.fromBytes
 
 
 deserialize : String -> Maybe Save
-deserialize =
-    Json.Decode.decodeString jsonDecode >> Result.toMaybe
+deserialize string =
+    string
+        |> Base64.toBytes
+        |> Maybe.andThen (Bytes.Decode.decode byteDecode)
 
 
 pack : List Point -> List Int
@@ -61,7 +63,7 @@ byteDecodeList a =
             -> Bytes.Decode.Decoder (Bytes.Decode.Step ( Int, List a ) (List a))
         listStep decoder ( n, xs ) =
             if n <= 0 then
-                Bytes.Decode.succeed (Bytes.Decode.Done xs)
+                Bytes.Decode.succeed (Bytes.Decode.Done (List.reverse xs))
 
             else
                 Bytes.Decode.map (\x -> Bytes.Decode.Loop ( n - 1, x :: xs )) decoder
@@ -98,20 +100,6 @@ byteEncoder save_ =
         |> (List.map <| List.map int16)
         |> List.map byteEncodeList
         |> byteEncodeList
-
-
-jsonDecode : Json.Decode.Decoder Save
-jsonDecode =
-    Json.Decode.list Json.Decode.int
-        |> Json.Decode.map unpack
-        |> Json.Decode.list
-
-
-jsonEncode : Save -> Json.Encode.Value
-jsonEncode s =
-    s
-        |> (List.map <| pack)
-        |> (Json.Encode.list <| Json.Encode.list Json.Encode.int)
 
 
 load : Save -> Seeded NewModel
