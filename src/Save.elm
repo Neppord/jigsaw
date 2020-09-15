@@ -23,13 +23,9 @@ deserialize =
     Json.Decode.decodeString decode >> Result.toMaybe
 
 
-decode : Json.Decode.Decoder Save
-decode =
+unpack : List Int -> List Point
+unpack =
     let
-        pack : List Int -> List Point
-        pack =
-            Tuple.second << List.foldl do ( Nothing, [] )
-
         do : Int -> ( Maybe Int, List Point ) -> ( Maybe Int, List Point )
         do a ( m, l ) =
             case m of
@@ -39,8 +35,13 @@ decode =
                 Just b ->
                     ( Nothing, Point b a :: l )
     in
+    Tuple.second << List.foldl do ( Nothing, [] )
+
+
+decode : Json.Decode.Decoder Save
+decode =
     Json.Decode.list Json.Decode.int
-        |> Json.Decode.map pack
+        |> Json.Decode.map unpack
         |> Json.Decode.list
 
 
