@@ -1,4 +1,10 @@
-module Save exposing (Save, decode, deserialize, encode, load, save, serialize)
+module Save exposing
+    ( Save
+    , deserialize
+    , load
+    , save
+    , serialize
+    )
 
 import DB
 import Json.Decode
@@ -15,12 +21,17 @@ type alias Save =
 
 serialize : Save -> String
 serialize =
-    Json.Encode.encode 0 << encode
+    Json.Encode.encode 0 << jsonEncode
 
 
 deserialize : String -> Maybe Save
 deserialize =
-    Json.Decode.decodeString decode >> Result.toMaybe
+    Json.Decode.decodeString jsonDecode >> Result.toMaybe
+
+
+pack : List Point -> List Int
+pack =
+    List.concatMap (\p -> [ p.x, p.y ])
 
 
 unpack : List Int -> List Point
@@ -38,20 +49,15 @@ unpack =
     Tuple.second << List.foldl do ( Nothing, [] )
 
 
-decode : Json.Decode.Decoder Save
-decode =
+jsonDecode : Json.Decode.Decoder Save
+jsonDecode =
     Json.Decode.list Json.Decode.int
         |> Json.Decode.map unpack
         |> Json.Decode.list
 
 
-pack : List Point -> List Int
-pack =
-    List.concatMap (\p -> [ p.x, p.y ])
-
-
-encode : Save -> Json.Encode.Value
-encode s =
+jsonEncode : Save -> Json.Encode.Value
+jsonEncode s =
     s
         |> (List.map <| pack)
         |> (Json.Encode.list <| Json.Encode.list Json.Encode.int)
