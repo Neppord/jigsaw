@@ -1,4 +1,4 @@
-module Save exposing (Save, decode, encode, load, save)
+module Save exposing (Save, decode, deserialize, encode, load, save, serialize)
 
 import DB
 import Json.Decode
@@ -11,6 +11,16 @@ import Seeded exposing (Seeded)
 
 type alias Save =
     List (List Point)
+
+
+serialize : Save -> String
+serialize =
+    Json.Encode.encode 0 << encode
+
+
+deserialize : String -> Maybe Save
+deserialize =
+    Json.Decode.decodeString decode >> Result.toMaybe
 
 
 decode : Json.Decode.Decoder Save

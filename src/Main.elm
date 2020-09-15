@@ -61,7 +61,7 @@ init flags url key =
         loaded =
             url.fragment
                 |> Maybe.andThen Url.percentDecode
-                |> Maybe.andThen (Json.Decode.decodeString Save.decode >> Result.toMaybe)
+                |> Maybe.andThen Save.deserialize
                 |> Maybe.map Save.load
 
         model =
@@ -130,7 +130,7 @@ update maybeMsg model =
         Just MouseUp ->
             Browser.Navigation.replaceUrl
                 model.key
-                ("#" ++ (Json.Encode.encode 0 << Save.encode << Save.save) nextModel.value)
+                ("#" ++ (Save.serialize << Save.save) nextModel.value)
 
         _ ->
             Cmd.none
