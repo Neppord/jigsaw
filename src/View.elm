@@ -56,6 +56,16 @@ view model =
                 , Html.Events.onInput ChangeImageUrl
                 ]
                 []
+            , Html.input
+                [ Html.Attributes.type_ "checkbox"
+                , Html.Attributes.checked (Set.member 1 model.visibleGroups)
+                , Html.Attributes.name "group-1-visible"
+                , Html.Events.onCheck (always <| ToggleVisibility 1)
+                ]
+                []
+            , Html.label
+                [ Html.Attributes.for "group-1-visible" ]
+                [ text "1" ]
             , renderStats model
             ]
         ]
