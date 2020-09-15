@@ -45,10 +45,15 @@ decode =
         |> Json.Decode.list
 
 
+pack : List Point -> List Int
+pack =
+    List.concatMap (\p -> [ p.x, p.y ])
+
+
 encode : Save -> Json.Encode.Value
 encode s =
     s
-        |> (List.map <| List.concatMap (\p -> [ p.x, p.y ]))
+        |> (List.map <| pack)
         |> (Json.Encode.list <| Json.Encode.list Json.Encode.int)
 
 
