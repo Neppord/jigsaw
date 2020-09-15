@@ -6,6 +6,9 @@ module Save exposing
     , serialize
     )
 
+import Bytes exposing (Endianness(..))
+import Bytes.Decode
+import Bytes.Encode
 import DB
 import Json.Decode
 import Json.Encode
@@ -47,6 +50,54 @@ unpack =
                     ( Nothing, Point b a :: l )
     in
     Tuple.second << List.foldl do ( Nothing, [] )
+
+
+byteDecodeList : Bytes.Decode.Decoder a -> Bytes.Decode.Decoder (List a)
+byteDecodeList a =
+    let
+        listStep :
+            Bytes.Decode.Decoder a
+            -> ( Int, List a )
+            -> Bytes.Decode.Decoder (Bytes.Decode.Step ( Int, List a ) (List a))
+        listStep decoder ( n, xs ) =
+            if n <= 0 then
+                Bytes.Decode.succeed (Bytes.Decode.Done xs)
+
+            else
+                Bytes.Decode.map (\x -> Bytes.Decode.Loop ( n - 1, x :: xs )) decoder
+    in
+    Bytes.Decode.unsignedInt16 BE
+        |> Bytes.Decode.andThen (\len -> Bytes.Decode.loop ( len, [] ) (listStep a))
+
+
+byteDecode : Bytes.Decode.Decoder Save
+byteDecode =
+    Bytes.Decode.unsignedInt16 BE
+        |> byteDecodeList
+        |> Bytes.Decode.map unpack
+        |> byteDecodeList
+
+
+int16 : Int -> Bytes.Encode.Encoder
+int16 =
+    Bytes.Encode.unsignedInt16 BE
+
+
+byteEncodeList : List Bytes.Encode.Encoder -> Bytes.Encode.Encoder
+byteEncodeList list =
+    Bytes.Encode.sequence
+        [ int16 (List.length list)
+        , Bytes.Encode.sequence list
+        ]
+
+
+byteEncoder : Save -> Bytes.Encode.Encoder
+byteEncoder save_ =
+    save_
+        |> List.map pack
+        |> (List.map <| List.map int16)
+        |> List.map byteEncodeList
+        |> byteEncodeList
 
 
 jsonDecode : Json.Decode.Decoder Save
