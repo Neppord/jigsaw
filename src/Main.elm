@@ -42,7 +42,6 @@ main =
             .value
                 >> Seeded.unwrap
                 >> subscriptions
-                >> Sub.map Just
         , onUrlChange = always Nothing
         , onUrlRequest = always Nothing
         }
@@ -86,10 +85,6 @@ update maybeMsg model =
                         |> Seeded.map (.image >> generateModel)
                         |> Seeded.step
 
-                KeyDown keyboard key ->
-                    seededModel
-                        |> Seeded.map (updateKeyChange keyboard key)
-
                 MouseDown coordinate keyboard ->
                     seededModel
                         |> Seeded.map (updateMouseDown coordinate keyboard)
@@ -112,6 +107,14 @@ update maybeMsg model =
                     in
                     seededModel
                         |> Seeded.map updateModel
+
+                SendToVisibility group ->
+                    seededModel
+                        |> Seeded.map (sendToVisibilityGroup group)
+
+                ToggleVisibility group ->
+                    seededModel
+                        |> Seeded.map (toggleVisibilityGroup group)
 
         nextModel =
             case maybeMsg of
@@ -151,30 +154,26 @@ sToggle a set =
         Set.insert a set
 
 
-updateKeyChange : Keyboard -> Maybe Key -> NewModel -> NewModel
-updateKeyChange keyboard key model =
-    case key of
-        Just (Number x) ->
-            if keyboard.ctrl then
-                { model
-                    | db =
-                        model.db
-                            |> DB.modifySelected
-                                (\pg ->
-                                    { pg
-                                        | visibilityGroup = x
-                                        , isSelected = True
-                                    }
-                                )
-                }
+toggleVisibilityGroup : Int -> NewModel -> NewModel
+toggleVisibilityGroup x model =
+    { model
+        | visibleGroups = sToggle x model.visibleGroups
+    }
 
-            else
-                { model
-                    | visibleGroups = sToggle x model.visibleGroups
-                }
 
-        _ ->
-            model
+sendToVisibilityGroup : Int -> NewModel -> NewModel
+sendToVisibilityGroup x model =
+    { model
+        | db =
+            model.db
+                |> DB.modifySelected
+                    (\pg ->
+                        { pg
+                            | visibilityGroup = x
+                            , isSelected = True
+                        }
+                    )
+    }
 
 
 updateMouseDown : Point -> Keyboard -> NewModel -> NewModel

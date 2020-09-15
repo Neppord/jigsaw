@@ -3,7 +3,7 @@ module Subscription exposing (subscriptions)
 import Browser.Events
 import Decode
 import Json.Decode
-import Model exposing (Msg(..), NewModel)
+import Model exposing (Key(..), Msg(..), NewModel)
 import UI
 
 
@@ -25,20 +25,34 @@ trackMouseUp =
     Browser.Events.onMouseUp (Json.Decode.succeed MouseUp)
 
 
-keyDown : Sub Msg
+keyDown : Sub (Maybe Msg)
 keyDown =
-    Json.Decode.map2 KeyDown Decode.keyboard Decode.key
+    Json.Decode.map2
+        (\keyboard key ->
+            case key of
+                Just (Number x) ->
+                    if keyboard.ctrl then
+                        Just <| SendToVisibility x
+
+                    else
+                        Just <| ToggleVisibility x
+
+                _ ->
+                    Nothing
+        )
+        Decode.keyboard
+        Decode.key
         |> Browser.Events.onKeyDown
 
 
-subscriptions : NewModel -> Sub Msg
+subscriptions : NewModel -> Sub (Maybe Msg)
 subscriptions newModel =
     case newModel.ui of
         UI.Moving _ _ ->
-            Sub.batch [ trackMouseMovement, trackMouseUp ]
+            Sub.batch [ trackMouseMovement, trackMouseUp ] |> Sub.map Just
 
         UI.Boxing _ _ ->
-            Sub.batch [ trackMouseMovement, trackMouseUp ]
+            Sub.batch [ trackMouseMovement, trackMouseUp ] |> Sub.map Just
 
         _ ->
-            Sub.batch [ trackMouseDown, keyDown ]
+            Sub.batch [ trackMouseDown |> Sub.map Just, keyDown ]

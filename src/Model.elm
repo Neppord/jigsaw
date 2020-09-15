@@ -28,7 +28,8 @@ type Msg
     | MouseMove Point
     | MouseUp
     | Scramble
-    | KeyDown Keyboard (Maybe Key)
+    | SendToVisibility Int
+    | ToggleVisibility Int
     | ChangeImageUrl String
 
 
