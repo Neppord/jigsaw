@@ -5,8 +5,6 @@ import Browser.Navigation
 import DB
 import Drag
 import Html
-import Json.Decode
-import Json.Encode
 import Keyboard exposing (Keyboard)
 import Keyed exposing (Keyed)
 import Model

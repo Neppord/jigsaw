@@ -12,7 +12,7 @@ import Bytes.Decode
 import Bytes.Encode
 import DB
 import Model exposing (NewModel)
-import PieceGroup exposing (ID)
+import PieceGroup
 import Point exposing (Point)
 import Seeded exposing (Seeded)
 
