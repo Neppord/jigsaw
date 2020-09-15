@@ -3,7 +3,7 @@ module View exposing (view)
 import DB
 import Drag
 import Edge exposing (Edge)
-import Html exposing (Attribute, Html, div, text)
+import Html exposing (Attribute, Html, text)
 import Html.Attributes exposing (height, style, width)
 import Html.Events
 import Html.Keyed
@@ -28,7 +28,7 @@ view : NewModel -> Html Msg
 view model =
     let
         image =
-            model.configuration.image
+            model.image
     in
     Html.div
         turnOffTheBloodyImageDragging
@@ -52,7 +52,7 @@ view model =
                 [ Html.text "scramble" ]
             , Html.input
                 [ Html.Attributes.placeholder "Image Url"
-                , Html.Attributes.value model.configuration.image.path
+                , Html.Attributes.value model.image.path
                 , Html.Events.onInput ChangeImageUrl
                 ]
                 []
@@ -62,7 +62,7 @@ view model =
 
 
 renderStats : NewModel -> Html msg
-renderStats { db, configuration } =
+renderStats { db, image } =
     let
         item string =
             string
@@ -71,7 +71,7 @@ renderStats { db, configuration } =
                 |> Html.li []
 
         size =
-            configuration.image.xpieces * configuration.image.ypieces
+            image.xpieces * image.ypieces
 
         perf =
             String.fromFloat
@@ -215,7 +215,7 @@ px int =
 
 viewClipPath : NewModel -> Html Msg
 viewClipPath model =
-    lazyclipPathDefs model.configuration.image model.edges
+    lazyclipPathDefs model.image model.edges
 
 
 viewDiv : NewModel -> List (Html Msg)
@@ -230,7 +230,7 @@ viewDiv model =
             )
 
         image =
-            model.configuration.image
+            model.image
 
         isVisible pieceGroup =
             Set.member

@@ -144,7 +144,7 @@ insert pg =
     KDDict.insert (makeKey pg) pg
 
 
-snap : Float -> DB -> DB
+snap : Int -> DB -> DB
 snap snapDistance db =
     case db |> getSelected of
         pg :: [] ->
@@ -165,7 +165,7 @@ snap snapDistance db =
                             pg.position
 
                         radius =
-                            floor snapDistance
+                            snapDistance
                     in
                     { x = x - radius
                     , w = radius * 2

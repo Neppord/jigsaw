@@ -15,7 +15,7 @@ import JigsawImage
         )
 import Keyboard exposing (Keyboard)
 import List
-import PieceGroup exposing (PieceGroup, genIds)
+import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
 import Random
 import Seeded exposing (Seeded(..))
@@ -32,16 +32,10 @@ type Msg
     | ChangeImageUrl String
 
 
-type alias Configuration =
-    { snapDistance : Float
-    , image : JigsawImage
-    }
-
-
 type alias NewModel =
     { visibleGroups : Set Int
     , edges : List (List Edge)
-    , configuration : Configuration
+    , image : JigsawImage
     , db : DB
     , ui : UI
     }
@@ -84,10 +78,7 @@ buildModel :
     -> List (List Edge)
     -> NewModel
 buildModel image pieceGroups edges =
-    { configuration =
-        { snapDistance = 30.0
-        , image = image
-        }
+    { image = image
     , visibleGroups = S.fromList [ -1 ]
     , edges = edges
     , db = DB.makeDb pieceGroups

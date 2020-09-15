@@ -108,11 +108,8 @@ load s =
         newModel =
             Model.init ()
 
-        configuration =
-            (Seeded.unwrap newModel).configuration
-
         image =
-            configuration.image
+            (Seeded.unwrap newModel).image
 
         createPG ( position, id ) =
             PieceGroup.createPieceGroup image id position

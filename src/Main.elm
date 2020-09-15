@@ -78,11 +78,12 @@ init flags url key =
 update : Maybe Msg -> Model -> ( Model, Cmd (Maybe Msg) )
 update maybeMsg model =
     let
+        makeNextModel : Msg -> Seeded NewModel -> Seeded NewModel
         makeNextModel msg seededModel =
             case msg of
                 Scramble ->
                     seededModel
-                        |> Seeded.map (.configuration >> .image >> generateModel)
+                        |> Seeded.map (.image >> generateModel)
                         |> Seeded.step
 
                 KeyDown keyboard key ->
@@ -104,10 +105,7 @@ update maybeMsg model =
                 ChangeImageUrl url ->
                     let
                         updateModel m =
-                            { m | configuration = updateConfiguration m.configuration }
-
-                        updateConfiguration configuration =
-                            { configuration | image = updateImage configuration.image }
+                            { m | image = updateImage m.image }
 
                         updateImage image =
                             { image | path = url }
@@ -182,11 +180,8 @@ updateKeyChange keyboard key model =
 updateMouseDown : Point -> Keyboard -> NewModel -> NewModel
 updateMouseDown coordinate keyboard model =
     let
-        { db, visibleGroups } =
+        { db, visibleGroups, image } =
             model
-
-        { image } =
-            model.configuration
 
         mode =
             if keyboard.shift then
@@ -237,7 +232,7 @@ updateMouseUp model =
             { model
                 | ui = UI.WaitingForInput
                 , db =
-                    DB.snap model.configuration.snapDistance updatedDb
+                    DB.snap model.image.pieceWidth updatedDb
             }
 
         _ ->
