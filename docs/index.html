@@ -4326,6 +4326,184 @@ function _Browser_load(url)
 }
 
 
+// BYTES
+
+function _Bytes_width(bytes)
+{
+	return bytes.byteLength;
+}
+
+var _Bytes_getHostEndianness = F2(function(le, be)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(new Uint8Array(new Uint32Array([1]))[0] === 1 ? le : be));
+	});
+});
+
+
+// ENCODERS
+
+function _Bytes_encode(encoder)
+{
+	var mutableBytes = new DataView(new ArrayBuffer($elm$bytes$Bytes$Encode$getWidth(encoder)));
+	$elm$bytes$Bytes$Encode$write(encoder)(mutableBytes)(0);
+	return mutableBytes;
+}
+
+
+// SIGNED INTEGERS
+
+var _Bytes_write_i8  = F3(function(mb, i, n) { mb.setInt8(i, n); return i + 1; });
+var _Bytes_write_i16 = F4(function(mb, i, n, isLE) { mb.setInt16(i, n, isLE); return i + 2; });
+var _Bytes_write_i32 = F4(function(mb, i, n, isLE) { mb.setInt32(i, n, isLE); return i + 4; });
+
+
+// UNSIGNED INTEGERS
+
+var _Bytes_write_u8  = F3(function(mb, i, n) { mb.setUint8(i, n); return i + 1 ;});
+var _Bytes_write_u16 = F4(function(mb, i, n, isLE) { mb.setUint16(i, n, isLE); return i + 2; });
+var _Bytes_write_u32 = F4(function(mb, i, n, isLE) { mb.setUint32(i, n, isLE); return i + 4; });
+
+
+// FLOATS
+
+var _Bytes_write_f32 = F4(function(mb, i, n, isLE) { mb.setFloat32(i, n, isLE); return i + 4; });
+var _Bytes_write_f64 = F4(function(mb, i, n, isLE) { mb.setFloat64(i, n, isLE); return i + 8; });
+
+
+// BYTES
+
+var _Bytes_write_bytes = F3(function(mb, offset, bytes)
+{
+	for (var i = 0, len = bytes.byteLength, limit = len - 4; i <= limit; i += 4)
+	{
+		mb.setUint32(offset + i, bytes.getUint32(i));
+	}
+	for (; i < len; i++)
+	{
+		mb.setUint8(offset + i, bytes.getUint8(i));
+	}
+	return offset + len;
+});
+
+
+// STRINGS
+
+function _Bytes_getStringWidth(string)
+{
+	for (var width = 0, i = 0; i < string.length; i++)
+	{
+		var code = string.charCodeAt(i);
+		width +=
+			(code < 0x80) ? 1 :
+			(code < 0x800) ? 2 :
+			(code < 0xD800 || 0xDBFF < code) ? 3 : (i++, 4);
+	}
+	return width;
+}
+
+var _Bytes_write_string = F3(function(mb, offset, string)
+{
+	for (var i = 0; i < string.length; i++)
+	{
+		var code = string.charCodeAt(i);
+		offset +=
+			(code < 0x80)
+				? (mb.setUint8(offset, code)
+				, 1
+				)
+				:
+			(code < 0x800)
+				? (mb.setUint16(offset, 0xC080 /* 0b1100000010000000 */
+					| (code >>> 6 & 0x1F /* 0b00011111 */) << 8
+					| code & 0x3F /* 0b00111111 */)
+				, 2
+				)
+				:
+			(code < 0xD800 || 0xDBFF < code)
+				? (mb.setUint16(offset, 0xE080 /* 0b1110000010000000 */
+					| (code >>> 12 & 0xF /* 0b00001111 */) << 8
+					| code >>> 6 & 0x3F /* 0b00111111 */)
+				, mb.setUint8(offset + 2, 0x80 /* 0b10000000 */
+					| code & 0x3F /* 0b00111111 */)
+				, 3
+				)
+				:
+			(code = (code - 0xD800) * 0x400 + string.charCodeAt(++i) - 0xDC00 + 0x10000
+			, mb.setUint32(offset, 0xF0808080 /* 0b11110000100000001000000010000000 */
+				| (code >>> 18 & 0x7 /* 0b00000111 */) << 24
+				| (code >>> 12 & 0x3F /* 0b00111111 */) << 16
+				| (code >>> 6 & 0x3F /* 0b00111111 */) << 8
+				| code & 0x3F /* 0b00111111 */)
+			, 4
+			);
+	}
+	return offset;
+});
+
+
+// DECODER
+
+var _Bytes_decode = F2(function(decoder, bytes)
+{
+	try {
+		return $elm$core$Maybe$Just(A2(decoder, bytes, 0).b);
+	} catch(e) {
+		return $elm$core$Maybe$Nothing;
+	}
+});
+
+var _Bytes_read_i8  = F2(function(      bytes, offset) { return _Utils_Tuple2(offset + 1, bytes.getInt8(offset)); });
+var _Bytes_read_i16 = F3(function(isLE, bytes, offset) { return _Utils_Tuple2(offset + 2, bytes.getInt16(offset, isLE)); });
+var _Bytes_read_i32 = F3(function(isLE, bytes, offset) { return _Utils_Tuple2(offset + 4, bytes.getInt32(offset, isLE)); });
+var _Bytes_read_u8  = F2(function(      bytes, offset) { return _Utils_Tuple2(offset + 1, bytes.getUint8(offset)); });
+var _Bytes_read_u16 = F3(function(isLE, bytes, offset) { return _Utils_Tuple2(offset + 2, bytes.getUint16(offset, isLE)); });
+var _Bytes_read_u32 = F3(function(isLE, bytes, offset) { return _Utils_Tuple2(offset + 4, bytes.getUint32(offset, isLE)); });
+var _Bytes_read_f32 = F3(function(isLE, bytes, offset) { return _Utils_Tuple2(offset + 4, bytes.getFloat32(offset, isLE)); });
+var _Bytes_read_f64 = F3(function(isLE, bytes, offset) { return _Utils_Tuple2(offset + 8, bytes.getFloat64(offset, isLE)); });
+
+var _Bytes_read_bytes = F3(function(len, bytes, offset)
+{
+	return _Utils_Tuple2(offset + len, new DataView(bytes.buffer, bytes.byteOffset + offset, len));
+});
+
+var _Bytes_read_string = F3(function(len, bytes, offset)
+{
+	var string = '';
+	var end = offset + len;
+	for (; offset < end;)
+	{
+		var byte = bytes.getUint8(offset++);
+		string +=
+			(byte < 128)
+				? String.fromCharCode(byte)
+				:
+			((byte & 0xE0 /* 0b11100000 */) === 0xC0 /* 0b11000000 */)
+				? String.fromCharCode((byte & 0x1F /* 0b00011111 */) << 6 | bytes.getUint8(offset++) & 0x3F /* 0b00111111 */)
+				:
+			((byte & 0xF0 /* 0b11110000 */) === 0xE0 /* 0b11100000 */)
+				? String.fromCharCode(
+					(byte & 0xF /* 0b00001111 */) << 12
+					| (bytes.getUint8(offset++) & 0x3F /* 0b00111111 */) << 6
+					| bytes.getUint8(offset++) & 0x3F /* 0b00111111 */
+				)
+				:
+				(byte =
+					((byte & 0x7 /* 0b00000111 */) << 18
+						| (bytes.getUint8(offset++) & 0x3F /* 0b00111111 */) << 12
+						| (bytes.getUint8(offset++) & 0x3F /* 0b00111111 */) << 6
+						| bytes.getUint8(offset++) & 0x3F /* 0b00111111 */
+					) - 0x10000
+				, String.fromCharCode(Math.floor(byte / 0x400) + 0xD800, byte % 0x400 + 0xDC00)
+				);
+	}
+	return _Utils_Tuple2(offset, string);
+});
+
+var _Bytes_decodeFailure = F2(function() { throw 0; });
+
+
 
 var _Bitwise_and = F2(function(a, b)
 {
@@ -5183,46 +5361,480 @@ var $elm$core$Maybe$andThen = F2(
 			return $elm$core$Maybe$Nothing;
 		}
 	});
-var $author$project$Save$Save = F2(
-	function (pieces, imageUrl) {
-		return {U: imageUrl, X: pieces};
+var $elm$bytes$Bytes$BE = 1;
+var $elm$bytes$Bytes$Decode$Done = function (a) {
+	return {$: 1, a: a};
+};
+var $elm$bytes$Bytes$Decode$Loop = function (a) {
+	return {$: 0, a: a};
+};
+var $elm$bytes$Bytes$Decode$Decoder = $elm$core$Basics$identity;
+var $elm$bytes$Bytes$Decode$andThen = F2(
+	function (callback, _v0) {
+		var decodeA = _v0;
+		return F2(
+			function (bites, offset) {
+				var _v1 = A2(decodeA, bites, offset);
+				var newOffset = _v1.a;
+				var a = _v1.b;
+				var _v2 = callback(a);
+				var decodeB = _v2;
+				return A2(decodeB, bites, newOffset);
+			});
 	});
-var $elm$json$Json$Decode$field = _Json_decodeField;
-var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $elm$core$Tuple$pair = F2(
-	function (a, b) {
-		return _Utils_Tuple2(a, b);
+var $elm$bytes$Bytes$Decode$loopHelp = F4(
+	function (state, callback, bites, offset) {
+		loopHelp:
+		while (true) {
+			var _v0 = callback(state);
+			var decoder = _v0;
+			var _v1 = A2(decoder, bites, offset);
+			var newOffset = _v1.a;
+			var step = _v1.b;
+			if (!step.$) {
+				var newState = step.a;
+				var $temp$state = newState,
+					$temp$callback = callback,
+					$temp$bites = bites,
+					$temp$offset = newOffset;
+				state = $temp$state;
+				callback = $temp$callback;
+				bites = $temp$bites;
+				offset = $temp$offset;
+				continue loopHelp;
+			} else {
+				var result = step.a;
+				return _Utils_Tuple2(newOffset, result);
+			}
+		}
 	});
-var $author$project$Save$decodeID = A3(
-	$elm$json$Json$Decode$map2,
-	$elm$core$Tuple$pair,
-	A2($elm$json$Json$Decode$field, 'x', $elm$json$Json$Decode$int),
-	A2($elm$json$Json$Decode$field, 'y', $elm$json$Json$Decode$int));
+var $elm$bytes$Bytes$Decode$loop = F2(
+	function (state, callback) {
+		return A2($elm$bytes$Bytes$Decode$loopHelp, state, callback);
+	});
+var $elm$bytes$Bytes$Decode$map = F2(
+	function (func, _v0) {
+		var decodeA = _v0;
+		return F2(
+			function (bites, offset) {
+				var _v1 = A2(decodeA, bites, offset);
+				var aOffset = _v1.a;
+				var a = _v1.b;
+				return _Utils_Tuple2(
+					aOffset,
+					func(a));
+			});
+	});
+var $elm$bytes$Bytes$Decode$succeed = function (a) {
+	return F2(
+		function (_v0, offset) {
+			return _Utils_Tuple2(offset, a);
+		});
+};
+var $elm$bytes$Bytes$Encode$getWidth = function (builder) {
+	switch (builder.$) {
+		case 0:
+			return 1;
+		case 1:
+			return 2;
+		case 2:
+			return 4;
+		case 3:
+			return 1;
+		case 4:
+			return 2;
+		case 5:
+			return 4;
+		case 6:
+			return 4;
+		case 7:
+			return 8;
+		case 8:
+			var w = builder.a;
+			return w;
+		case 9:
+			var w = builder.a;
+			return w;
+		default:
+			var bs = builder.a;
+			return _Bytes_width(bs);
+	}
+};
+var $elm$bytes$Bytes$LE = 0;
+var $elm$bytes$Bytes$Encode$write = F3(
+	function (builder, mb, offset) {
+		switch (builder.$) {
+			case 0:
+				var n = builder.a;
+				return A3(_Bytes_write_i8, mb, offset, n);
+			case 1:
+				var e = builder.a;
+				var n = builder.b;
+				return A4(_Bytes_write_i16, mb, offset, n, !e);
+			case 2:
+				var e = builder.a;
+				var n = builder.b;
+				return A4(_Bytes_write_i32, mb, offset, n, !e);
+			case 3:
+				var n = builder.a;
+				return A3(_Bytes_write_u8, mb, offset, n);
+			case 4:
+				var e = builder.a;
+				var n = builder.b;
+				return A4(_Bytes_write_u16, mb, offset, n, !e);
+			case 5:
+				var e = builder.a;
+				var n = builder.b;
+				return A4(_Bytes_write_u32, mb, offset, n, !e);
+			case 6:
+				var e = builder.a;
+				var n = builder.b;
+				return A4(_Bytes_write_f32, mb, offset, n, !e);
+			case 7:
+				var e = builder.a;
+				var n = builder.b;
+				return A4(_Bytes_write_f64, mb, offset, n, !e);
+			case 8:
+				var bs = builder.b;
+				return A3($elm$bytes$Bytes$Encode$writeSequence, bs, mb, offset);
+			case 9:
+				var s = builder.b;
+				return A3(_Bytes_write_string, mb, offset, s);
+			default:
+				var bs = builder.a;
+				return A3(_Bytes_write_bytes, mb, offset, bs);
+		}
+	});
+var $elm$bytes$Bytes$Encode$writeSequence = F3(
+	function (builders, mb, offset) {
+		writeSequence:
+		while (true) {
+			if (!builders.b) {
+				return offset;
+			} else {
+				var b = builders.a;
+				var bs = builders.b;
+				var $temp$builders = bs,
+					$temp$mb = mb,
+					$temp$offset = A3($elm$bytes$Bytes$Encode$write, b, mb, offset);
+				builders = $temp$builders;
+				mb = $temp$mb;
+				offset = $temp$offset;
+				continue writeSequence;
+			}
+		}
+	});
+var $elm$bytes$Bytes$Decode$unsignedInt16 = function (endianness) {
+	return _Bytes_read_u16(!endianness);
+};
+var $author$project$Save$byteDecodeList = function (a) {
+	var listStep = F2(
+		function (decoder, _v0) {
+			var n = _v0.a;
+			var xs = _v0.b;
+			return (n <= 0) ? $elm$bytes$Bytes$Decode$succeed(
+				$elm$bytes$Bytes$Decode$Done(
+					$elm$core$List$reverse(xs))) : A2(
+				$elm$bytes$Bytes$Decode$map,
+				function (x) {
+					return $elm$bytes$Bytes$Decode$Loop(
+						_Utils_Tuple2(
+							n - 1,
+							A2($elm$core$List$cons, x, xs)));
+				},
+				decoder);
+		});
+	return A2(
+		$elm$bytes$Bytes$Decode$andThen,
+		function (len) {
+			return A2(
+				$elm$bytes$Bytes$Decode$loop,
+				_Utils_Tuple2(len, _List_Nil),
+				listStep(a));
+		},
+		$elm$bytes$Bytes$Decode$unsignedInt16(1));
+};
 var $author$project$Point$Point = F2(
 	function (x, y) {
 		return {s: x, t: y};
 	});
-var $author$project$Save$decodePoint = A3(
-	$elm$json$Json$Decode$map2,
-	$author$project$Point$Point,
-	A2($elm$json$Json$Decode$field, 'x', $elm$json$Json$Decode$int),
-	A2($elm$json$Json$Decode$field, 'y', $elm$json$Json$Decode$int));
-var $author$project$Save$decodePair = A3(
-	$elm$json$Json$Decode$map2,
-	$elm$core$Tuple$pair,
-	A2($elm$json$Json$Decode$field, 'point', $author$project$Save$decodePoint),
-	A2($elm$json$Json$Decode$field, 'id', $author$project$Save$decodeID));
-var $elm$json$Json$Decode$list = _Json_decodeList;
-var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Save$decode = A3(
-	$elm$json$Json$Decode$map2,
-	$author$project$Save$Save,
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
+var $author$project$Save$unpack = function () {
+	var _do = F2(
+		function (a, _v1) {
+			var m = _v1.a;
+			var l = _v1.b;
+			if (m.$ === 1) {
+				return _Utils_Tuple2(
+					$elm$core$Maybe$Just(a),
+					l);
+			} else {
+				var b = m.a;
+				return _Utils_Tuple2(
+					$elm$core$Maybe$Nothing,
+					A2(
+						$elm$core$List$cons,
+						A2($author$project$Point$Point, b, a),
+						l));
+			}
+		});
+	return A2(
+		$elm$core$Basics$composeL,
+		$elm$core$Tuple$second,
+		A2(
+			$elm$core$List$foldl,
+			_do,
+			_Utils_Tuple2($elm$core$Maybe$Nothing, _List_Nil)));
+}();
+var $author$project$Save$byteDecode = $author$project$Save$byteDecodeList(
 	A2(
-		$elm$json$Json$Decode$field,
-		'pieces',
-		$elm$json$Json$Decode$list($author$project$Save$decodePair)),
-	A2($elm$json$Json$Decode$field, 'imageUrl', $elm$json$Json$Decode$string));
-var $elm$json$Json$Decode$decodeString = _Json_runOnString;
+		$elm$bytes$Bytes$Decode$map,
+		$author$project$Save$unpack,
+		$author$project$Save$byteDecodeList(
+			$elm$bytes$Bytes$Decode$unsignedInt16(1))));
+var $elm$bytes$Bytes$Decode$decode = F2(
+	function (_v0, bs) {
+		var decoder = _v0;
+		return A2(_Bytes_decode, decoder, bs);
+	});
+var $elm$bytes$Bytes$Encode$encode = _Bytes_encode;
+var $danfishgold$base64_bytes$Encode$isValidChar = function (c) {
+	if ($elm$core$Char$isAlphaNum(c)) {
+		return true;
+	} else {
+		switch (c) {
+			case '+':
+				return true;
+			case '/':
+				return true;
+			default:
+				return false;
+		}
+	}
+};
+var $elm$core$Bitwise$or = _Bitwise_or;
+var $elm$bytes$Bytes$Encode$Seq = F2(
+	function (a, b) {
+		return {$: 8, a: a, b: b};
+	});
+var $elm$bytes$Bytes$Encode$getWidths = F2(
+	function (width, builders) {
+		getWidths:
+		while (true) {
+			if (!builders.b) {
+				return width;
+			} else {
+				var b = builders.a;
+				var bs = builders.b;
+				var $temp$width = width + $elm$bytes$Bytes$Encode$getWidth(b),
+					$temp$builders = bs;
+				width = $temp$width;
+				builders = $temp$builders;
+				continue getWidths;
+			}
+		}
+	});
+var $elm$bytes$Bytes$Encode$sequence = function (builders) {
+	return A2(
+		$elm$bytes$Bytes$Encode$Seq,
+		A2($elm$bytes$Bytes$Encode$getWidths, 0, builders),
+		builders);
+};
+var $elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var $elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var $elm$core$Basics$ge = _Utils_ge;
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var $danfishgold$base64_bytes$Encode$unsafeConvertChar = function (_char) {
+	var key = $elm$core$Char$toCode(_char);
+	if ((key >= 65) && (key <= 90)) {
+		return key - 65;
+	} else {
+		if ((key >= 97) && (key <= 122)) {
+			return (key - 97) + 26;
+		} else {
+			if ((key >= 48) && (key <= 57)) {
+				return ((key - 48) + 26) + 26;
+			} else {
+				switch (_char) {
+					case '+':
+						return 62;
+					case '/':
+						return 63;
+					default:
+						return -1;
+				}
+			}
+		}
+	}
+};
+var $elm$bytes$Bytes$Encode$U16 = F2(
+	function (a, b) {
+		return {$: 4, a: a, b: b};
+	});
+var $elm$bytes$Bytes$Encode$unsignedInt16 = $elm$bytes$Bytes$Encode$U16;
+var $elm$bytes$Bytes$Encode$U8 = function (a) {
+	return {$: 3, a: a};
+};
+var $elm$bytes$Bytes$Encode$unsignedInt8 = $elm$bytes$Bytes$Encode$U8;
+var $danfishgold$base64_bytes$Encode$encodeCharacters = F4(
+	function (a, b, c, d) {
+		if ($danfishgold$base64_bytes$Encode$isValidChar(a) && $danfishgold$base64_bytes$Encode$isValidChar(b)) {
+			var n2 = $danfishgold$base64_bytes$Encode$unsafeConvertChar(b);
+			var n1 = $danfishgold$base64_bytes$Encode$unsafeConvertChar(a);
+			if ('=' === d) {
+				if ('=' === c) {
+					var n = (n1 << 18) | (n2 << 12);
+					var b1 = n >> 16;
+					return $elm$core$Maybe$Just(
+						$elm$bytes$Bytes$Encode$unsignedInt8(b1));
+				} else {
+					if ($danfishgold$base64_bytes$Encode$isValidChar(c)) {
+						var n3 = $danfishgold$base64_bytes$Encode$unsafeConvertChar(c);
+						var n = ((n1 << 18) | (n2 << 12)) | (n3 << 6);
+						var combined = n >> 8;
+						return $elm$core$Maybe$Just(
+							A2($elm$bytes$Bytes$Encode$unsignedInt16, 1, combined));
+					} else {
+						return $elm$core$Maybe$Nothing;
+					}
+				}
+			} else {
+				if ($danfishgold$base64_bytes$Encode$isValidChar(c) && $danfishgold$base64_bytes$Encode$isValidChar(d)) {
+					var n4 = $danfishgold$base64_bytes$Encode$unsafeConvertChar(d);
+					var n3 = $danfishgold$base64_bytes$Encode$unsafeConvertChar(c);
+					var n = ((n1 << 18) | (n2 << 12)) | ((n3 << 6) | n4);
+					var combined = n >> 8;
+					var b3 = n;
+					return $elm$core$Maybe$Just(
+						$elm$bytes$Bytes$Encode$sequence(
+							_List_fromArray(
+								[
+									A2($elm$bytes$Bytes$Encode$unsignedInt16, 1, combined),
+									$elm$bytes$Bytes$Encode$unsignedInt8(b3)
+								])));
+				} else {
+					return $elm$core$Maybe$Nothing;
+				}
+			}
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$core$String$foldr = _String_foldr;
+var $elm$core$String$toList = function (string) {
+	return A3($elm$core$String$foldr, $elm$core$List$cons, _List_Nil, string);
+};
+var $danfishgold$base64_bytes$Encode$encodeChunks = F2(
+	function (input, accum) {
+		encodeChunks:
+		while (true) {
+			var _v0 = $elm$core$String$toList(
+				A2($elm$core$String$left, 4, input));
+			_v0$4:
+			while (true) {
+				if (!_v0.b) {
+					return $elm$core$Maybe$Just(accum);
+				} else {
+					if (_v0.b.b) {
+						if (_v0.b.b.b) {
+							if (_v0.b.b.b.b) {
+								if (!_v0.b.b.b.b.b) {
+									var a = _v0.a;
+									var _v1 = _v0.b;
+									var b = _v1.a;
+									var _v2 = _v1.b;
+									var c = _v2.a;
+									var _v3 = _v2.b;
+									var d = _v3.a;
+									var _v4 = A4($danfishgold$base64_bytes$Encode$encodeCharacters, a, b, c, d);
+									if (!_v4.$) {
+										var enc = _v4.a;
+										var $temp$input = A2($elm$core$String$dropLeft, 4, input),
+											$temp$accum = A2($elm$core$List$cons, enc, accum);
+										input = $temp$input;
+										accum = $temp$accum;
+										continue encodeChunks;
+									} else {
+										return $elm$core$Maybe$Nothing;
+									}
+								} else {
+									break _v0$4;
+								}
+							} else {
+								var a = _v0.a;
+								var _v5 = _v0.b;
+								var b = _v5.a;
+								var _v6 = _v5.b;
+								var c = _v6.a;
+								var _v7 = A4($danfishgold$base64_bytes$Encode$encodeCharacters, a, b, c, '=');
+								if (_v7.$ === 1) {
+									return $elm$core$Maybe$Nothing;
+								} else {
+									var enc = _v7.a;
+									return $elm$core$Maybe$Just(
+										A2($elm$core$List$cons, enc, accum));
+								}
+							}
+						} else {
+							var a = _v0.a;
+							var _v8 = _v0.b;
+							var b = _v8.a;
+							var _v9 = A4($danfishgold$base64_bytes$Encode$encodeCharacters, a, b, '=', '=');
+							if (_v9.$ === 1) {
+								return $elm$core$Maybe$Nothing;
+							} else {
+								var enc = _v9.a;
+								return $elm$core$Maybe$Just(
+									A2($elm$core$List$cons, enc, accum));
+							}
+						}
+					} else {
+						break _v0$4;
+					}
+				}
+			}
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (!maybe.$) {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $danfishgold$base64_bytes$Encode$encoder = function (string) {
+	return A2(
+		$elm$core$Maybe$map,
+		A2($elm$core$Basics$composeR, $elm$core$List$reverse, $elm$bytes$Bytes$Encode$sequence),
+		A2($danfishgold$base64_bytes$Encode$encodeChunks, string, _List_Nil));
+};
+var $danfishgold$base64_bytes$Encode$toBytes = function (string) {
+	return A2(
+		$elm$core$Maybe$map,
+		$elm$bytes$Bytes$Encode$encode,
+		$danfishgold$base64_bytes$Encode$encoder(string));
+};
+var $danfishgold$base64_bytes$Base64$toBytes = $danfishgold$base64_bytes$Encode$toBytes;
+var $author$project$Save$deserialize = function (string) {
+	return A2(
+		$elm$core$Maybe$andThen,
+		$elm$bytes$Bytes$Decode$decode($author$project$Save$byteDecode),
+		$danfishgold$base64_bytes$Base64$toBytes(string));
+};
 var $author$project$Seeded$Seeded = F2(
 	function (a, b) {
 		return {$: 0, a: a, b: b};
@@ -5694,9 +6306,6 @@ var $author$project$DB$makeKey = function (_v0) {
 var $author$project$DB$makeDb = function (list) {
 	return A2($author$project$KDDict$fromListBy, $author$project$DB$makeKey, list);
 };
-var $elm$core$Basics$negate = function (n) {
-	return -n;
-};
 var $author$project$Model$buildModel = F3(
 	function (image, pieceGroups, edges) {
 		return {
@@ -5772,6 +6381,10 @@ var $elm$core$List$concatMap = F2(
 	function (f, list) {
 		return $elm$core$List$concat(
 			A2($elm$core$List$map, f, list));
+	});
+var $elm$core$Tuple$pair = F2(
+	function (a, b) {
+		return _Utils_Tuple2(a, b);
 	});
 var $author$project$PieceGroup$genIds = F2(
 	function (w, h) {
@@ -6116,7 +6729,6 @@ var $author$project$Edge$North = 0;
 var $author$project$Edge$South = 2;
 var $author$project$Edge$West = 3;
 var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
-var $elm$core$Basics$ge = _Utils_ge;
 var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
 var $elm$core$Array$getHelp = F3(
 	function (shift, index, tree) {
@@ -6139,7 +6751,6 @@ var $elm$core$Array$getHelp = F3(
 			}
 		}
 	});
-var $elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
 var $elm$core$Array$tailIndex = function (len) {
 	return (len >>> 5) << 5;
 };
@@ -6198,11 +6809,6 @@ var $author$project$Edge$Flat = function (a) {
 var $author$project$Edge$S = F2(
 	function (a, b) {
 		return {$: 1, a: a, b: b};
-	});
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
 	});
 var $author$project$Edge$defaultCurvedEdge = $author$project$Edge$Curved(
 	{
@@ -6459,46 +7065,38 @@ var $author$project$Save$load = function (s) {
 		var id = _v0.b;
 		return A3($author$project$PieceGroup$createPieceGroup, image, id, position);
 	};
+	var db = $author$project$DB$makeDb(
+		A2(
+			$elm$core$List$map,
+			createPG,
+			$elm$core$List$concat(
+				A2(
+					$elm$core$List$indexedMap,
+					F2(
+						function (x, l) {
+							return A2(
+								$elm$core$List$indexedMap,
+								F2(
+									function (y, p) {
+										return _Utils_Tuple2(
+											p,
+											_Utils_Tuple2(x, y));
+									}),
+								l);
+						}),
+					s))));
 	return A2(
 		$author$project$Seeded$map,
 		function (m) {
 			return _Utils_update(
 				m,
-				{
-					J: _Utils_update(
-						configuration,
-						{
-							T: _Utils_update(
-								image,
-								{bK: s.U})
-						}),
-					p: $author$project$DB$makeDb(
-						A2($elm$core$List$map, createPG, s.X))
-				});
+				{p: db});
 		},
 		newModel);
 };
-var $elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (!maybe.$) {
-			var value = maybe.a;
-			return $elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $elm$url$Url$percentDecode = _Url_percentDecode;
-var $elm$core$Result$toMaybe = function (result) {
-	if (!result.$) {
-		var v = result.a;
-		return $elm$core$Maybe$Just(v);
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
 var $author$project$Main$init = F3(
 	function (flags, url, key) {
 		var loaded = A2(
@@ -6506,10 +7104,7 @@ var $author$project$Main$init = F3(
 			$author$project$Save$load,
 			A2(
 				$elm$core$Maybe$andThen,
-				A2(
-					$elm$core$Basics$composeR,
-					$elm$json$Json$Decode$decodeString($author$project$Save$decode),
-					$elm$core$Result$toMaybe),
+				$author$project$Save$deserialize,
 				A2($elm$core$Maybe$andThen, $elm$url$Url$percentDecode, url.bo)));
 		var model = A2(
 			$elm$core$Maybe$withDefault,
@@ -6525,6 +7120,7 @@ var $author$project$Model$KeyDown = F2(
 	function (a, b) {
 		return {$: 4, a: a, b: b};
 	});
+var $elm$json$Json$Decode$field = _Json_decodeField;
 var $author$project$Model$Number = $elm$core$Basics$identity;
 var $author$project$Decode$identifierToKey = function (identifier) {
 	switch (identifier) {
@@ -6552,6 +7148,7 @@ var $author$project$Decode$identifierToKey = function (identifier) {
 			return $elm$core$Maybe$Nothing;
 	}
 };
+var $elm$json$Json$Decode$string = _Json_decodeString;
 var $author$project$Decode$key = A2(
 	$elm$json$Json$Decode$map,
 	$author$project$Decode$identifierToKey,
@@ -6863,6 +7460,7 @@ var $author$project$Model$MouseDown = F2(
 		return {$: 0, a: a, b: b};
 	});
 var $elm$browser$Browser$Events$onMouseDown = A2($elm$browser$Browser$Events$on, 0, 'mousedown');
+var $elm$json$Json$Decode$int = _Json_decodeInt;
 var $author$project$Decode$pageCoordinates = A3(
 	$elm$json$Json$Decode$map2,
 	$author$project$Point$Point,
@@ -6897,82 +7495,6 @@ var $author$project$Subscription$subscriptions = function (newModel) {
 					[$author$project$Subscription$trackMouseDown, $author$project$Subscription$keyDown]));
 	}
 };
-var $elm$json$Json$Encode$int = _Json_wrap;
-var $elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v0, obj) {
-					var k = _v0.a;
-					var v = _v0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(0),
-			pairs));
-};
-var $author$project$Save$encodeID = function (_v0) {
-	var x = _v0.a;
-	var y = _v0.b;
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'x',
-				$elm$json$Json$Encode$int(x)),
-				_Utils_Tuple2(
-				'y',
-				$elm$json$Json$Encode$int(y))
-			]));
-};
-var $author$project$Save$encodePoint = function (point) {
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'x',
-				$elm$json$Json$Encode$int(point.s)),
-				_Utils_Tuple2(
-				'y',
-				$elm$json$Json$Encode$int(point.t))
-			]));
-};
-var $author$project$Save$encodePair = function (_v0) {
-	var a = _v0.a;
-	var b = _v0.b;
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'point',
-				$author$project$Save$encodePoint(a)),
-				_Utils_Tuple2(
-				'id',
-				$author$project$Save$encodeID(b))
-			]));
-};
-var $elm$json$Json$Encode$list = F2(
-	function (func, entries) {
-		return _Json_wrap(
-			A3(
-				$elm$core$List$foldl,
-				_Json_addEntry(func),
-				_Json_emptyArray(0),
-				entries));
-	});
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Save$encode = function (s) {
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'pieces',
-				A2($elm$json$Json$Encode$list, $author$project$Save$encodePair, s.X)),
-				_Utils_Tuple2(
-				'imageUrl',
-				$elm$json$Json$Encode$string(s.U))
-			]));
-};
 var $author$project$Keyed$map = F2(
 	function (f, _v0) {
 		var key = _v0.ac;
@@ -6983,10 +7505,6 @@ var $author$project$Keyed$map = F2(
 		};
 	});
 var $elm$browser$Browser$Navigation$replaceUrl = _Browser_replaceUrl;
-var $elm$core$Tuple$second = function (_v0) {
-	var y = _v0.b;
-	return y;
-};
 var $author$project$KDDict$toList = function (dict) {
 	switch (dict.$) {
 		case 0:
@@ -7021,8 +7539,8 @@ var $author$project$DB$getPieces = function (db) {
 			$elm$core$List$map,
 			function (p) {
 				return _Utils_Tuple2(
-					A2($author$project$Point$add, p.bF, pg.ag),
-					p.n);
+					p.n,
+					A2($author$project$Point$add, p.bF, pg.ag));
 			},
 			pg.aL);
 	};
@@ -7031,12 +7549,361 @@ var $author$project$DB$getPieces = function (db) {
 		pgToP,
 		$author$project$DB$all(db));
 };
+var $elm$core$List$sortBy = _List_sortBy;
 var $author$project$Save$save = function (model) {
-	return {
-		U: $author$project$Seeded$unwrap(model).J.T.bK,
-		X: $author$project$DB$getPieces(
-			$author$project$Seeded$unwrap(model).p)
-	};
+	var _do = F2(
+		function (_v2, matrix) {
+			var _v3 = _v2.a;
+			var y = _v3.b;
+			var point = _v2.b;
+			var _v0 = _Utils_Tuple2(y, matrix);
+			_v0$0:
+			while (true) {
+				if (_v0.b.b) {
+					if (!_v0.a) {
+						break _v0$0;
+					} else {
+						var _v1 = _v0.b;
+						var row = _v1.a;
+						var rows = _v1.b;
+						return A2(
+							$elm$core$List$cons,
+							A2($elm$core$List$cons, point, row),
+							rows);
+					}
+				} else {
+					if (!_v0.a) {
+						break _v0$0;
+					} else {
+						return _List_fromArray(
+							[
+								_List_fromArray(
+								[point])
+							]);
+					}
+				}
+			}
+			return A2(
+				$elm$core$List$cons,
+				_List_fromArray(
+					[point]),
+				matrix);
+		});
+	return $elm$core$List$reverse(
+		A3(
+			$elm$core$List$foldl,
+			_do,
+			_List_Nil,
+			A2(
+				$elm$core$List$sortBy,
+				$elm$core$Tuple$first,
+				$author$project$DB$getPieces(
+					$author$project$Seeded$unwrap(model).p))));
+};
+var $author$project$Save$int16 = $elm$bytes$Bytes$Encode$unsignedInt16(1);
+var $author$project$Save$byteEncodeList = function (list) {
+	return $elm$bytes$Bytes$Encode$sequence(
+		_List_fromArray(
+			[
+				$author$project$Save$int16(
+				$elm$core$List$length(list)),
+				$elm$bytes$Bytes$Encode$sequence(list)
+			]));
+};
+var $author$project$Save$pack = $elm$core$List$concatMap(
+	function (p) {
+		return _List_fromArray(
+			[p.s, p.t]);
+	});
+var $author$project$Save$byteEncoder = function (save_) {
+	return $author$project$Save$byteEncodeList(
+		A2(
+			$elm$core$List$map,
+			$author$project$Save$byteEncodeList,
+			A3(
+				$elm$core$Basics$apL,
+				$elm$core$List$map,
+				$elm$core$List$map($author$project$Save$int16),
+				A2($elm$core$List$map, $author$project$Save$pack, save_))));
+};
+var $elm$core$String$cons = _String_cons;
+var $elm$core$String$fromChar = function (_char) {
+	return A2($elm$core$String$cons, _char, '');
+};
+var $danfishgold$base64_bytes$Decode$lowest6BitsMask = 63;
+var $elm$core$Char$fromCode = _Char_fromCode;
+var $danfishgold$base64_bytes$Decode$unsafeToChar = function (n) {
+	if (n <= 25) {
+		return $elm$core$Char$fromCode(65 + n);
+	} else {
+		if (n <= 51) {
+			return $elm$core$Char$fromCode(97 + (n - 26));
+		} else {
+			if (n <= 61) {
+				return $elm$core$Char$fromCode(48 + (n - 52));
+			} else {
+				switch (n) {
+					case 62:
+						return '+';
+					case 63:
+						return '/';
+					default:
+						return '\u0000';
+				}
+			}
+		}
+	}
+};
+var $danfishgold$base64_bytes$Decode$bitsToChars = F2(
+	function (bits, missing) {
+		var s = $danfishgold$base64_bytes$Decode$unsafeToChar(bits & $danfishgold$base64_bytes$Decode$lowest6BitsMask);
+		var r = $danfishgold$base64_bytes$Decode$unsafeToChar((bits >>> 6) & $danfishgold$base64_bytes$Decode$lowest6BitsMask);
+		var q = $danfishgold$base64_bytes$Decode$unsafeToChar((bits >>> 12) & $danfishgold$base64_bytes$Decode$lowest6BitsMask);
+		var p = $danfishgold$base64_bytes$Decode$unsafeToChar(bits >>> 18);
+		switch (missing) {
+			case 0:
+				return A2(
+					$elm$core$String$cons,
+					p,
+					A2(
+						$elm$core$String$cons,
+						q,
+						A2(
+							$elm$core$String$cons,
+							r,
+							$elm$core$String$fromChar(s))));
+			case 1:
+				return A2(
+					$elm$core$String$cons,
+					p,
+					A2(
+						$elm$core$String$cons,
+						q,
+						A2($elm$core$String$cons, r, '=')));
+			case 2:
+				return A2(
+					$elm$core$String$cons,
+					p,
+					A2($elm$core$String$cons, q, '=='));
+			default:
+				return '';
+		}
+	});
+var $danfishgold$base64_bytes$Decode$bitsToCharSpecialized = F4(
+	function (bits1, bits2, bits3, accum) {
+		var z = $danfishgold$base64_bytes$Decode$unsafeToChar((bits3 >>> 6) & $danfishgold$base64_bytes$Decode$lowest6BitsMask);
+		var y = $danfishgold$base64_bytes$Decode$unsafeToChar((bits3 >>> 12) & $danfishgold$base64_bytes$Decode$lowest6BitsMask);
+		var x = $danfishgold$base64_bytes$Decode$unsafeToChar(bits3 >>> 18);
+		var w = $danfishgold$base64_bytes$Decode$unsafeToChar(bits3 & $danfishgold$base64_bytes$Decode$lowest6BitsMask);
+		var s = $danfishgold$base64_bytes$Decode$unsafeToChar(bits1 & $danfishgold$base64_bytes$Decode$lowest6BitsMask);
+		var r = $danfishgold$base64_bytes$Decode$unsafeToChar((bits1 >>> 6) & $danfishgold$base64_bytes$Decode$lowest6BitsMask);
+		var q = $danfishgold$base64_bytes$Decode$unsafeToChar((bits1 >>> 12) & $danfishgold$base64_bytes$Decode$lowest6BitsMask);
+		var p = $danfishgold$base64_bytes$Decode$unsafeToChar(bits1 >>> 18);
+		var d = $danfishgold$base64_bytes$Decode$unsafeToChar(bits2 & $danfishgold$base64_bytes$Decode$lowest6BitsMask);
+		var c = $danfishgold$base64_bytes$Decode$unsafeToChar((bits2 >>> 6) & $danfishgold$base64_bytes$Decode$lowest6BitsMask);
+		var b = $danfishgold$base64_bytes$Decode$unsafeToChar((bits2 >>> 12) & $danfishgold$base64_bytes$Decode$lowest6BitsMask);
+		var a = $danfishgold$base64_bytes$Decode$unsafeToChar(bits2 >>> 18);
+		return A2(
+			$elm$core$String$cons,
+			x,
+			A2(
+				$elm$core$String$cons,
+				y,
+				A2(
+					$elm$core$String$cons,
+					z,
+					A2(
+						$elm$core$String$cons,
+						w,
+						A2(
+							$elm$core$String$cons,
+							a,
+							A2(
+								$elm$core$String$cons,
+								b,
+								A2(
+									$elm$core$String$cons,
+									c,
+									A2(
+										$elm$core$String$cons,
+										d,
+										A2(
+											$elm$core$String$cons,
+											p,
+											A2(
+												$elm$core$String$cons,
+												q,
+												A2(
+													$elm$core$String$cons,
+													r,
+													A2($elm$core$String$cons, s, accum))))))))))));
+	});
+var $danfishgold$base64_bytes$Decode$decode18Help = F5(
+	function (a, b, c, d, e) {
+		var combined6 = ((255 & d) << 16) | e;
+		var combined5 = d >>> 8;
+		var combined4 = 16777215 & c;
+		var combined3 = ((65535 & b) << 8) | (c >>> 24);
+		var combined2 = ((255 & a) << 16) | (b >>> 16);
+		var combined1 = a >>> 8;
+		return A4(
+			$danfishgold$base64_bytes$Decode$bitsToCharSpecialized,
+			combined3,
+			combined2,
+			combined1,
+			A4($danfishgold$base64_bytes$Decode$bitsToCharSpecialized, combined6, combined5, combined4, ''));
+	});
+var $elm$bytes$Bytes$Decode$map5 = F6(
+	function (func, _v0, _v1, _v2, _v3, _v4) {
+		var decodeA = _v0;
+		var decodeB = _v1;
+		var decodeC = _v2;
+		var decodeD = _v3;
+		var decodeE = _v4;
+		return F2(
+			function (bites, offset) {
+				var _v5 = A2(decodeA, bites, offset);
+				var aOffset = _v5.a;
+				var a = _v5.b;
+				var _v6 = A2(decodeB, bites, aOffset);
+				var bOffset = _v6.a;
+				var b = _v6.b;
+				var _v7 = A2(decodeC, bites, bOffset);
+				var cOffset = _v7.a;
+				var c = _v7.b;
+				var _v8 = A2(decodeD, bites, cOffset);
+				var dOffset = _v8.a;
+				var d = _v8.b;
+				var _v9 = A2(decodeE, bites, dOffset);
+				var eOffset = _v9.a;
+				var e = _v9.b;
+				return _Utils_Tuple2(
+					eOffset,
+					A5(func, a, b, c, d, e));
+			});
+	});
+var $danfishgold$base64_bytes$Decode$u16BE = $elm$bytes$Bytes$Decode$unsignedInt16(1);
+var $elm$bytes$Bytes$Decode$unsignedInt32 = function (endianness) {
+	return _Bytes_read_u32(!endianness);
+};
+var $danfishgold$base64_bytes$Decode$u32BE = $elm$bytes$Bytes$Decode$unsignedInt32(1);
+var $danfishgold$base64_bytes$Decode$decode18Bytes = A6($elm$bytes$Bytes$Decode$map5, $danfishgold$base64_bytes$Decode$decode18Help, $danfishgold$base64_bytes$Decode$u32BE, $danfishgold$base64_bytes$Decode$u32BE, $danfishgold$base64_bytes$Decode$u32BE, $danfishgold$base64_bytes$Decode$u32BE, $danfishgold$base64_bytes$Decode$u16BE);
+var $elm$bytes$Bytes$Decode$map2 = F3(
+	function (func, _v0, _v1) {
+		var decodeA = _v0;
+		var decodeB = _v1;
+		return F2(
+			function (bites, offset) {
+				var _v2 = A2(decodeA, bites, offset);
+				var aOffset = _v2.a;
+				var a = _v2.b;
+				var _v3 = A2(decodeB, bites, aOffset);
+				var bOffset = _v3.a;
+				var b = _v3.b;
+				return _Utils_Tuple2(
+					bOffset,
+					A2(func, a, b));
+			});
+	});
+var $elm$bytes$Bytes$Decode$map3 = F4(
+	function (func, _v0, _v1, _v2) {
+		var decodeA = _v0;
+		var decodeB = _v1;
+		var decodeC = _v2;
+		return F2(
+			function (bites, offset) {
+				var _v3 = A2(decodeA, bites, offset);
+				var aOffset = _v3.a;
+				var a = _v3.b;
+				var _v4 = A2(decodeB, bites, aOffset);
+				var bOffset = _v4.a;
+				var b = _v4.b;
+				var _v5 = A2(decodeC, bites, bOffset);
+				var cOffset = _v5.a;
+				var c = _v5.b;
+				return _Utils_Tuple2(
+					cOffset,
+					A3(func, a, b, c));
+			});
+	});
+var $elm$bytes$Bytes$Decode$unsignedInt8 = _Bytes_read_u8;
+var $danfishgold$base64_bytes$Decode$loopHelp = function (_v0) {
+	var remaining = _v0.W;
+	var string = _v0.Y;
+	if (remaining >= 18) {
+		return A2(
+			$elm$bytes$Bytes$Decode$map,
+			function (result) {
+				return $elm$bytes$Bytes$Decode$Loop(
+					{
+						W: remaining - 18,
+						Y: _Utils_ap(string, result)
+					});
+			},
+			$danfishgold$base64_bytes$Decode$decode18Bytes);
+	} else {
+		if (remaining >= 3) {
+			var helper = F3(
+				function (a, b, c) {
+					var combined = ((a << 16) | (b << 8)) | c;
+					return $elm$bytes$Bytes$Decode$Loop(
+						{
+							W: remaining - 3,
+							Y: _Utils_ap(
+								string,
+								A2($danfishgold$base64_bytes$Decode$bitsToChars, combined, 0))
+						});
+				});
+			return A4($elm$bytes$Bytes$Decode$map3, helper, $elm$bytes$Bytes$Decode$unsignedInt8, $elm$bytes$Bytes$Decode$unsignedInt8, $elm$bytes$Bytes$Decode$unsignedInt8);
+		} else {
+			if (!remaining) {
+				return $elm$bytes$Bytes$Decode$succeed(
+					$elm$bytes$Bytes$Decode$Done(string));
+			} else {
+				if (remaining === 2) {
+					var helper = F2(
+						function (a, b) {
+							var combined = (a << 16) | (b << 8);
+							return $elm$bytes$Bytes$Decode$Done(
+								_Utils_ap(
+									string,
+									A2($danfishgold$base64_bytes$Decode$bitsToChars, combined, 1)));
+						});
+					return A3($elm$bytes$Bytes$Decode$map2, helper, $elm$bytes$Bytes$Decode$unsignedInt8, $elm$bytes$Bytes$Decode$unsignedInt8);
+				} else {
+					return A2(
+						$elm$bytes$Bytes$Decode$map,
+						function (a) {
+							return $elm$bytes$Bytes$Decode$Done(
+								_Utils_ap(
+									string,
+									A2($danfishgold$base64_bytes$Decode$bitsToChars, a << 16, 2)));
+						},
+						$elm$bytes$Bytes$Decode$unsignedInt8);
+				}
+			}
+		}
+	}
+};
+var $danfishgold$base64_bytes$Decode$decoder = function (width) {
+	return A2(
+		$elm$bytes$Bytes$Decode$loop,
+		{W: width, Y: ''},
+		$danfishgold$base64_bytes$Decode$loopHelp);
+};
+var $elm$bytes$Bytes$width = _Bytes_width;
+var $danfishgold$base64_bytes$Decode$fromBytes = function (bytes) {
+	return A2(
+		$elm$bytes$Bytes$Decode$decode,
+		$danfishgold$base64_bytes$Decode$decoder(
+			$elm$bytes$Bytes$width(bytes)),
+		bytes);
+};
+var $danfishgold$base64_bytes$Base64$fromBytes = $danfishgold$base64_bytes$Decode$fromBytes;
+var $author$project$Save$serialize = function (save_) {
+	return $danfishgold$base64_bytes$Base64$fromBytes(
+		$elm$bytes$Bytes$Encode$encode(
+			$author$project$Save$byteEncoder(save_)));
 };
 var $elm$core$List$filter = F2(
 	function (isGood, list) {
@@ -8396,16 +9263,13 @@ var $author$project$Main$update = F2(
 			function () {
 				if ((!maybeMsg.$) && (maybeMsg.a.$ === 2)) {
 					var _v1 = maybeMsg.a;
-					return A2(
-						$elm$browser$Browser$Navigation$replaceUrl,
-						model.ac,
-						'#' + A2(
-							$elm$core$Basics$composeL,
-							A2(
-								$elm$core$Basics$composeL,
-								$elm$json$Json$Encode$encode(0),
-								$author$project$Save$encode),
-							$author$project$Save$save)(nextModel.an));
+					var _v2 = A2($elm$core$Basics$composeL, $author$project$Save$serialize, $author$project$Save$save)(nextModel.an);
+					if (_v2.$ === 1) {
+						return $elm$core$Platform$Cmd$none;
+					} else {
+						var data = _v2.a;
+						return A2($elm$browser$Browser$Navigation$replaceUrl, model.ac, '#' + data);
+					}
 				} else {
 					return $elm$core$Platform$Cmd$none;
 				}
@@ -8472,6 +9336,7 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			$elm$html$Html$Events$alwaysStop,
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
+var $elm$json$Json$Encode$string = _Json_wrap;
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
