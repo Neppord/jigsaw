@@ -10,74 +10,35 @@ import Seeded exposing (Seeded)
 
 
 type alias Save =
-    { pieces : List ( Point, ID )
-    , imageUrl : String
-    }
-
-
-decodePoint : Json.Decode.Decoder Point
-decodePoint =
-    Json.Decode.map2 Point
-        (Json.Decode.field "x" Json.Decode.int)
-        (Json.Decode.field "y" Json.Decode.int)
-
-
-decodeID : Json.Decode.Decoder ID
-decodeID =
-    Json.Decode.map2 Tuple.pair
-        (Json.Decode.field "x" Json.Decode.int)
-        (Json.Decode.field "y" Json.Decode.int)
-
-
-decodePair : Json.Decode.Decoder ( Point, ID )
-decodePair =
-    Json.Decode.map2
-        Tuple.pair
-        (Json.Decode.field "point" decodePoint)
-        (Json.Decode.field "id" decodeID)
+    List (List Point)
 
 
 decode : Json.Decode.Decoder Save
 decode =
-    Json.Decode.map2 Save
-        (Json.Decode.field "pieces" (Json.Decode.list decodePair))
-        (Json.Decode.field "imageUrl" Json.Decode.string)
+    let
+        pack : List Int -> List Point
+        pack =
+            Tuple.second << List.foldl do ( Nothing, [] )
+
+        do : Int -> ( Maybe Int, List Point ) -> ( Maybe Int, List Point )
+        do a ( m, l ) =
+            case m of
+                Nothing ->
+                    ( Just a, l )
+
+                Just b ->
+                    ( Nothing, Point b a :: l )
+    in
+    Json.Decode.list Json.Decode.int
+        |> Json.Decode.map pack
+        |> Json.Decode.list
 
 
 encode : Save -> Json.Encode.Value
 encode s =
-    Json.Encode.object <|
-        [ ( "pieces"
-          , Json.Encode.list
-                encodePair
-                s.pieces
-          )
-        , ( "imageUrl", Json.Encode.string s.imageUrl )
-        ]
-
-
-encodePair : ( Point, ID ) -> Json.Encode.Value
-encodePair ( a, b ) =
-    Json.Encode.object <|
-        [ ( "point", encodePoint a )
-        , ( "id", encodeID b )
-        ]
-
-
-encodeID : PieceGroup.ID -> Json.Encode.Value
-encodeID ( x, y ) =
-    Json.Encode.object <|
-        [ ( "x", Json.Encode.int x )
-        , ( "y", Json.Encode.int y )
-        ]
-
-
-encodePoint : Point -> Json.Encode.Value
-encodePoint point =
-    Json.Encode.object <|
-        [ ( "x", Json.Encode.int point.x )
-        , ( "y", Json.Encode.int point.y )
-        ]
+    s
+        |> (List.map <| List.concatMap (\p -> [ p.x, p.y ]))
+        |> (Json.Encode.list <| Json.Encode.list Json.Encode.int)
 
 
 load : Save -> Seeded NewModel
@@ -94,32 +55,46 @@ load s =
 
         createPG ( position, id ) =
             PieceGroup.createPieceGroup image id position
+
+        db =
+            s
+                |> List.indexedMap
+                    (\x l ->
+                        List.indexedMap
+                            (\y p -> ( p, ( x, y ) ))
+                            l
+                    )
+                |> List.concat
+                |> List.map createPG
+                |> DB.makeDb
     in
     newModel
         |> Seeded.map
             (\m ->
                 { m
-                    | db =
-                        s.pieces
-                            |> List.map createPG
-                            |> DB.makeDb
-                    , configuration =
-                        { configuration
-                            | image = { image | path = s.imageUrl }
-                        }
+                    | db = db
                 }
             )
 
 
 save : Seeded NewModel -> Save
 save model =
-    { pieces =
-        Seeded.unwrap model
-            |> .db
-            |> DB.getPieces
-    , imageUrl =
-        Seeded.unwrap model
-            |> .configuration
-            |> .image
-            |> .path
-    }
+    let
+        do : ( PieceGroup.ID, Point ) -> List (List Point) -> List (List Point)
+        do ( ( _, y ), point ) matrix =
+            case ( y, matrix ) of
+                ( 0, _ ) ->
+                    [ point ] :: matrix
+
+                ( _, row :: rows ) ->
+                    (point :: row) :: rows
+
+                ( _, [] ) ->
+                    [ [ point ] ]
+    in
+    Seeded.unwrap model
+        |> .db
+        |> DB.getPieces
+        |> List.sortBy Tuple.first
+        |> List.foldl do []
+        |> List.reverse

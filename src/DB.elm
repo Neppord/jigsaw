@@ -305,13 +305,13 @@ heightDifference =
     KDDict.heightDifference
 
 
-getPieces : DB -> List ( Point, PieceGroup.ID )
+getPieces : DB -> List ( PieceGroup.ID, Point )
 getPieces db =
     let
-        pgToP : PieceGroup -> List ( Point, PieceGroup.ID )
+        pgToP : PieceGroup -> List ( PieceGroup.ID, Point )
         pgToP pg =
             pg.members
-                |> List.map (\p -> ( Point.add p.offset pg.position, p.id ))
+                |> List.map (\p -> ( p.id, Point.add p.offset pg.position ))
     in
     all db
         |> List.concatMap pgToP
