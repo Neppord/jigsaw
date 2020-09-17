@@ -46,7 +46,7 @@ init : () -> Seeded NewModel
 init () =
     let
         ( width, height ) =
-            ( 1920, 1080 )
+            ( 1920 * 2, 1080 * 2 )
 
         ( xpieces, ypieces ) =
             ( 16 * 4, 9 * 4 )
@@ -58,7 +58,7 @@ init () =
             height // ypieces
 
         image =
-            { path = "ship-1366926_1920.jpg"
+            { path = "fantasy-2543658-4k.jpg"
             , width = width
             , height = height
             , xpieces = xpieces
