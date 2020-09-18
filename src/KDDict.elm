@@ -486,3 +486,56 @@ unsafeMap f dict =
 
         Deleted level smaller larger ->
             Deleted level (unsafeMap f smaller) (unsafeMap f larger)
+
+
+smallest : Int -> KDDict comparable v -> Maybe ( Key comparable, v )
+smallest axis dict =
+    case dict of
+        Empty ->
+            Nothing
+
+        Node level smaller item larger ->
+            if level == axis then
+                smallest axis smaller
+
+            else
+                case ( smallest axis smaller, smallest axis larger ) of
+                    ( Nothing, Nothing ) ->
+                        Just item
+
+                    ( Just ( aKey, aValue ), Just ( bKey, bValue ) ) ->
+                        case compareKey axis aKey bKey of
+                            LT ->
+                                Just ( aKey, aValue )
+
+                            _ ->
+                                Just ( bKey, bValue )
+
+                    ( Just a, Nothing ) ->
+                        Just a
+
+                    ( Nothing, Just b ) ->
+                        Just b
+
+        Deleted level smaller larger ->
+            if level == axis then
+                smallest axis smaller
+
+            else
+                case ( smallest axis smaller, smallest axis larger ) of
+                    ( Nothing, Nothing ) ->
+                        Nothing
+
+                    ( Just ( aKey, aValue ), Just ( bKey, bValue ) ) ->
+                        case compareKey axis aKey bKey of
+                            LT ->
+                                Just ( aKey, aValue )
+
+                            _ ->
+                                Just ( bKey, bValue )
+
+                    ( Just a, Nothing ) ->
+                        Just a
+
+                    ( Nothing, Just b ) ->
+                        Just b
