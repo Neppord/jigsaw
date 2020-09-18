@@ -192,10 +192,12 @@ snap radius db =
                     Set.fromList <| List.map .id pg.members
 
                 shouldBeMerged other =
-                    (other.id == pg.id)
-                        || (Set.intersect memberIds other.neighbours
-                                |> Set.isEmpty
-                                |> not
+                    Set.member other.visibilityGroup db.visibleGroups
+                        && ((other.id == pg.id)
+                                || (Set.intersect memberIds other.neighbours
+                                        |> Set.isEmpty
+                                        |> not
+                                   )
                            )
 
                 dimensions =
