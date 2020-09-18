@@ -49,23 +49,14 @@ view model =
             , style "background-color" "rgba(100%, 100%, 100%, 50%)"
             ]
             [ visibilityCheckbox 1 model
-            , visibilityLabel 1
             , visibilityCheckbox 2 model
-            , visibilityLabel 2
             , visibilityCheckbox 3 model
-            , visibilityLabel 3
             , visibilityCheckbox 4 model
-            , visibilityLabel 4
             , visibilityCheckbox 5 model
-            , visibilityLabel 5
             , visibilityCheckbox 6 model
-            , visibilityLabel 6
             , visibilityCheckbox 7 model
-            , visibilityLabel 7
             , visibilityCheckbox 8 model
-            , visibilityLabel 8
             , visibilityCheckbox 9 model
-            , visibilityLabel 9
             ]
         , Html.div
             [ style "position" "fixed"
@@ -77,27 +68,18 @@ view model =
         ]
 
 
-visibilityGroupName : Int -> String
-visibilityGroupName x =
-    "group-" ++ String.fromInt x ++ "-visible"
-
-
-visibilityLabel : Int -> Html msg
-visibilityLabel x =
-    Html.label
-        [ Html.Attributes.for <| visibilityGroupName x ]
-        [ text <| String.fromInt x ]
-
-
 visibilityCheckbox : Int -> NewModel -> Html Msg
 visibilityCheckbox x model =
-    Html.input
-        [ Html.Attributes.type_ "checkbox"
-        , Html.Attributes.checked (Set.member x model.db.visibleGroups)
-        , Html.Attributes.name <| visibilityGroupName x
-        , Html.Events.onCheck (always <| ToggleVisibility x)
-        ]
+    Html.label
         []
+        [ Html.input
+            [ Html.Attributes.type_ "checkbox"
+            , Html.Attributes.checked (Set.member x model.db.visibleGroups)
+            , Html.Events.onCheck (always <| ToggleVisibility x)
+            ]
+            []
+        , text <| String.fromInt x
+        ]
 
 
 renderStats : NewModel -> Html msg
