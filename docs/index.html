@@ -2674,8 +2674,8 @@ var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
 		w: func(record.w),
-		ak: record.ak,
-		ah: record.ah
+		al: record.al,
+		ai: record.ai
 	}
 });
 
@@ -2944,10 +2944,10 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 
 		var value = result.a;
 		var message = !tag ? value : tag < 3 ? value.a : value.w;
-		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.ak;
+		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.al;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
-			(tag == 2 ? value.b : tag == 3 && value.ah) && event.preventDefault(),
+			(tag == 2 ? value.b : tag == 3 && value.ai) && event.preventDefault(),
 			eventNode
 		);
 		var tagger;
@@ -3937,7 +3937,7 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 		impl.bS,
 		impl.bO,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.ai && impl.ai(sendToApp)
+			var divertHrefToApp = impl.aj && impl.aj(sendToApp)
 			var view = impl.bT;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
@@ -4012,7 +4012,7 @@ function _Browser_application(impl)
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		ai: function(sendToApp)
+		aj: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -5350,7 +5350,7 @@ var $elm$core$Basics$composeR = F3(
 	});
 var $author$project$Keyed$Keyed = F2(
 	function (key, value) {
-		return {ac: key, an: value};
+		return {ad: key, ao: value};
 	});
 var $elm$core$Maybe$andThen = F2(
 	function (callback, maybeValue) {
@@ -6289,7 +6289,7 @@ var $author$project$Point$toPair = function (point) {
 	return _Utils_Tuple2(point.t, point.u);
 };
 var $author$project$DB$makeKey = function (_v0) {
-	var position = _v0.ag;
+	var position = _v0.ah;
 	var minOffset = _v0.bt;
 	var maxOffset = _v0.bs;
 	var y = _Utils_Tuple2(position.u + minOffset.u, position.u + maxOffset.u);
@@ -6309,7 +6309,7 @@ var $author$project$DB$makeIndex = function (list) {
 var $author$project$DB$makeDb = function (pieceGroups) {
 	return {
 		a: $author$project$DB$makeIndex(pieceGroups),
-		C: $elm$core$Set$fromList(
+		z: $elm$core$Set$fromList(
 			_List_fromArray(
 				[-1]))
 	};
@@ -6325,7 +6325,7 @@ var $author$project$Model$buildModel = F3(
 	});
 var $author$project$PieceGroup$Piece = F3(
 	function (id, offset, size) {
-		return {p: id, bF: offset, aj: size};
+		return {p: id, bF: offset, ak: size};
 	});
 var $author$project$Point$add = F2(
 	function (a, b) {
@@ -6367,8 +6367,8 @@ var $author$project$PieceGroup$createPieceGroup = F3(
 				]),
 			bt: offset,
 			bx: $author$project$PieceGroup$neighbours(id),
-			ag: A2($author$project$Point$sub, pos, offset),
-			ao: -1
+			ah: A2($author$project$Point$sub, pos, offset),
+			_: -1
 		};
 	});
 var $elm$core$List$append = F2(
@@ -7296,7 +7296,7 @@ var $elm$core$Dict$merge = F6(
 	});
 var $elm$browser$Browser$Events$Event = F2(
 	function (key, event) {
-		return {aE: event, ac: key};
+		return {aE: event, ad: key};
 	});
 var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
 var $elm$browser$Browser$Events$spawn = F3(
@@ -7417,7 +7417,7 @@ var $elm$core$List$filterMap = F2(
 	});
 var $elm$browser$Browser$Events$onSelfMsg = F3(
 	function (router, _v0, state) {
-		var key = _v0.ac;
+		var key = _v0.ad;
 		var event = _v0.aE;
 		var toMessage = function (_v2) {
 			var subKey = _v2.a;
@@ -7526,11 +7526,11 @@ var $author$project$Subscription$subscriptions = function (newModel) {
 };
 var $author$project$Keyed$map = F2(
 	function (f, _v0) {
-		var key = _v0.ac;
-		var value = _v0.an;
+		var key = _v0.ad;
+		var value = _v0.ao;
 		return {
-			ac: key,
-			an: f(value)
+			ad: key,
+			ao: f(value)
 		};
 	});
 var $elm$browser$Browser$Navigation$replaceUrl = _Browser_replaceUrl;
@@ -7569,7 +7569,7 @@ var $author$project$DB$getPieces = function (db) {
 			function (p) {
 				return _Utils_Tuple2(
 					p.p,
-					A2($author$project$Point$add, p.bF, pg.ag));
+					A2($author$project$Point$add, p.bF, pg.ah));
 			},
 			pg.aM);
 	};
@@ -7804,7 +7804,7 @@ var $author$project$Main$sendToVisibilityGroup = F2(
 					function (pg) {
 						return _Utils_update(
 							pg,
-							{aJ: true, ao: x});
+							{aJ: true, _: x});
 					},
 					model.o)
 			});
@@ -8535,7 +8535,7 @@ var $author$project$DB$toggleVisibilityGroup = F2(
 		return _Utils_update(
 			db,
 			{
-				C: A2($author$project$DB$sToggle, groupId, db.C)
+				z: A2($author$project$DB$sToggle, groupId, db.z)
 			});
 	});
 var $author$project$Main$toggleVisibilityGroup = F2(
@@ -8710,12 +8710,12 @@ var $author$project$KDDict$findMatching = F2(
 var $author$project$PieceGroup$isPointInsidePiece = F2(
 	function (point, piece) {
 		var pieceTL = piece.bF;
-		var pieceBR = A2($author$project$Point$add, piece.bF, piece.aj);
+		var pieceBR = A2($author$project$Point$add, piece.bF, piece.ak);
 		return (_Utils_cmp(pieceTL.t, point.t) < 1) && ((_Utils_cmp(pieceTL.u, point.u) < 1) && ((_Utils_cmp(pieceBR.t, point.t) > -1) && (_Utils_cmp(pieceBR.u, point.u) > -1)));
 	});
 var $author$project$PieceGroup$isPointInsidePieceGroup = F2(
 	function (point, pieceGroup) {
-		var relativePosition = A2($author$project$Point$sub, point, pieceGroup.ag);
+		var relativePosition = A2($author$project$Point$sub, point, pieceGroup.ah);
 		return A2(
 			$elm$core$List$any,
 			$author$project$PieceGroup$isPointInsidePiece(relativePosition),
@@ -8755,7 +8755,7 @@ var $author$project$DB$clickedPieceGroup = F3(
 					A2(
 						$elm$core$List$filter,
 						function (pg) {
-							return A2($elm$core$Set$member, pg.ao, db_.C);
+							return A2($elm$core$Set$member, pg._, db_.z);
 						},
 						A2(
 							$author$project$KDDict$findMatching,
@@ -8880,7 +8880,7 @@ var $author$project$Drag$getDimensions = function (_v0) {
 	var start = _v0.I;
 	var current = _v0.L;
 	return {
-		aa: $elm$core$Basics$abs(start.u - current.u),
+		ab: $elm$core$Basics$abs(start.u - current.u),
 		ap: $elm$core$Basics$abs(start.t - current.t),
 		t: A2($elm$core$Basics$min, start.t, current.t),
 		u: A2($elm$core$Basics$min, start.u, current.u)
@@ -8890,7 +8890,7 @@ var $author$project$DB$matchBox = function (_v0) {
 	var x = _v0.t;
 	var y = _v0.u;
 	var w = _v0.ap;
-	var h = _v0.aa;
+	var h = _v0.ab;
 	return A2(
 		$author$project$KDDict$addCoordinateAxis,
 		_Utils_Tuple2(
@@ -8918,7 +8918,7 @@ var $author$project$DB$boxSelect = F3(
 		var targets = A2(
 			$elm$core$List$filter,
 			function (pg) {
-				return A2($elm$core$Set$member, pg.ao, db.C);
+				return A2($elm$core$Set$member, pg._, db.z);
 			},
 			A2(
 				$author$project$KDDict$findMatching,
@@ -8965,7 +8965,7 @@ var $author$project$PieceGroup$move = F2(
 		return _Utils_update(
 			pg,
 			{
-				ag: A2($author$project$Point$add, offset, pg.ag)
+				ah: A2($author$project$Point$add, offset, pg.ah)
 			});
 	});
 var $author$project$KDDict$countDeleted = function (dict) {
@@ -9040,7 +9040,7 @@ var $author$project$DB$matchWithin = function (_v0) {
 	var x = _v0.t;
 	var y = _v0.u;
 	var w = _v0.ap;
-	var h = _v0.aa;
+	var h = _v0.ab;
 	return A2(
 		$author$project$KDDict$addCoordinateAxis,
 		_Utils_Tuple2($author$project$KD$Match$Anything, $author$project$KD$Match$Anything),
@@ -9096,7 +9096,7 @@ var $author$project$PieceGroup$merge = F2(
 			$author$project$Point$Point,
 			A2($elm$core$Basics$max, a.bs.t, b.bs.t),
 			A2($elm$core$Basics$max, a.bs.u, b.bs.u));
-		return {p: a.p, aJ: false, bs: maxOffset, aM: newMembers, bt: minOffset, bx: newNeighbours, ag: a.ag, ao: a.ao};
+		return {p: a.p, aJ: false, bs: maxOffset, aM: newMembers, bt: minOffset, bx: newNeighbours, ah: a.ah, _: a._};
 	});
 var $author$project$KDDict$size = function (dict) {
 	switch (dict.$) {
@@ -9141,14 +9141,14 @@ var $author$project$DB$snap = F2(
 					},
 					pg.aM));
 			var shouldBeMerged = function (other) {
-				return _Utils_eq(other.p, pg.p) || (!$elm$core$Set$isEmpty(
-					A2($elm$core$Set$intersect, memberIds, other.bx)));
+				return A2($elm$core$Set$member, other._, db.z) && (_Utils_eq(other.p, pg.p) || (!$elm$core$Set$isEmpty(
+					A2($elm$core$Set$intersect, memberIds, other.bx))));
 			};
 			var dimensions = function () {
-				var _v2 = pg.ag;
+				var _v2 = pg.ah;
 				var x = _v2.t;
 				var y = _v2.u;
-				return {aa: radius * 2, ap: radius * 2, t: x - radius, u: y - radius};
+				return {ab: radius * 2, ap: radius * 2, t: x - radius, u: y - radius};
 			}();
 			var targets = A2(
 				$elm$core$List$filter,
@@ -9323,12 +9323,12 @@ var $author$project$Main$update = F2(
 			function () {
 				if ((!maybeMsg.$) && (maybeMsg.a.$ === 2)) {
 					var _v1 = maybeMsg.a;
-					var _v2 = A2($elm$core$Basics$composeL, $author$project$Save$serialize, $author$project$Save$save)(nextModel.an);
+					var _v2 = A2($elm$core$Basics$composeL, $author$project$Save$serialize, $author$project$Save$save)(nextModel.ao);
 					if (_v2.$ === 1) {
 						return $elm$core$Platform$Cmd$none;
 					} else {
 						var data = _v2.a;
-						return A2($elm$browser$Browser$Navigation$replaceUrl, model.ac, '#' + data);
+						return A2($elm$browser$Browser$Navigation$replaceUrl, model.ad, '#' + data);
 					}
 				} else {
 					return $elm$core$Platform$Cmd$none;
@@ -9341,70 +9341,7 @@ var $elm$browser$Browser$Document = F2(
 	});
 var $elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
 var $elm$html$Html$map = $elm$virtual_dom$VirtualDom$map;
-var $author$project$Model$ChangeImageUrl = function (a) {
-	return {$: 6, a: a};
-};
-var $author$project$Model$Scramble = {$: 3};
-var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$html$Html$div = _VirtualDom_node('div');
-var $elm$html$Html$input = _VirtualDom_node('input');
-var $elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 0, a: a};
-};
-var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var $elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			$elm$virtual_dom$VirtualDom$on,
-			event,
-			$elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
-var $elm$html$Html$Events$onClick = function (msg) {
-	return A2(
-		$elm$html$Html$Events$on,
-		'click',
-		$elm$json$Json$Decode$succeed(msg));
-};
-var $elm$html$Html$Events$alwaysStop = function (x) {
-	return _Utils_Tuple2(x, true);
-};
-var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
-	return {$: 1, a: a};
-};
-var $elm$html$Html$Events$stopPropagationOn = F2(
-	function (event, decoder) {
-		return A2(
-			$elm$virtual_dom$VirtualDom$on,
-			event,
-			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
-	});
-var $elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
-	});
-var $elm$html$Html$Events$targetValue = A2(
-	$elm$json$Json$Decode$at,
-	_List_fromArray(
-		['target', 'value']),
-	$elm$json$Json$Decode$string);
-var $elm$html$Html$Events$onInput = function (tagger) {
-	return A2(
-		$elm$html$Html$Events$stopPropagationOn,
-		'input',
-		A2(
-			$elm$json$Json$Decode$map,
-			$elm$html$Html$Events$alwaysStop,
-			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
-};
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			$elm$json$Json$Encode$string(string));
-	});
-var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
 var $elm$core$String$fromFloat = _String_fromNumber;
 var $author$project$KDDict$height = function (dict) {
 	switch (dict.$) {
@@ -9536,7 +9473,6 @@ var $author$project$View$turnOffTheBloodyImageDragging = _List_fromArray(
 		A2($elm$html$Html$Attributes$style, 'user-select', 'none'),
 		$elm$html$Html$Attributes$draggable('false')
 	]);
-var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
 var $elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
 var $elm$svg$Svg$clipPath = $elm$svg$Svg$trustedNode('clipPath');
 var $elm$svg$Svg$Attributes$d = _VirtualDom_attribute('d');
@@ -9683,7 +9619,7 @@ var $author$project$DB$getVisibleUnSelected = function (db) {
 	return A2(
 		$elm$core$List$filter,
 		function (pg) {
-			return A2($elm$core$Set$member, pg.ao, db.C);
+			return A2($elm$core$Set$member, pg._, db.z);
 		},
 		A2(
 			$elm$core$List$filter,
@@ -9719,19 +9655,19 @@ var $author$project$View$clipPathRef = function (id) {
 };
 var $author$project$View$pieceDiv = F3(
 	function (backgroundUrl, pg, piece) {
-		var _v0 = _Utils_Tuple2((piece.aj.t / 2) | 0, (piece.aj.u / 2) | 0);
+		var _v0 = _Utils_Tuple2((piece.ak.t / 2) | 0, (piece.ak.u / 2) | 0);
 		var borderWidth = _v0.a;
 		var borderHeight = _v0.b;
-		var height = (borderHeight + piece.aj.u) + borderHeight;
+		var height = (borderHeight + piece.ak.u) + borderHeight;
 		var _v1 = $author$project$Point$toPair(
 			A2(
 				$author$project$Point$add,
 				A2($author$project$Point$Point, -borderWidth, -borderHeight),
-				A2($author$project$Point$add, piece.bF, pg.ag)));
+				A2($author$project$Point$add, piece.bF, pg.ah)));
 		var left = _v1.a;
 		var top = _v1.b;
 		var translate = 'translate(' + ($elm$core$String$fromInt(left) + ('px,' + ($elm$core$String$fromInt(top) + 'px)')));
-		var width = (borderWidth + piece.aj.t) + borderWidth;
+		var width = (borderWidth + piece.ak.t) + borderWidth;
 		var _v2 = $author$project$Point$toPair(
 			A2(
 				$author$project$Point$sub,
@@ -9892,7 +9828,7 @@ var $author$project$View$viewSelectionBox = function (model) {
 		var x = _v1.t;
 		var y = _v1.u;
 		var w = _v1.ap;
-		var h = _v1.aa;
+		var h = _v1.ab;
 		return A5(
 			box,
 			x,
@@ -9922,7 +9858,23 @@ var $elm$html$Html$Attributes$boolProperty = F2(
 			$elm$json$Json$Encode$bool(bool));
 	});
 var $elm$html$Html$Attributes$checked = $elm$html$Html$Attributes$boolProperty('checked');
-var $elm$html$Html$Attributes$name = $elm$html$Html$Attributes$stringProperty('name');
+var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$label = _VirtualDom_node('label');
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 0, a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
 var $elm$html$Html$Events$targetChecked = A2(
 	$elm$json$Json$Decode$at,
 	_List_fromArray(
@@ -9934,43 +9886,38 @@ var $elm$html$Html$Events$onCheck = function (tagger) {
 		'change',
 		A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetChecked));
 };
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
-var $author$project$View$visibilityGroupName = function (x) {
-	return 'group-' + ($elm$core$String$fromInt(x) + '-visible');
-};
 var $author$project$View$visibilityCheckbox = F2(
 	function (x, model) {
 		return A2(
-			$elm$html$Html$input,
+			$elm$html$Html$label,
+			_List_Nil,
 			_List_fromArray(
 				[
-					$elm$html$Html$Attributes$type_('checkbox'),
-					$elm$html$Html$Attributes$checked(
-					A2($elm$core$Set$member, x, model.o.C)),
-					$elm$html$Html$Attributes$name(
-					$author$project$View$visibilityGroupName(x)),
-					$elm$html$Html$Events$onCheck(
-					$elm$core$Basics$always(
-						$author$project$Model$ToggleVisibility(x)))
-				]),
-			_List_Nil);
+					A2(
+					$elm$html$Html$input,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('checkbox'),
+							$elm$html$Html$Attributes$checked(
+							A2($elm$core$Set$member, x, model.o.z)),
+							$elm$html$Html$Events$onCheck(
+							$elm$core$Basics$always(
+								$author$project$Model$ToggleVisibility(x)))
+						]),
+					_List_Nil),
+					$elm$html$Html$text(
+					$elm$core$String$fromInt(x))
+				]));
 	});
-var $elm$html$Html$Attributes$for = $elm$html$Html$Attributes$stringProperty('htmlFor');
-var $elm$html$Html$label = _VirtualDom_node('label');
-var $author$project$View$visibilityLabel = function (x) {
-	return A2(
-		$elm$html$Html$label,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$for(
-				$author$project$View$visibilityGroupName(x))
-			]),
-		_List_fromArray(
-			[
-				$elm$html$Html$text(
-				$elm$core$String$fromInt(x))
-			]));
-};
 var $author$project$View$view = function (model) {
 	var image = model.M;
 	return A2(
@@ -10008,43 +9955,15 @@ var $author$project$View$view = function (model) {
 					]),
 				_List_fromArray(
 					[
-						A2(
-						$elm$html$Html$button,
-						_List_fromArray(
-							[
-								$elm$html$Html$Events$onClick($author$project$Model$Scramble)
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('scramble')
-							])),
-						A2(
-						$elm$html$Html$input,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$placeholder('Image Url'),
-								$elm$html$Html$Attributes$value(model.M.bK),
-								$elm$html$Html$Events$onInput($author$project$Model$ChangeImageUrl)
-							]),
-						_List_Nil),
 						A2($author$project$View$visibilityCheckbox, 1, model),
-						$author$project$View$visibilityLabel(1),
 						A2($author$project$View$visibilityCheckbox, 2, model),
-						$author$project$View$visibilityLabel(2),
 						A2($author$project$View$visibilityCheckbox, 3, model),
-						$author$project$View$visibilityLabel(3),
 						A2($author$project$View$visibilityCheckbox, 4, model),
-						$author$project$View$visibilityLabel(4),
 						A2($author$project$View$visibilityCheckbox, 5, model),
-						$author$project$View$visibilityLabel(5),
 						A2($author$project$View$visibilityCheckbox, 6, model),
-						$author$project$View$visibilityLabel(6),
 						A2($author$project$View$visibilityCheckbox, 7, model),
-						$author$project$View$visibilityLabel(7),
 						A2($author$project$View$visibilityCheckbox, 8, model),
-						$author$project$View$visibilityLabel(8),
-						A2($author$project$View$visibilityCheckbox, 9, model),
-						$author$project$View$visibilityLabel(9)
+						A2($author$project$View$visibilityCheckbox, 9, model)
 					])),
 				A2(
 				$elm$html$Html$div,
@@ -10081,14 +10000,14 @@ var $author$project$Main$main = $elm$browser$Browser$application(
 		bO: A2(
 			$elm$core$Basics$composeR,
 			function ($) {
-				return $.an;
+				return $.ao;
 			},
 			A2($elm$core$Basics$composeR, $author$project$Seeded$unwrap, $author$project$Subscription$subscriptions)),
 		bS: $author$project$Main$update,
 		bT: A2(
 			$elm$core$Basics$composeR,
 			function ($) {
-				return $.an;
+				return $.ao;
 			},
 			A2($elm$core$Basics$composeR, $author$project$Seeded$unwrap, $author$project$Main$view))
 	});
