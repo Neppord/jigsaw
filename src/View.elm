@@ -48,16 +48,7 @@ view model =
             , style "left" "0"
             , style "background-color" "rgba(100%, 100%, 100%, 50%)"
             ]
-            [ Html.button
-                [ Html.Events.onClick Scramble ]
-                [ Html.text "scramble" ]
-            , Html.input
-                [ Html.Attributes.placeholder "Image Url"
-                , Html.Attributes.value model.image.path
-                , Html.Events.onInput ChangeImageUrl
-                ]
-                []
-            , visibilityCheckbox 1 model
+            [ visibilityCheckbox 1 model
             , visibilityLabel 1
             , visibilityCheckbox 2 model
             , visibilityLabel 2
