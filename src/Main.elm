@@ -18,7 +18,6 @@ import PieceGroup
 import Point exposing (Point)
 import Save
 import Seeded exposing (Seeded(..))
-import Set exposing (Set)
 import Subscription exposing (subscriptions)
 import UI
 import Url
@@ -141,23 +140,10 @@ update maybeMsg model =
     )
 
 
-
-{- this could be replaced from Set.Extra -}
-
-
-sToggle : comparable -> Set comparable -> Set comparable
-sToggle a set =
-    if Set.member a set then
-        Set.remove a set
-
-    else
-        Set.insert a set
-
-
 toggleVisibilityGroup : Int -> NewModel -> NewModel
 toggleVisibilityGroup x model =
     { model
-        | visibleGroups = sToggle x model.visibleGroups
+        | db = DB.toggleVisibilityGroup x model.db
     }
 
 
@@ -179,7 +165,7 @@ sendToVisibilityGroup x model =
 updateMouseDown : Point -> Keyboard -> NewModel -> NewModel
 updateMouseDown coordinate keyboard model =
     let
-        { db, visibleGroups, image } =
+        { db, image } =
             model
 
         mode =
@@ -192,7 +178,7 @@ updateMouseDown coordinate keyboard model =
             else
                 UI.Replace
     in
-    case DB.clickedPieceGroup visibleGroups image db coordinate of
+    case DB.clickedPieceGroup image db coordinate of
         Nothing ->
             { model | ui = UI.Boxing mode (Drag.from coordinate) }
 
@@ -217,7 +203,7 @@ updateMouseUp model =
         UI.Boxing mode drag ->
             { model
                 | ui = UI.WaitingForInput
-                , db = DB.boxSelect model.visibleGroups mode drag model.db
+                , db = DB.boxSelect mode drag model.db
             }
 
         UI.Moving _ drag ->

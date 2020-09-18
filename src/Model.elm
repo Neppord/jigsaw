@@ -19,7 +19,6 @@ import PieceGroup exposing (PieceGroup)
 import Point exposing (Point)
 import Random
 import Seeded exposing (Seeded(..))
-import Set as S exposing (Set)
 import UI exposing (UI(..))
 
 
@@ -34,8 +33,7 @@ type Msg
 
 
 type alias NewModel =
-    { visibleGroups : Set Int
-    , edges : List (List Edge)
+    { edges : List (List Edge)
     , image : JigsawImage
     , db : DB
     , ui : UI
@@ -80,7 +78,6 @@ buildModel :
     -> NewModel
 buildModel image pieceGroups edges =
     { image = image
-    , visibleGroups = S.fromList [ -1 ]
     , edges = edges
     , db = DB.makeDb pieceGroups
     , ui = WaitingForInput

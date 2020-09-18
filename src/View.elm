@@ -102,7 +102,7 @@ visibilityCheckbox : Int -> NewModel -> Html Msg
 visibilityCheckbox x model =
     Html.input
         [ Html.Attributes.type_ "checkbox"
-        , Html.Attributes.checked (Set.member x model.visibleGroups)
+        , Html.Attributes.checked (Set.member x model.db.visibleGroups)
         , Html.Attributes.name <| visibilityGroupName x
         , Html.Events.onCheck (always <| ToggleVisibility x)
         ]
@@ -268,21 +268,16 @@ viewClipPath model =
 viewDiv : NewModel -> List (Html Msg)
 viewDiv model =
     let
-        { db, visibleGroups } =
+        { db } =
             model
 
         ( selected, unSelected ) =
             ( DB.getSelected db
-            , DB.getUnSelected db
+            , DB.getVisibleUnSelected db
             )
 
         image =
             model.image
-
-        isVisible pieceGroup =
-            Set.member
-                pieceGroup.visibilityGroup
-                visibleGroups
 
         shadowWithColor : String -> List ( String, Html msg ) -> List ( String, Html msg )
         shadowWithColor color keyedPieces =
@@ -298,7 +293,6 @@ viewDiv model =
     [ keyedDiv
         []
         (unSelected
-            |> List.filter isVisible
             |> renderPieces image
             |> shadowBlack
         )
