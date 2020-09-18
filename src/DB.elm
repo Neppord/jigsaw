@@ -145,7 +145,7 @@ insert pg =
 
 
 snap : Int -> DB -> DB
-snap snapDistance db =
+snap radius db =
     case db |> getSelected of
         pg :: [] ->
             let
@@ -163,9 +163,6 @@ snap snapDistance db =
                     let
                         { x, y } =
                             pg.position
-
-                        radius =
-                            snapDistance
                     in
                     { x = x - radius
                     , w = radius * 2

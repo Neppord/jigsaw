@@ -231,7 +231,7 @@ updateMouseUp model =
             { model
                 | ui = UI.WaitingForInput
                 , db =
-                    DB.snap model.image.pieceWidth updatedDb
+                    DB.snap (model.image.pieceWidth // 2) updatedDb
             }
 
         _ ->
