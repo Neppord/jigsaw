@@ -106,15 +106,10 @@ insert k v tree =
 
 
 {-
-   insert key
-
    create from list
    destruct in to list
 
-   find smallest
-
    delete:
-    * key
     * range
     * region
 
