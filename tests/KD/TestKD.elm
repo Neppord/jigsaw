@@ -1,7 +1,7 @@
 module KD.TestKD exposing (..)
 
 import Expect exposing (all, equal)
-import KD.Tree1D exposing (Tree1D(..), delete, insert, singleton, smallest)
+import KD.Tree1D exposing (Tree1D(..), delete, find, insert, singleton, smallest)
 import Test exposing (Test, describe, test)
 
 
@@ -171,5 +171,28 @@ suite =
                         }
                         |> delete 2
                         |> equal (singleton 1 ())
+            ]
+        , describe "find"
+            [ test "it always return Nothing for empty trees" <|
+                \_ ->
+                    find 1 Empty
+                        |> equal Nothing
+            , test "it finds key and value that are in the root node" <|
+                \_ ->
+                    singleton 1 ()
+                        |> find 1
+                        |> equal (Just ( 1, () ))
+            , test "it finds key and values for keys that are smaller then the root" <|
+                \_ ->
+                    singleton 2 ()
+                        |> insert 1 ()
+                        |> find 1
+                        |> equal (Just ( 1, () ))
+            , test "it finds key and values for keys that are larger then the root" <|
+                \_ ->
+                    singleton 1 ()
+                        |> insert 2 ()
+                        |> find 2
+                        |> equal (Just ( 2, () ))
             ]
         ]

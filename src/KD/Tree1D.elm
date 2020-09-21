@@ -1,6 +1,7 @@
 module KD.Tree1D exposing
     ( Tree1D(..)
     , delete
+    , find
     , insert
     , singleton
     , smallest
@@ -102,6 +103,24 @@ insert k v tree =
                     , value = value
                     , larger = insert k v larger
                     }
+
+
+find : comparable -> Tree1D comparable v -> Maybe ( comparable, v )
+find k tree =
+    case tree of
+        Empty ->
+            Nothing
+
+        Node { smaller, key, value, larger } ->
+            case compare k key of
+                LT ->
+                    find k smaller
+
+                GT ->
+                    find k larger
+
+                EQ ->
+                    Just ( key, value )
 
 
 
