@@ -7,30 +7,32 @@ module KD.Tree exposing
     )
 
 
-type Tree k
+type Tree k v
     = Empty
     | Node
-        { smaller : Tree k
+        { smaller : Tree k v
         , key : k
-        , larger : Tree k
+        , value : v
+        , larger : Tree k v
         }
 
 
-delete : comparable -> Tree comparable -> Tree comparable
+delete : comparable -> Tree comparable v -> Tree comparable v
 delete k tree =
     case tree of
         Empty ->
             tree
 
-        Node { key, smaller, larger } ->
+        Node { key, value, smaller, larger } ->
             case compare k key of
                 EQ ->
                     case smallest larger of
-                        Just a ->
+                        Just ( k1, v1 ) ->
                             Node
                                 { smaller = smaller
-                                , key = a
-                                , larger = delete a larger
+                                , key = k1
+                                , value = v1
+                                , larger = delete k1 larger
                                 }
 
                         Nothing ->
@@ -40,6 +42,7 @@ delete k tree =
                     Node
                         { smaller = delete k smaller
                         , key = key
+                        , value = value
                         , larger = larger
                         }
 
@@ -48,48 +51,56 @@ delete k tree =
                         { smaller = smaller
                         , key = key
                         , larger = delete k larger
+                        , value = value
                         }
 
 
-smallest : Tree k -> Maybe k
+smallest : Tree k v -> Maybe ( k, v )
 smallest tree =
     case tree of
         Empty ->
             Nothing
 
-        Node { smaller, key } ->
+        Node { smaller, key, value } ->
             case smaller of
                 Empty ->
-                    Just key
+                    Just ( key, value )
 
                 _ ->
                     smallest smaller
 
 
-singleton : k -> Tree k
-singleton k =
-    Node { smaller = Empty, key = k, larger = Empty }
+singleton : k -> v -> Tree k v
+singleton k v =
+    Node
+        { smaller = Empty
+        , key = k
+        , value = v
+        , larger = Empty
+        }
 
 
-insert : comparable -> Tree comparable -> Tree comparable
-insert k tree =
+insert : comparable -> v -> Tree comparable v -> Tree comparable v
+insert k v tree =
     case tree of
         Empty ->
-            singleton k
+            singleton k v
 
-        Node { smaller, key, larger } ->
+        Node { smaller, key, larger, value } ->
             if k < key then
                 Node
-                    { smaller = insert k smaller
+                    { smaller = insert k v smaller
                     , key = key
                     , larger = larger
+                    , value = value
                     }
 
             else
                 Node
                     { smaller = smaller
                     , key = key
-                    , larger = insert k larger
+                    , value = value
+                    , larger = insert k v larger
                     }
 
 
