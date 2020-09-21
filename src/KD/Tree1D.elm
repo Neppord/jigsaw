@@ -1,5 +1,5 @@
-module KD.Tree exposing
-    ( Tree(..)
+module KD.Tree1D exposing
+    ( Tree1D(..)
     , delete
     , insert
     , singleton
@@ -7,17 +7,17 @@ module KD.Tree exposing
     )
 
 
-type Tree k v
+type Tree1D k v
     = Empty
     | Node
-        { smaller : Tree k v
+        { smaller : Tree1D k v
         , key : k
         , value : v
-        , larger : Tree k v
+        , larger : Tree1D k v
         }
 
 
-delete : comparable -> Tree comparable v -> Tree comparable v
+delete : comparable -> Tree1D comparable v -> Tree1D comparable v
 delete k tree =
     case tree of
         Empty ->
@@ -55,7 +55,7 @@ delete k tree =
                         }
 
 
-smallest : Tree k v -> Maybe ( k, v )
+smallest : Tree1D k v -> Maybe ( k, v )
 smallest tree =
     case tree of
         Empty ->
@@ -70,7 +70,7 @@ smallest tree =
                     smallest smaller
 
 
-singleton : k -> v -> Tree k v
+singleton : k -> v -> Tree1D k v
 singleton k v =
     Node
         { smaller = Empty
@@ -80,7 +80,7 @@ singleton k v =
         }
 
 
-insert : comparable -> v -> Tree comparable v -> Tree comparable v
+insert : comparable -> v -> Tree1D comparable v -> Tree1D comparable v
 insert k v tree =
     case tree of
         Empty ->

@@ -1,7 +1,7 @@
 module KD.TestKD exposing (..)
 
 import Expect exposing (all, equal)
-import KD.Tree exposing (Tree(..), delete, insert, singleton, smallest)
+import KD.Tree1D exposing (Tree1D(..), delete, insert, singleton, smallest)
 import Test exposing (Test, describe, test)
 
 
