@@ -2,7 +2,16 @@ module KD.TestTree1D exposing (suite)
 
 import Expect exposing (all, equal)
 import KD.Match exposing (Match(..))
-import KD.Tree1D exposing (Tree1D(..), delete, find, insert, match, singleton, smallest)
+import KD.Tree1D
+    exposing
+        ( Tree1D(..)
+        , delete
+        , find
+        , insert
+        , match
+        , singleton
+        , smallest
+        )
 import Test exposing (Test, describe, test)
 
 
