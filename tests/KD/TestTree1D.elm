@@ -1,4 +1,4 @@
-module KD.TestKD exposing (..)
+module KD.TestTree1D exposing (..)
 
 import Expect exposing (all, equal)
 import KD.Match exposing (Match(..))
@@ -8,7 +8,7 @@ import Test exposing (Test, describe, test)
 
 suite : Test
 suite =
-    describe "Tree"
+    describe "Tree1D"
         [ test "singleton return a tree with only the value" <|
             \_ ->
                 singleton 1 ()
