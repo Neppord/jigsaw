@@ -1,4 +1,4 @@
-module KD.TestTree1D exposing (..)
+module KD.TestTree1D exposing (suite)
 
 import Expect exposing (all, equal)
 import KD.Match exposing (Match(..))
