@@ -3,9 +3,12 @@ module KD.Tree1D exposing
     , delete
     , find
     , insert
+    , match
     , singleton
     , smallest
     )
+
+import KD.Match as Match exposing (Match)
 
 
 type Tree1D k v
@@ -123,6 +126,28 @@ find k tree =
                     Just ( key, value )
 
 
+match : Match comparable -> Tree1D comparable v -> Tree1D comparable v
+match toMatch tree =
+    case tree of
+        Empty ->
+            Empty
+
+        Node data ->
+            case Match.compareWithMatch data.key toMatch of
+                EQ ->
+                    Node
+                        { data
+                            | larger = match toMatch data.larger
+                            , smaller = match toMatch data.smaller
+                        }
+
+                LT ->
+                    match toMatch data.larger
+
+                GT ->
+                    match toMatch data.smaller
+
+
 
 {-
    create from list
@@ -133,8 +158,6 @@ find k tree =
     * region
 
    find:
-    * key
-    * range
     * region (Pair k)
 
    chain queries by returning trees

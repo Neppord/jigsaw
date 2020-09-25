@@ -1,7 +1,8 @@
 module KD.TestKD exposing (..)
 
 import Expect exposing (all, equal)
-import KD.Tree1D exposing (Tree1D(..), delete, find, insert, singleton, smallest)
+import KD.Match exposing (Match(..))
+import KD.Tree1D exposing (Tree1D(..), delete, find, insert, match, singleton, smallest)
 import Test exposing (Test, describe, test)
 
 
@@ -194,5 +195,45 @@ suite =
                         |> insert 2 ()
                         |> find 2
                         |> equal (Just ( 2, () ))
+            ]
+        , describe "match"
+            [ test "it finds nothing in a empty tree" <|
+                \_ ->
+                    Empty
+                        |> match Anything
+                        |> equal Empty
+            , test "it finds everything in the tree if matching anything" <|
+                \_ ->
+                    singleton 1 ()
+                        |> match Anything
+                        |> equal (singleton 1 ())
+            , test "it finds only things in range" <|
+                \_ ->
+                    let
+                        tree =
+                            singleton 1 ()
+                                |> insert 2 ()
+                    in
+                    tree
+                        |> insert 3 ()
+                        |> match (WithinRange 1 2)
+                        |> equal tree
+            , test "it dont return values that dont match" <|
+                all
+                    [ \_ ->
+                        singleton 1 ()
+                            |> match (EqualTo 2)
+                            |> equal Empty
+                    , \_ ->
+                        singleton 1 ()
+                            |> insert 2 ()
+                            |> match (EqualTo 2)
+                            |> equal (singleton 2 ())
+                    , \_ ->
+                        singleton 2 ()
+                            |> insert 1 ()
+                            |> match (EqualTo 1)
+                            |> equal (singleton 1 ())
+                    ]
             ]
         ]
