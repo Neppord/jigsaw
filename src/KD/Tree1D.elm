@@ -155,10 +155,4 @@ match toMatch tree =
 
    delete:
     * range
-    * region
-
-   find:
-    * region (Pair k)
-
-   chain queries by returning trees
 -}
