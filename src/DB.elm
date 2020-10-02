@@ -1,7 +1,8 @@
 module DB exposing
     ( DB
     , boxSelect
-    , clickedPieceGroup
+    , clickedSelected
+    , clickedUnselectedPieceGroup
     , countDeleted
     , getPieces
     , getSelected
@@ -19,7 +20,6 @@ module DB exposing
     )
 
 import Drag
-import JigsawImage exposing (JigsawImage)
 import KD.Match exposing (Match(..))
 import KDDict exposing (KDDict, MatchKey)
 import PieceGroup exposing (PieceGroup)
@@ -33,7 +33,8 @@ type alias DbIndex =
 
 
 type alias DB =
-    { index : DbIndex
+    { unselected : DbIndex
+    , selected : DbIndex
     , visibleGroups : Set.Set Int
     }
 
@@ -44,12 +45,12 @@ type alias DbKey =
 
 size : DB -> Int
 size =
-    .index >> KDDict.size
+    .unselected >> KDDict.size
 
 
 height : DB -> Int
 height =
-    .index >> KDDict.height
+    .unselected >> KDDict.height
 
 
 optimalHeight : DB -> Int
@@ -129,7 +130,8 @@ toggleVisibilityGroup groupId db =
 
 makeDb : List PieceGroup -> DB
 makeDb pieceGroups =
-    { index = makeIndex pieceGroups
+    { unselected = makeIndex pieceGroups
+    , selected = KDDict.fromList []
     , visibleGroups = Set.fromList [ -1 ]
     }
 
@@ -141,41 +143,29 @@ makeIndex list =
 
 getSelected : DB -> List PieceGroup
 getSelected db =
-    db
-        |> all
-        |> List.filter .isSelected
+    db.selected
+        |> KDDict.toList
+        |> List.map Tuple.second
 
 
 getVisibleUnSelected : DB -> List PieceGroup
 getVisibleUnSelected db =
-    db
-        |> all
-        |> List.filter (not << .isSelected)
+    db.unselected
+        |> KDDict.toList
+        |> List.map Tuple.second
         |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
 
 
 modifySelected : (PieceGroup -> PieceGroup) -> DB -> DB
 modifySelected f db =
-    let
-        selected =
-            getSelected db
-
-        modified =
-            List.map f selected
-    in
     { db
-        | index =
-            db.index
-                |> KDDict.removeAll (List.map makeKey selected)
-                |> KDDict.insertAllBy makeKey modified
+        | selected =
+            db.selected
+                |> KDDict.toList
+                |> List.map Tuple.second
+                |> List.map f
+                |> makeIndex
     }
-
-
-all : DB -> List PieceGroup
-all db =
-    db.index
-        |> KDDict.toList
-        |> List.map Tuple.second
 
 
 insert : PieceGroup -> DbIndex -> DbIndex
@@ -193,11 +183,9 @@ snap radius db =
 
                 shouldBeMerged other =
                     Set.member other.visibilityGroup db.visibleGroups
-                        && ((other.id == pg.id)
-                                || (Set.intersect memberIds other.neighbours
-                                        |> Set.isEmpty
-                                        |> not
-                                   )
+                        && (Set.intersect memberIds other.neighbours
+                                |> Set.isEmpty
+                                |> not
                            )
 
                 dimensions =
@@ -212,34 +200,32 @@ snap radius db =
                     }
 
                 targets =
-                    db.index
+                    db.unselected
                         |> KDDict.findMatching
                             (matchWithin dimensions)
                         |> List.filter shouldBeMerged
 
                 merge list =
-                    case list of
-                        [] ->
-                            Nothing
+                    List.foldl PieceGroup.merge pg list
 
-                        head :: tail ->
-                            Just <| List.foldl PieceGroup.merge head tail
+                merged =
+                    merge targets
             in
-            case merge targets of
-                Nothing ->
-                    db
-
-                Just merged ->
-                    { db
-                        | index =
-                            db.index
-                                |> KDDict.removeAll (List.map makeKey targets)
-                                |> insert merged
-                    }
+            { db
+                | unselected =
+                    db.unselected
+                        |> KDDict.removeAll (List.map makeKey targets)
+                , selected = makeIndex [ merged ]
+            }
 
         _ ->
             if countDeleted db > size db then
-                { db | index = db |> all |> makeIndex }
+                { db
+                    | unselected =
+                        db.unselected
+                            |> KDDict.toList
+                            |> KDDict.fromList
+                }
 
             else
                 db
@@ -248,108 +234,123 @@ snap radius db =
 boxSelect : UI.SelectionMode -> Drag.Drag -> DB -> DB
 boxSelect mode drag db =
     let
-        targets =
-            db.index
+        targets index =
+            index
                 |> KDDict.findMatching (matchBox <| Drag.getDimensions drag)
                 |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
     in
-    { db
-        | index =
-            case mode of
-                UI.Add ->
-                    db.index
-                        |> KDDict.unsafeMap
-                            (\pg ->
-                                if List.member pg targets then
-                                    PieceGroup.select pg
+    case mode of
+        UI.Add ->
+            let
+                toMove =
+                    targets db.unselected
+            in
+            { db
+                | unselected =
+                    db.unselected
+                        |> (KDDict.removeAll << List.map makeKey) toMove
+                , selected =
+                    db.selected
+                        |> KDDict.insertAllBy makeKey toMove
+            }
 
-                                else
-                                    pg
-                            )
+        UI.Remove ->
+            let
+                toMove =
+                    targets db.selected
+            in
+            { db
+                | selected =
+                    db.selected
+                        |> (KDDict.removeAll << List.map makeKey) toMove
+                , unselected =
+                    db.unselected
+                        |> KDDict.insertAllBy makeKey toMove
+            }
 
-                UI.Remove ->
-                    db.index
-                        |> KDDict.unsafeMap
-                            (\pg ->
-                                if List.member pg targets then
-                                    PieceGroup.deselect pg
+        UI.Replace ->
+            let
+                all =
+                    db.unselected
+                        |> KDDict.insertAll (KDDict.toList db.selected)
 
-                                else
-                                    pg
-                            )
+                selected =
+                    all
+                        |> targets
 
-                UI.Replace ->
-                    db.index
-                        |> KDDict.unsafeMap
-                            (\pg ->
-                                if List.member pg targets then
-                                    PieceGroup.select pg
-
-                                else
-                                    PieceGroup.deselect pg
-                            )
-    }
+                unselected =
+                    all
+                        |> KDDict.removeAll
+                            (List.map makeKey selected)
+            in
+            { db
+                | unselected = unselected
+                , selected = makeIndex selected
+            }
 
 
-clickedPieceGroup : JigsawImage -> DB -> Point.Point -> Maybe PieceGroup
-clickedPieceGroup _ db_ point =
-    db_.index
+clickedUnselectedPieceGroup : DB -> Point.Point -> Maybe PieceGroup
+clickedUnselectedPieceGroup db point =
+    db.unselected
         |> KDDict.findMatching
             (matchPoint point)
-        |> List.filter (\pg -> Set.member pg.visibilityGroup db_.visibleGroups)
+        |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
         |> List.filter (PieceGroup.isPointInsidePieceGroup point)
         |> List.reverse
         |> List.head
 
 
+clickedSelected : DB -> Point.Point -> Bool
+clickedSelected db point =
+    db.selected
+        |> KDDict.findMatching
+            (matchPoint point)
+        |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
+        |> List.any (PieceGroup.isPointInsidePieceGroup point)
+
+
 select : UI.SelectionMode -> PieceGroup -> DB -> DB
 select mode pg db =
-    { db
-        | index =
-            case mode of
-                UI.Add ->
-                    db.index
-                        |> KDDict.unsafeMap
-                            (\other ->
-                                if other.id == pg.id then
-                                    PieceGroup.select other
+    case mode of
+        UI.Add ->
+            { db
+                | unselected =
+                    db.unselected
+                        |> KDDict.remove (makeKey pg)
+                , selected =
+                    db.selected
+                        |> KDDict.insert (makeKey pg) pg
+            }
 
-                                else
-                                    other
-                            )
+        UI.Remove ->
+            { db
+                | unselected =
+                    db.unselected
+                        |> KDDict.insert (makeKey pg) pg
+                , selected =
+                    db.selected
+                        |> KDDict.remove (makeKey pg)
+            }
 
-                UI.Replace ->
-                    db.index
-                        |> KDDict.unsafeMap
-                            (\other ->
-                                if other.id == pg.id then
-                                    PieceGroup.select other
-
-                                else
-                                    PieceGroup.deselect other
-                            )
-
-                UI.Remove ->
-                    db.index
-                        |> KDDict.unsafeMap
-                            (\other ->
-                                if other.id == pg.id then
-                                    PieceGroup.deselect other
-
-                                else
-                                    other
-                            )
-    }
+        UI.Replace ->
+            { db
+                | unselected =
+                    db.unselected
+                        |> KDDict.insertAll (KDDict.toList db.selected)
+                        |> KDDict.remove (makeKey pg)
+                , selected =
+                    makeIndex [ pg ]
+            }
 
 
 countDeleted : DB -> Int
 countDeleted =
-    .index >> KDDict.countDeleted
+    .unselected >> KDDict.countDeleted
 
 
 heightDifference : DB -> Int
 heightDifference =
-    .index >> KDDict.heightDifference
+    .unselected >> KDDict.heightDifference
 
 
 getPieces : DB -> List ( PieceGroup.ID, Point )
@@ -360,5 +361,7 @@ getPieces db =
             pg.members
                 |> List.map (\p -> ( p.id, Point.add p.offset pg.position ))
     in
-    all db
+    KDDict.toList db.selected
+        ++ KDDict.toList db.unselected
+        |> List.map Tuple.second
         |> List.concatMap pgToP

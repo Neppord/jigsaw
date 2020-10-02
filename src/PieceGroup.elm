@@ -4,14 +4,11 @@ module PieceGroup exposing
     , PieceGroup
     , createPieceGroup
     , createPieceGroups
-    , deselect
     , distance
     , genIds
-    , isPieceGroupInsideBox
     , isPointInsidePieceGroup
     , merge
     , move
-    , select
     )
 
 import JigsawImage exposing (JigsawImage)
@@ -37,7 +34,6 @@ type alias PieceGroup =
     , position : Point
     , minOffset : Point
     , maxOffset : Point
-    , isSelected : Bool
     , visibilityGroup : Int
     }
 
@@ -66,7 +62,6 @@ merge a b =
     { id = a.id
     , minOffset = minOffset
     , maxOffset = maxOffset
-    , isSelected = False
     , members = newMembers
     , neighbours = newNeighbours
     , visibilityGroup = a.visibilityGroup
@@ -84,16 +79,6 @@ move offset pg =
     { pg | position = Point.add offset pg.position }
 
 
-select : PieceGroup -> PieceGroup
-select x =
-    { x | isSelected = True }
-
-
-deselect : PieceGroup -> PieceGroup
-deselect x =
-    { x | isSelected = False }
-
-
 createPieceGroup : JigsawImage -> ID -> Point -> PieceGroup
 createPieceGroup image id pos =
     let
@@ -104,7 +89,6 @@ createPieceGroup image id pos =
             Point image.pieceWidth image.pieceHeight
     in
     { position = Point.sub pos offset
-    , isSelected = False
     , id = id
     , members = [ Piece id offset size ]
     , neighbours = neighbours id
@@ -112,28 +96,6 @@ createPieceGroup image id pos =
     , minOffset = offset
     , maxOffset = Point.add size offset
     }
-
-
-isPieceGroupInsideBox : Point -> Point -> PieceGroup -> Bool
-isPieceGroupInsideBox boxTL boxBR pieceGroup =
-    List.any
-        (isPieceInsideBox pieceGroup.position boxTL boxBR)
-        pieceGroup.members
-
-
-isPieceInsideBox : Point -> Point -> Point -> Piece -> Bool
-isPieceInsideBox pos boxTL boxBR piece =
-    let
-        pieceTL =
-            Point.add pos piece.offset
-
-        pieceBR =
-            Point.add pieceTL piece.size
-    in
-    (pieceTL.x <= boxBR.x)
-        && (pieceTL.y <= boxBR.y)
-        && (pieceBR.x >= boxTL.x)
-        && (pieceBR.y >= boxTL.y)
 
 
 isPointInsidePieceGroup : Point -> PieceGroup -> Bool

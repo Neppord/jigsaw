@@ -156,7 +156,6 @@ sendToVisibilityGroup x model =
                     (\pg ->
                         { pg
                             | visibilityGroup = x
-                            , isSelected = True
                         }
                     )
     }
@@ -165,7 +164,7 @@ sendToVisibilityGroup x model =
 updateMouseDown : Point -> Keyboard -> NewModel -> NewModel
 updateMouseDown coordinate keyboard model =
     let
-        { db, image } =
+        { db } =
             model
 
         mode =
@@ -178,21 +177,19 @@ updateMouseDown coordinate keyboard model =
             else
                 UI.Replace
     in
-    case DB.clickedPieceGroup image db coordinate of
-        Nothing ->
-            { model | ui = UI.Boxing mode (Drag.from coordinate) }
+    if DB.clickedSelected db coordinate then
+        { model
+            | ui = UI.Moving UI.Snap (Drag.from coordinate)
+        }
 
-        Just pg ->
-            let
-                ui =
-                    UI.Moving UI.Snap (Drag.from coordinate)
-            in
-            if pg.isSelected && mode /= UI.Remove then
-                { model | ui = ui }
+    else
+        case DB.clickedUnselectedPieceGroup db coordinate of
+            Nothing ->
+                { model | ui = UI.Boxing mode (Drag.from coordinate) }
 
-            else
+            Just pg ->
                 { model
-                    | ui = ui
+                    | ui = UI.Moving UI.Snap (Drag.from coordinate)
                     , db = model.db |> DB.select mode pg
                 }
 
