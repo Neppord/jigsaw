@@ -8885,9 +8885,142 @@ var $author$project$DB$matchBox = function (_v0) {
 			$author$project$KDDict$coordinateKey(
 				_Utils_Tuple2($author$project$KD$Match$Anything, $author$project$KD$Match$Anything))));
 };
+var $elm$core$List$member = F2(
+	function (x, xs) {
+		return A2(
+			$elm$core$List$any,
+			function (a) {
+				return _Utils_eq(a, x);
+			},
+			xs);
+	});
+var $elm$core$Basics$neq = _Utils_notEqual;
+var $author$project$KDDict$partition = F3(
+	function (compareFunction, pivot, items) {
+		if (!items.b) {
+			return _Utils_Tuple3(_List_Nil, _List_Nil, _List_Nil);
+		} else {
+			var head = items.a;
+			var tail = items.b;
+			var _v1 = A3($author$project$KDDict$partition, compareFunction, pivot, tail);
+			var less = _v1.a;
+			var equal = _v1.b;
+			var greater = _v1.c;
+			var _v2 = A2(compareFunction, head, pivot);
+			switch (_v2) {
+				case 0:
+					return _Utils_Tuple3(
+						A2($elm$core$List$cons, head, less),
+						equal,
+						greater);
+				case 1:
+					return _Utils_Tuple3(
+						less,
+						A2($elm$core$List$cons, head, equal),
+						greater);
+				default:
+					return _Utils_Tuple3(
+						less,
+						equal,
+						A2($elm$core$List$cons, head, greater));
+			}
+		}
+	});
 var $author$project$KDDict$removeAll = F2(
-	function (keys, db) {
-		return A3($elm$core$List$foldl, $author$project$KDDict$remove, db, keys);
+	function (keys, dict) {
+		switch (dict.$) {
+			case 0:
+				return $author$project$KDDict$Empty;
+			case 2:
+				var level = dict.a;
+				var smaller = dict.b;
+				var larger = dict.c;
+				return A3(
+					$author$project$KDDict$Deleted,
+					level,
+					A2($author$project$KDDict$removeAll, keys, smaller),
+					A2($author$project$KDDict$removeAll, keys, larger));
+			default:
+				var level = dict.a;
+				var s = dict.b;
+				var _v1 = dict.c;
+				var k = _v1.a;
+				var v = _v1.b;
+				var l = dict.d;
+				var _v2 = A3(
+					$author$project$KDDict$partition,
+					$author$project$KDDict$compareKey(level),
+					k,
+					keys);
+				_v2$3:
+				while (true) {
+					if (!_v2.b.b) {
+						if (!_v2.a.b) {
+							if (!_v2.c.b) {
+								return A4(
+									$author$project$KDDict$Node,
+									level,
+									s,
+									_Utils_Tuple2(k, v),
+									l);
+							} else {
+								var lKeys = _v2.c;
+								return A4(
+									$author$project$KDDict$Node,
+									level,
+									s,
+									_Utils_Tuple2(k, v),
+									A2($author$project$KDDict$removeAll, lKeys, l));
+							}
+						} else {
+							if (!_v2.c.b) {
+								var sKeys = _v2.a;
+								return A4(
+									$author$project$KDDict$Node,
+									level,
+									A2($author$project$KDDict$removeAll, sKeys, s),
+									_Utils_Tuple2(k, v),
+									l);
+							} else {
+								break _v2$3;
+							}
+						}
+					} else {
+						break _v2$3;
+					}
+				}
+				var sKeys = _v2.a;
+				var eqKeys = _v2.b;
+				var lKeys = _v2.c;
+				if (A2($elm$core$List$member, k, eqKeys)) {
+					var eqRM = A2(
+						$elm$core$List$filter,
+						function (eqK) {
+							return !_Utils_eq(eqK, k);
+						},
+						eqKeys);
+					var lRM = _Utils_ap(eqRM, lKeys);
+					var sRM = _Utils_ap(eqRM, sKeys);
+					return A3(
+						$author$project$KDDict$Deleted,
+						level,
+						A2($author$project$KDDict$removeAll, sRM, s),
+						A2($author$project$KDDict$removeAll, lRM, l));
+				} else {
+					return A4(
+						$author$project$KDDict$Node,
+						level,
+						A2(
+							$author$project$KDDict$removeAll,
+							_Utils_ap(eqKeys, sKeys),
+							s),
+						_Utils_Tuple2(k, v),
+						A2(
+							$author$project$KDDict$removeAll,
+							_Utils_ap(eqKeys, lKeys),
+							l));
+				}
+		}
 	});
 var $author$project$DB$boxSelect = F3(
 	function (mode, drag, db) {

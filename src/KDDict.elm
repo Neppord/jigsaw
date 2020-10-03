@@ -287,9 +287,67 @@ remove q dict =
             Deleted i (remove q s) (remove q l)
 
 
+{-| partitions with the compare function (smaller, equal, larger) then pivot
+-}
+partition : (a -> a -> Order) -> a -> List a -> ( List a, List a, List a )
+partition compareFunction pivot items =
+    case items of
+        [] ->
+            ( [], [], [] )
+
+        head :: tail ->
+            let
+                ( less, equal, greater ) =
+                    partition compareFunction pivot tail
+            in
+            case compareFunction head pivot of
+                LT ->
+                    ( head :: less, equal, greater )
+
+                EQ ->
+                    ( less, head :: equal, greater )
+
+                GT ->
+                    ( less, equal, head :: greater )
+
+
 removeAll : List (Key comparable) -> KDDict comparable v -> KDDict comparable v
-removeAll keys db =
-    List.foldl remove db keys
+removeAll keys dict =
+    case dict of
+        Empty ->
+            Empty
+
+        Deleted level smaller larger ->
+            Deleted level (removeAll keys smaller) (removeAll keys larger)
+
+        Node level s ( k, v ) l ->
+            case partition (compareKey level) k keys of
+                ( [], [], [] ) ->
+                    Node level s ( k, v ) l
+
+                ( [], [], lKeys ) ->
+                    Node level s ( k, v ) (removeAll lKeys l)
+
+                ( sKeys, [], [] ) ->
+                    Node level (removeAll sKeys s) ( k, v ) l
+
+                ( sKeys, eqKeys, lKeys ) ->
+                    if List.member k eqKeys then
+                        let
+                            eqRM =
+                                eqKeys
+                                    |> List.filter (\eqK -> eqK /= k)
+
+                            sRM =
+                                eqRM ++ sKeys
+
+                            lRM =
+                                eqRM ++ lKeys
+                        in
+                        Deleted level (removeAll sRM s) (removeAll lRM l)
+
+                    else
+                        Node level (removeAll (eqKeys ++ sKeys) s) ( k, v ) (removeAll (eqKeys ++ lKeys) l)
 
 
 insert : Key comparable -> v -> KDDict comparable v -> KDDict comparable v
