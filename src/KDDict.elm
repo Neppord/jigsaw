@@ -278,7 +278,7 @@ remove q dict =
                         Node i (remove q s) ( key_, v ) l
 
                     GT ->
-                        Node i (remove q s) ( key_, v ) (remove q l)
+                        Node i s ( key_, v ) (remove q l)
 
                     EQ ->
                         Node i (remove q s) ( key_, v ) (remove q l)
