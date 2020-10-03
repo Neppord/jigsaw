@@ -6359,7 +6359,6 @@ var $author$project$PieceGroup$createPieceGroup = F3(
 		var size = A2($author$project$Point$Point, image.aQ, image.aP);
 		var offset = A2($author$project$JigsawImage$pieceIdToOffset, image, id);
 		return {
-			aI: id,
 			bs: A2($author$project$Point$add, size, offset),
 			aL: _List_fromArray(
 				[
@@ -9224,7 +9223,7 @@ var $author$project$PieceGroup$merge = F2(
 			$author$project$Point$Point,
 			A2($elm$core$Basics$max, a.bs.u, b.bs.u),
 			A2($elm$core$Basics$max, a.bs.v, b.bs.v));
-		return {aI: a.aI, bs: maxOffset, aL: newMembers, bt: minOffset, bx: newNeighbours, ah: a.ah, T: a.T};
+		return {bs: maxOffset, aL: newMembers, bt: minOffset, bx: newNeighbours, ah: a.ah, T: a.T};
 	});
 var $author$project$KDDict$size = function (dict) {
 	switch (dict.$) {
