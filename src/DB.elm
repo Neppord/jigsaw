@@ -304,40 +304,6 @@ selectAt point mode db =
                 db |> select mode pg
 
 
-clickedUnselectedPieceGroup : Point.Point -> DB -> Maybe PieceGroup
-clickedUnselectedPieceGroup point db =
-    db.unselected
-        |> KDDict.findMatching
-            (matchPoint point)
-        |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
-        |> List.filter (PieceGroup.isPointInsidePieceGroup point)
-        |> List.reverse
-        |> List.head
-
-
-clickedUnselected : Point.Point -> DB -> Bool
-clickedUnselected point db =
-    db.unselected
-        |> KDDict.findMatching
-            (matchPoint point)
-        |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
-        |> List.any (PieceGroup.isPointInsidePieceGroup point)
-
-
-clickedAny : Point.Point -> DB -> Bool
-clickedAny point db =
-    clickedSelected point db || clickedUnselected point db
-
-
-clickedSelected : Point.Point -> DB -> Bool
-clickedSelected point db =
-    db.selected
-        |> KDDict.findMatching
-            (matchPoint point)
-        |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
-        |> List.any (PieceGroup.isPointInsidePieceGroup point)
-
-
 select : UI.SelectionMode -> PieceGroup -> DB -> DB
 select mode pg db =
     case mode of
@@ -370,6 +336,40 @@ select mode pg db =
                 , selected =
                     makeIndex [ pg ]
             }
+
+
+clickedUnselectedPieceGroup : Point.Point -> DB -> Maybe PieceGroup
+clickedUnselectedPieceGroup point db =
+    db.unselected
+        |> KDDict.findMatching
+            (matchPoint point)
+        |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
+        |> List.filter (PieceGroup.isPointInsidePieceGroup point)
+        |> List.reverse
+        |> List.head
+
+
+clickedUnselected : Point.Point -> DB -> Bool
+clickedUnselected point db =
+    db.unselected
+        |> KDDict.findMatching
+            (matchPoint point)
+        |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
+        |> List.any (PieceGroup.isPointInsidePieceGroup point)
+
+
+clickedAny : Point.Point -> DB -> Bool
+clickedAny point db =
+    clickedSelected point db || clickedUnselected point db
+
+
+clickedSelected : Point.Point -> DB -> Bool
+clickedSelected point db =
+    db.selected
+        |> KDDict.findMatching
+            (matchPoint point)
+        |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
+        |> List.any (PieceGroup.isPointInsidePieceGroup point)
 
 
 countDeleted : DB -> Int
