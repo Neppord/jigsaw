@@ -3,7 +3,6 @@ module DB exposing
     , boxSelect
     , clickedAny
     , clickedSelected
-    , clickedUnselectedPieceGroup
     , countDeleted
     , getPieces
     , getSelected
