@@ -399,13 +399,7 @@ getPieces db =
 
 sendSelectedToVisibilityGroup : Int -> DB -> DB
 sendSelectedToVisibilityGroup x db =
-    db
-        |> modifySelected
-            (\pg ->
-                { pg
-                    | visibilityGroup = x
-                }
-            )
+    modifySelected (\pg -> { pg | visibilityGroup = x }) db
 
 
 move : Int -> Drag.Drag -> DB -> DB
