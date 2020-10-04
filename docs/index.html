@@ -9317,6 +9317,17 @@ var $author$project$DB$snap = F2(
 				}) : db;
 		}
 	});
+var $author$project$DB$move = F3(
+	function (radius, drag, db) {
+		return A2(
+			$author$project$DB$snap,
+			radius,
+			A2(
+				$author$project$DB$modifySelected,
+				$author$project$PieceGroup$move(
+					$author$project$Drag$distance(drag)),
+				db));
+	});
 var $author$project$Main$updateMouseUp = function (model) {
 	var _v0 = model.C;
 	switch (_v0.$) {
@@ -9331,13 +9342,10 @@ var $author$project$Main$updateMouseUp = function (model) {
 				});
 		case 0:
 			var drag = _v0.b;
-			var move = $author$project$PieceGroup$move(
-				$author$project$Drag$distance(drag));
-			var updatedDb = A2($author$project$DB$modifySelected, move, model.p);
 			return _Utils_update(
 				model,
 				{
-					p: A2($author$project$DB$snap, (model.V.aQ / 2) | 0, updatedDb),
+					p: A3($author$project$DB$move, (model.V.aQ / 2) | 0, drag, model.p),
 					C: $author$project$UI$WaitingForInput
 				});
 		default:

@@ -12,6 +12,7 @@ module DB exposing
     , heightDifference
     , makeDb
     , modifySelected
+    , move
     , optimalHeight
     , select
     , selectAt
@@ -406,3 +407,10 @@ sendSelectedToVisibilityGroup x db =
                     | visibilityGroup = x
                 }
             )
+
+
+move : Int -> Drag.Drag -> DB -> DB
+move radius drag db =
+    db
+        |> modifySelected (PieceGroup.move (Drag.distance drag))
+        |> snap radius

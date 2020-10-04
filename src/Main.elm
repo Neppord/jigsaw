@@ -14,7 +14,6 @@ import Model
         , NewModel
         , generateModel
         )
-import PieceGroup
 import Point exposing (Point)
 import Save
 import Seeded exposing (Seeded(..))
@@ -188,17 +187,9 @@ updateMouseUp model =
             }
 
         UI.Moving _ drag ->
-            let
-                move =
-                    PieceGroup.move (Drag.distance drag)
-
-                updatedDb =
-                    DB.modifySelected move model.db
-            in
             { model
                 | ui = UI.WaitingForInput
-                , db =
-                    DB.snap (model.image.pieceWidth // 2) updatedDb
+                , db = DB.move (model.image.pieceWidth // 2) drag model.db
             }
 
         _ ->
