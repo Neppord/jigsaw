@@ -13,7 +13,6 @@ module DB exposing
     , modifySelected
     , move
     , optimalHeight
-    , select
     , selectAt
     , sendSelectedToVisibilityGroup
     , size
