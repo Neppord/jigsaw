@@ -1,6 +1,7 @@
 module DB exposing
     ( DB
     , boxSelect
+    , clickedAny
     , clickedSelected
     , clickedUnselectedPieceGroup
     , countDeleted
@@ -13,6 +14,7 @@ module DB exposing
     , modifySelected
     , optimalHeight
     , select
+    , selectAt
     , sendSelectedToVisibilityGroup
     , size
     , snap
@@ -289,8 +291,22 @@ boxSelect mode drag db =
             }
 
 
-clickedUnselectedPieceGroup : DB -> Point.Point -> Maybe PieceGroup
-clickedUnselectedPieceGroup db point =
+selectAt : Point.Point -> UI.SelectionMode -> DB -> DB
+selectAt point mode db =
+    if clickedSelected point db then
+        db
+
+    else
+        case clickedUnselectedPieceGroup point db of
+            Nothing ->
+                db
+
+            Just pg ->
+                db |> select mode pg
+
+
+clickedUnselectedPieceGroup : Point.Point -> DB -> Maybe PieceGroup
+clickedUnselectedPieceGroup point db =
     db.unselected
         |> KDDict.findMatching
             (matchPoint point)
@@ -300,8 +316,22 @@ clickedUnselectedPieceGroup db point =
         |> List.head
 
 
-clickedSelected : DB -> Point.Point -> Bool
-clickedSelected db point =
+clickedUnselected : Point.Point -> DB -> Bool
+clickedUnselected point db =
+    db.unselected
+        |> KDDict.findMatching
+            (matchPoint point)
+        |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
+        |> List.any (PieceGroup.isPointInsidePieceGroup point)
+
+
+clickedAny : Point.Point -> DB -> Bool
+clickedAny point db =
+    clickedSelected point db || clickedUnselected point db
+
+
+clickedSelected : Point.Point -> DB -> Bool
+clickedSelected point db =
     db.selected
         |> KDDict.findMatching
             (matchPoint point)

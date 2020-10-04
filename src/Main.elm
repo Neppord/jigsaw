@@ -156,6 +156,7 @@ updateMouseDown coordinate keyboard model =
         { db } =
             model
 
+        mode : UI.SelectionMode
         mode =
             if keyboard.shift then
                 UI.Add
@@ -165,31 +166,16 @@ updateMouseDown coordinate keyboard model =
 
             else
                 UI.Replace
-    in
-    { model
-        | ui =
-            if DB.clickedSelected db coordinate then
+
+        ui : UI.UI
+        ui =
+            if DB.clickedAny coordinate db then
                 UI.Moving UI.Snap (Drag.from coordinate)
 
             else
-                case DB.clickedUnselectedPieceGroup db coordinate of
-                    Nothing ->
-                        UI.Boxing mode (Drag.from coordinate)
-
-                    Just _ ->
-                        UI.Moving UI.Snap (Drag.from coordinate)
-        , db =
-            if DB.clickedSelected db coordinate then
-                model.db
-
-            else
-                case DB.clickedUnselectedPieceGroup db coordinate of
-                    Nothing ->
-                        model.db
-
-                    Just pg ->
-                        model.db |> DB.select mode pg
-    }
+                UI.Boxing mode (Drag.from coordinate)
+    in
+    { model | ui = ui, db = DB.selectAt coordinate mode db }
 
 
 updateMouseUp : NewModel -> NewModel
