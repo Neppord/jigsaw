@@ -142,9 +142,7 @@ update maybeMsg model =
 
 toggleVisibilityGroup : Int -> NewModel -> NewModel
 toggleVisibilityGroup x model =
-    { model
-        | db = DB.toggleVisibilityGroup x model.db
-    }
+    { model | db = DB.toggleVisibilityGroup x model.db }
 
 
 sendToVisibilityGroup : Int -> NewModel -> NewModel
