@@ -10,7 +10,6 @@ module DB exposing
     , height
     , heightDifference
     , makeDb
-    , makeIndex
     , modifySelected
     , optimalHeight
     , select
