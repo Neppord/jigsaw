@@ -149,16 +149,7 @@ toggleVisibilityGroup x model =
 
 sendToVisibilityGroup : Int -> NewModel -> NewModel
 sendToVisibilityGroup x model =
-    { model
-        | db =
-            model.db
-                |> DB.modifySelected
-                    (\pg ->
-                        { pg
-                            | visibilityGroup = x
-                        }
-                    )
-    }
+    { model | db = DB.sendSelectedToVisibilityGroup x model.db }
 
 
 updateMouseDown : Point -> Keyboard -> NewModel -> NewModel

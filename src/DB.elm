@@ -13,6 +13,7 @@ module DB exposing
     , modifySelected
     , optimalHeight
     , select
+    , sendSelectedToVisibilityGroup
     , size
     , snap
     , toggleVisibilityGroup
@@ -364,3 +365,14 @@ getPieces db =
         ++ KDDict.toList db.unselected
         |> List.map Tuple.second
         |> List.concatMap pgToP
+
+
+sendSelectedToVisibilityGroup : Int -> DB -> DB
+sendSelectedToVisibilityGroup x db =
+    db
+        |> modifySelected
+            (\pg ->
+                { pg
+                    | visibilityGroup = x
+                }
+            )
