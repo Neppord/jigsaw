@@ -56,7 +56,7 @@ init () =
             height // ypieces
 
         image =
-            { path = "fantasy-2543658-4k.jpg"
+            { path = "ship-1366926_crop_4k.png"
             , width = width
             , height = height
             , xpieces = xpieces
