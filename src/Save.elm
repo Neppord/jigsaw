@@ -8,7 +8,7 @@ module Save exposing
 
 import Base64
 import Bytes exposing (Endianness(..))
-import Bytes.Decode exposing (fail)
+import Bytes.Decode
 import Bytes.Encode
 import DB
 import Model exposing (NewModel)
