@@ -8,7 +8,7 @@ module Save exposing
 
 import Base64
 import Bytes exposing (Endianness(..))
-import Bytes.Decode
+import Bytes.Decode exposing (fail)
 import Bytes.Encode
 import DB
 import Model exposing (NewModel)
@@ -54,8 +54,14 @@ unpack =
     Tuple.second << List.foldl do ( Nothing, [] )
 
 
-byteDecodeList : Bytes.Decode.Decoder a -> Bytes.Decode.Decoder (List a)
-byteDecodeList a =
+byteDecodeListAndLength : Bytes.Decode.Decoder Int -> Bytes.Decode.Decoder a -> Bytes.Decode.Decoder (List a)
+byteDecodeListAndLength length a =
+    length
+        |> Bytes.Decode.andThen (\len -> byteDecodeList len a)
+
+
+byteDecodeList : Int -> Bytes.Decode.Decoder a -> Bytes.Decode.Decoder (List a)
+byteDecodeList len a =
     let
         listStep :
             Bytes.Decode.Decoder a
@@ -68,21 +74,39 @@ byteDecodeList a =
             else
                 Bytes.Decode.map (\x -> Bytes.Decode.Loop ( n - 1, x :: xs )) decoder
     in
-    Bytes.Decode.unsignedInt16 BE
-        |> Bytes.Decode.andThen (\len -> Bytes.Decode.loop ( len, [] ) (listStep a))
+    Bytes.Decode.loop ( len, [] ) (listStep a)
 
 
 byteDecode : Bytes.Decode.Decoder Save
 byteDecode =
+    let
+        decodeVersion version =
+            case version of
+                1 ->
+                    Bytes.Decode.unsignedInt8
+                        |> byteDecodeListAndLength (Bytes.Decode.unsignedInt16 BE)
+                        |> Bytes.Decode.map (List.map ((*) 32))
+                        |> Bytes.Decode.map unpack
+                        |> byteDecodeListAndLength (Bytes.Decode.unsignedInt16 BE)
+
+                length ->
+                    Bytes.Decode.unsignedInt16 BE
+                        |> byteDecodeListAndLength (Bytes.Decode.unsignedInt16 BE)
+                        |> Bytes.Decode.map unpack
+                        |> byteDecodeListAndLength (Bytes.Decode.succeed length)
+    in
     Bytes.Decode.unsignedInt16 BE
-        |> byteDecodeList
-        |> Bytes.Decode.map unpack
-        |> byteDecodeList
+        |> Bytes.Decode.andThen decodeVersion
 
 
 int16 : Int -> Bytes.Encode.Encoder
 int16 =
     Bytes.Encode.unsignedInt16 BE
+
+
+int8 : Int -> Bytes.Encode.Encoder
+int8 =
+    Bytes.Encode.unsignedInt8
 
 
 byteEncodeList : List Bytes.Encode.Encoder -> Bytes.Encode.Encoder
@@ -95,11 +119,21 @@ byteEncodeList list =
 
 byteEncoder : Save -> Bytes.Encode.Encoder
 byteEncoder save_ =
+    let
+        version =
+            1
+    in
     save_
         |> List.map pack
-        |> (List.map <| List.map int16)
+        |> (List.map <| List.map (int8 << (\x -> x // 32)))
         |> List.map byteEncodeList
         |> byteEncodeList
+        |> (\data ->
+                Bytes.Encode.sequence
+                    [ int16 version
+                    , data
+                    ]
+           )
 
 
 load : Save -> Seeded NewModel

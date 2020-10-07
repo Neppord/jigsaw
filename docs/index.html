@@ -5362,12 +5362,6 @@ var $elm$core$Maybe$andThen = F2(
 		}
 	});
 var $elm$bytes$Bytes$BE = 1;
-var $elm$bytes$Bytes$Decode$Done = function (a) {
-	return {$: 1, a: a};
-};
-var $elm$bytes$Bytes$Decode$Loop = function (a) {
-	return {$: 0, a: a};
-};
 var $elm$bytes$Bytes$Decode$Decoder = $elm$core$Basics$identity;
 var $elm$bytes$Bytes$Decode$andThen = F2(
 	function (callback, _v0) {
@@ -5382,6 +5376,12 @@ var $elm$bytes$Bytes$Decode$andThen = F2(
 				return A2(decodeB, bites, newOffset);
 			});
 	});
+var $elm$bytes$Bytes$Decode$Done = function (a) {
+	return {$: 1, a: a};
+};
+var $elm$bytes$Bytes$Decode$Loop = function (a) {
+	return {$: 0, a: a};
+};
 var $elm$bytes$Bytes$Decode$loopHelp = F4(
 	function (state, callback, bites, offset) {
 		loopHelp:
@@ -5431,6 +5431,78 @@ var $elm$bytes$Bytes$Decode$succeed = function (a) {
 			return _Utils_Tuple2(offset, a);
 		});
 };
+var $author$project$Save$byteDecodeList = F2(
+	function (len, a) {
+		var listStep = F2(
+			function (decoder, _v0) {
+				var n = _v0.a;
+				var xs = _v0.b;
+				return (n <= 0) ? $elm$bytes$Bytes$Decode$succeed(
+					$elm$bytes$Bytes$Decode$Done(
+						$elm$core$List$reverse(xs))) : A2(
+					$elm$bytes$Bytes$Decode$map,
+					function (x) {
+						return $elm$bytes$Bytes$Decode$Loop(
+							_Utils_Tuple2(
+								n - 1,
+								A2($elm$core$List$cons, x, xs)));
+					},
+					decoder);
+			});
+		return A2(
+			$elm$bytes$Bytes$Decode$loop,
+			_Utils_Tuple2(len, _List_Nil),
+			listStep(a));
+	});
+var $author$project$Save$byteDecodeListAndLength = F2(
+	function (length, a) {
+		return A2(
+			$elm$bytes$Bytes$Decode$andThen,
+			function (len) {
+				return A2($author$project$Save$byteDecodeList, len, a);
+			},
+			length);
+	});
+var $author$project$Point$Point = F2(
+	function (x, y) {
+		return {t: x, u: y};
+	});
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
+var $author$project$Save$unpack = function () {
+	var _do = F2(
+		function (a, _v1) {
+			var m = _v1.a;
+			var l = _v1.b;
+			if (m.$ === 1) {
+				return _Utils_Tuple2(
+					$elm$core$Maybe$Just(a),
+					l);
+			} else {
+				var b = m.a;
+				return _Utils_Tuple2(
+					$elm$core$Maybe$Nothing,
+					A2(
+						$elm$core$List$cons,
+						A2($author$project$Point$Point, b, a),
+						l));
+			}
+		});
+	return A2(
+		$elm$core$Basics$composeL,
+		$elm$core$Tuple$second,
+		A2(
+			$elm$core$List$foldl,
+			_do,
+			_Utils_Tuple2($elm$core$Maybe$Nothing, _List_Nil)));
+}();
 var $elm$bytes$Bytes$Encode$getWidth = function (builder) {
 	switch (builder.$) {
 		case 0:
@@ -5527,79 +5599,43 @@ var $elm$bytes$Bytes$Encode$writeSequence = F3(
 var $elm$bytes$Bytes$Decode$unsignedInt16 = function (endianness) {
 	return _Bytes_read_u16(!endianness);
 };
-var $author$project$Save$byteDecodeList = function (a) {
-	var listStep = F2(
-		function (decoder, _v0) {
-			var n = _v0.a;
-			var xs = _v0.b;
-			return (n <= 0) ? $elm$bytes$Bytes$Decode$succeed(
-				$elm$bytes$Bytes$Decode$Done(
-					$elm$core$List$reverse(xs))) : A2(
-				$elm$bytes$Bytes$Decode$map,
-				function (x) {
-					return $elm$bytes$Bytes$Decode$Loop(
-						_Utils_Tuple2(
-							n - 1,
-							A2($elm$core$List$cons, x, xs)));
-				},
-				decoder);
-		});
+var $elm$bytes$Bytes$Decode$unsignedInt8 = _Bytes_read_u8;
+var $author$project$Save$byteDecode = function () {
+	var decodeVersion = function (version) {
+		if (version === 1) {
+			return A2(
+				$author$project$Save$byteDecodeListAndLength,
+				$elm$bytes$Bytes$Decode$unsignedInt16(1),
+				A2(
+					$elm$bytes$Bytes$Decode$map,
+					$author$project$Save$unpack,
+					A2(
+						$elm$bytes$Bytes$Decode$map,
+						$elm$core$List$map(
+							$elm$core$Basics$mul(32)),
+						A2(
+							$author$project$Save$byteDecodeListAndLength,
+							$elm$bytes$Bytes$Decode$unsignedInt16(1),
+							$elm$bytes$Bytes$Decode$unsignedInt8))));
+		} else {
+			var length = version;
+			return A2(
+				$author$project$Save$byteDecodeListAndLength,
+				$elm$bytes$Bytes$Decode$succeed(length),
+				A2(
+					$elm$bytes$Bytes$Decode$map,
+					$author$project$Save$unpack,
+					A2(
+						$author$project$Save$byteDecodeListAndLength,
+						$elm$bytes$Bytes$Decode$unsignedInt16(1),
+						$elm$bytes$Bytes$Decode$unsignedInt16(1))));
+		}
+	};
 	return A2(
 		$elm$bytes$Bytes$Decode$andThen,
-		function (len) {
-			return A2(
-				$elm$bytes$Bytes$Decode$loop,
-				_Utils_Tuple2(len, _List_Nil),
-				listStep(a));
-		},
+		decodeVersion,
 		$elm$bytes$Bytes$Decode$unsignedInt16(1));
-};
-var $author$project$Point$Point = F2(
-	function (x, y) {
-		return {t: x, u: y};
-	});
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
-var $elm$core$Tuple$second = function (_v0) {
-	var y = _v0.b;
-	return y;
-};
-var $author$project$Save$unpack = function () {
-	var _do = F2(
-		function (a, _v1) {
-			var m = _v1.a;
-			var l = _v1.b;
-			if (m.$ === 1) {
-				return _Utils_Tuple2(
-					$elm$core$Maybe$Just(a),
-					l);
-			} else {
-				var b = m.a;
-				return _Utils_Tuple2(
-					$elm$core$Maybe$Nothing,
-					A2(
-						$elm$core$List$cons,
-						A2($author$project$Point$Point, b, a),
-						l));
-			}
-		});
-	return A2(
-		$elm$core$Basics$composeL,
-		$elm$core$Tuple$second,
-		A2(
-			$elm$core$List$foldl,
-			_do,
-			_Utils_Tuple2($elm$core$Maybe$Nothing, _List_Nil)));
 }();
-var $author$project$Save$byteDecode = $author$project$Save$byteDecodeList(
-	A2(
-		$elm$bytes$Bytes$Decode$map,
-		$author$project$Save$unpack,
-		$author$project$Save$byteDecodeList(
-			$elm$bytes$Bytes$Decode$unsignedInt16(1))));
 var $elm$bytes$Bytes$Decode$decode = F2(
 	function (_v0, bs) {
 		var decoder = _v0;
@@ -7671,21 +7707,37 @@ var $author$project$Save$byteEncodeList = function (list) {
 				$elm$bytes$Bytes$Encode$sequence(list)
 			]));
 };
+var $author$project$Save$int8 = $elm$bytes$Bytes$Encode$unsignedInt8;
 var $author$project$Save$pack = $elm$core$List$concatMap(
 	function (p) {
 		return _List_fromArray(
 			[p.t, p.u]);
 	});
 var $author$project$Save$byteEncoder = function (save_) {
-	return $author$project$Save$byteEncodeList(
-		A2(
-			$elm$core$List$map,
-			$author$project$Save$byteEncodeList,
-			A3(
-				$elm$core$Basics$apL,
+	var version = 1;
+	return function (data) {
+		return $elm$bytes$Bytes$Encode$sequence(
+			_List_fromArray(
+				[
+					$author$project$Save$int16(version),
+					data
+				]));
+	}(
+		$author$project$Save$byteEncodeList(
+			A2(
 				$elm$core$List$map,
-				$elm$core$List$map($author$project$Save$int16),
-				A2($elm$core$List$map, $author$project$Save$pack, save_))));
+				$author$project$Save$byteEncodeList,
+				A3(
+					$elm$core$Basics$apL,
+					$elm$core$List$map,
+					$elm$core$List$map(
+						A2(
+							$elm$core$Basics$composeL,
+							$author$project$Save$int8,
+							function (x) {
+								return (x / 32) | 0;
+							})),
+					A2($elm$core$List$map, $author$project$Save$pack, save_)))));
 };
 var $elm$core$String$cons = _String_cons;
 var $elm$core$String$fromChar = function (_char) {
@@ -7887,7 +7939,6 @@ var $elm$bytes$Bytes$Decode$map3 = F4(
 					A3(func, a, b, c));
 			});
 	});
-var $elm$bytes$Bytes$Decode$unsignedInt8 = _Bytes_read_u8;
 var $danfishgold$base64_bytes$Decode$loopHelp = function (_v0) {
 	var remaining = _v0.Y;
 	var string = _v0._;
