@@ -11,8 +11,8 @@ import Bytes exposing (Endianness(..))
 import Bytes.Decode
 import Bytes.Encode
 import DB
+import Group
 import Model exposing (NewModel)
-import PieceGroup
 import Point exposing (Point)
 import Seeded exposing (Seeded)
 
@@ -146,7 +146,7 @@ load s =
             (Seeded.unwrap newModel).image
 
         createPG ( position, id ) =
-            PieceGroup.createGroup image id position
+            Group.createGroup image id position
 
         db =
             s
@@ -172,7 +172,7 @@ load s =
 save : Seeded NewModel -> Save
 save model =
     let
-        do : ( PieceGroup.ID, Point ) -> List (List Point) -> List (List Point)
+        do : ( Group.ID, Point ) -> List (List Point) -> List (List Point)
         do ( ( _, y ), point ) matrix =
             case ( y, matrix ) of
                 ( 0, _ ) ->

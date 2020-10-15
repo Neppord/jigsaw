@@ -1,4 +1,4 @@
-module PieceGroup exposing
+module Group exposing
     ( Group
     , ID
     , Piece

@@ -12,7 +12,7 @@ module Edge exposing
     )
 
 import Array
-import PieceGroup
+import Group
 import Point exposing (Point)
 import Random
 
@@ -150,12 +150,12 @@ cords width index =
     )
 
 
-toId : Int -> Int -> PieceGroup.ID -> Int
+toId : Int -> Int -> Group.ID -> Int
 toId w _ ( x, y ) =
     x + y * w
 
 
-indexOf : Orientation -> Int -> Int -> PieceGroup.ID -> Int
+indexOf : Orientation -> Int -> Int -> Group.ID -> Int
 indexOf orientation width height ( x, y ) =
     let
         id =
@@ -197,7 +197,7 @@ indexOf orientation width height ( x, y ) =
                 id - (id // width)
 
 
-getEdge : Orientation -> Int -> Int -> PieceGroup.ID -> Array.Array EdgePoints -> Edge
+getEdge : Orientation -> Int -> Int -> Group.ID -> Array.Array EdgePoints -> Edge
 getEdge orientation nx ny id edgePoints =
     let
         index =
@@ -210,7 +210,7 @@ getEdge orientation nx ny id edgePoints =
     makeEdge orientation points
 
 
-pieceEdges : Int -> Int -> PieceGroup.ID -> Array.Array EdgePoints -> List Edge
+pieceEdges : Int -> Int -> Group.ID -> Array.Array EdgePoints -> List Edge
 pieceEdges nx ny id edgePoints =
     [ North, East, South, West ]
         |> List.map (\orientation -> getEdge orientation nx ny id edgePoints)

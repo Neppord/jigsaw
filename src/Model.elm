@@ -8,6 +8,7 @@ module Model exposing
 
 import DB exposing (DB)
 import Edge exposing (Edge, generateEdgePoints)
+import Group exposing (Group)
 import JigsawImage
     exposing
         ( JigsawImage
@@ -15,7 +16,6 @@ import JigsawImage
         )
 import Keyboard exposing (Keyboard)
 import List
-import PieceGroup exposing (Group)
 import Point exposing (Point)
 import Random
 import Seeded exposing (Seeded(..))
@@ -94,12 +94,12 @@ generateModel image =
             shufflePiecePositions image.width image.height image
 
         generatePieceGroups =
-            Random.map (PieceGroup.createGroups image) generatePositions
+            Random.map (Group.createGroups image) generatePositions
 
         generateEdges =
             Random.map
                 (\eps ->
-                    PieceGroup.genIds image.xpieces image.ypieces
+                    Group.genIds image.xpieces image.ypieces
                         |> List.map (\id -> Edge.pieceEdges image.xpieces image.ypieces id eps)
                 )
                 (generateEdgePoints numberOfEdges)

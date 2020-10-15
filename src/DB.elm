@@ -21,9 +21,9 @@ module DB exposing
     )
 
 import Drag
+import Group exposing (Group)
 import KD.Match exposing (Match(..))
 import KDDict exposing (KDDict, MatchKey)
-import PieceGroup exposing (Group)
 import Point exposing (Point)
 import Set exposing (Set)
 import UI
@@ -211,7 +211,7 @@ snap radius db =
                         |> List.filter shouldBeMerged
 
                 merge list =
-                    List.foldl PieceGroup.merge pg list
+                    List.foldl Group.merge pg list
 
                 merged =
                     merge targets
@@ -348,7 +348,7 @@ clickedUnselectedPieceGroup point db =
         |> KDDict.findMatching
             (matchPoint point)
         |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
-        |> List.filter (PieceGroup.isPointInsideGroup point)
+        |> List.filter (Group.isPointInsideGroup point)
         |> List.reverse
         |> List.head
 
@@ -359,7 +359,7 @@ clickedUnselected point db =
         |> KDDict.findMatching
             (matchPoint point)
         |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
-        |> List.any (PieceGroup.isPointInsideGroup point)
+        |> List.any (Group.isPointInsideGroup point)
 
 
 clickedAny : Point.Point -> DB -> Bool
@@ -373,7 +373,7 @@ clickedSelected point db =
         |> KDDict.findMatching
             (matchPoint point)
         |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
-        |> List.any (PieceGroup.isPointInsideGroup point)
+        |> List.any (Group.isPointInsideGroup point)
 
 
 countDeleted : DB -> Int
@@ -386,10 +386,10 @@ heightDifference =
     .unselected >> KDDict.heightDifference
 
 
-getPieces : DB -> List ( PieceGroup.ID, Point )
+getPieces : DB -> List ( Group.ID, Point )
 getPieces db =
     let
-        pgToP : Group -> List ( PieceGroup.ID, Point )
+        pgToP : Group -> List ( Group.ID, Point )
         pgToP pg =
             pg.members
                 |> List.map (\p -> ( p.id, Point.add p.offset pg.position ))
@@ -408,5 +408,5 @@ sendSelectedToVisibilityGroup x db =
 move : Int -> Drag.Drag -> DB -> DB
 move radius drag db =
     db
-        |> modifySelected (PieceGroup.move (Drag.distance drag))
+        |> modifySelected (Group.move (Drag.distance drag))
         |> snap radius

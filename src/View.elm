@@ -3,6 +3,7 @@ module View exposing (view)
 import DB
 import Drag
 import Edge exposing (Edge)
+import Group exposing (Group)
 import Html exposing (Attribute, Html, text)
 import Html.Attributes exposing (height, style, width)
 import Html.Events
@@ -14,7 +15,6 @@ import Model
         ( Msg(..)
         , NewModel
         )
-import PieceGroup exposing (Group)
 import Point exposing (Point)
 import Set
 import Svg exposing (Svg)
@@ -168,12 +168,12 @@ viewSelectionBox model =
             box -10 -10 0 0 "rgba(0,255,0,0.2)"
 
 
-lazyPieceDiv : String -> Group -> PieceGroup.Piece -> Html msg
+lazyPieceDiv : String -> Group -> Group.Piece -> Html msg
 lazyPieceDiv =
     Html.Lazy.lazy3 pieceDiv
 
 
-pieceDiv : String -> Group -> PieceGroup.Piece -> Html msg
+pieceDiv : String -> Group -> Group.Piece -> Html msg
 pieceDiv backgroundUrl pg piece =
     let
         ( borderWidth, borderHeight ) =
@@ -330,10 +330,10 @@ lazyclipPathDefs =
 
 definePieceClipPaths : JigsawImage -> List (List Edge) -> List (Svg msg)
 definePieceClipPaths image edges =
-    List.map2 (piecePath image) edges (PieceGroup.genIds image.xpieces image.ypieces)
+    List.map2 (piecePath image) edges (Group.genIds image.xpieces image.ypieces)
 
 
-piecePath : JigsawImage -> List Edge -> PieceGroup.ID -> Svg msg
+piecePath : JigsawImage -> List Edge -> Group.ID -> Svg msg
 piecePath image edges id =
     let
         w =
@@ -364,11 +364,11 @@ piecePath image edges id =
         ]
 
 
-pieceClipId : PieceGroup.ID -> String
+pieceClipId : Group.ID -> String
 pieceClipId ( x, y ) =
     "piece-" ++ String.fromInt x ++ "-" ++ String.fromInt y ++ "-clip"
 
 
-clipPathRef : PieceGroup.ID -> String
+clipPathRef : Group.ID -> String
 clipPathRef id =
     "url(#" ++ pieceClipId id ++ ")"
