@@ -1,12 +1,12 @@
 module PieceGroup exposing
-    ( ID
+    ( Group
+    , ID
     , Piece
-    , PieceGroup
-    , createPieceGroup
-    , createPieceGroups
+    , createGroup
+    , createGroups
     , distance
     , genIds
-    , isPointInsidePieceGroup
+    , isPointInsideGroup
     , merge
     , move
     )
@@ -27,7 +27,7 @@ type alias Piece =
     }
 
 
-type alias PieceGroup =
+type alias Group =
     { members : List Piece
     , neighbours : Set ID
     , position : Point
@@ -37,7 +37,7 @@ type alias PieceGroup =
     }
 
 
-merge : PieceGroup -> PieceGroup -> PieceGroup
+merge : Group -> Group -> Group
 merge a b =
     let
         newMembers =
@@ -67,18 +67,18 @@ merge a b =
     }
 
 
-distance : PieceGroup -> PieceGroup -> Float
+distance : Group -> Group -> Float
 distance from to =
     Point.dist from.position to.position
 
 
-move : Point -> PieceGroup -> PieceGroup
+move : Point -> Group -> Group
 move offset pg =
     { pg | position = Point.add offset pg.position }
 
 
-createPieceGroup : JigsawImage -> ID -> Point -> PieceGroup
-createPieceGroup image id pos =
+createGroup : JigsawImage -> ID -> Point -> Group
+createGroup image id pos =
     let
         offset =
             JigsawImage.pieceIdToOffset image id
@@ -95,8 +95,8 @@ createPieceGroup image id pos =
     }
 
 
-isPointInsidePieceGroup : Point -> PieceGroup -> Bool
-isPointInsidePieceGroup point pieceGroup =
+isPointInsideGroup : Point -> Group -> Bool
+isPointInsideGroup point pieceGroup =
     let
         relativePosition =
             Point.sub point pieceGroup.position
@@ -121,8 +121,8 @@ isPointInsidePiece point piece =
         && (pieceBR.y >= point.y)
 
 
-createPieceGroups : JigsawImage -> List Point -> List PieceGroup
-createPieceGroups image points =
+createGroups : JigsawImage -> List Point -> List Group
+createGroups image points =
     let
         numberOfPieces =
             image.xpieces * image.ypieces
@@ -138,7 +138,7 @@ createPieceGroups image points =
             else
                 points
     in
-    List.map2 (createPieceGroup image) ids positions
+    List.map2 (createGroup image) ids positions
 
 
 neighbours : ID -> Set ID

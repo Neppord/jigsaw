@@ -15,7 +15,7 @@ import JigsawImage
         )
 import Keyboard exposing (Keyboard)
 import List
-import PieceGroup exposing (PieceGroup)
+import PieceGroup exposing (Group)
 import Point exposing (Point)
 import Random
 import Seeded exposing (Seeded(..))
@@ -73,7 +73,7 @@ init () =
 
 buildModel :
     JigsawImage
-    -> List PieceGroup
+    -> List Group
     -> List (List Edge)
     -> NewModel
 buildModel image pieceGroups edges =
@@ -94,7 +94,7 @@ generateModel image =
             shufflePiecePositions image.width image.height image
 
         generatePieceGroups =
-            Random.map (PieceGroup.createPieceGroups image) generatePositions
+            Random.map (PieceGroup.createGroups image) generatePositions
 
         generateEdges =
             Random.map

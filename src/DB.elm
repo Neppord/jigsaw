@@ -23,14 +23,14 @@ module DB exposing
 import Drag
 import KD.Match exposing (Match(..))
 import KDDict exposing (KDDict, MatchKey)
-import PieceGroup exposing (PieceGroup)
+import PieceGroup exposing (Group)
 import Point exposing (Point)
 import Set exposing (Set)
 import UI
 
 
 type alias DbIndex =
-    KDDict Int PieceGroup
+    KDDict Int Group
 
 
 type alias GroupID =
@@ -67,7 +67,7 @@ optimalHeight db =
         |> floor
 
 
-makeKey : PieceGroup -> DbKey
+makeKey : Group -> DbKey
 makeKey { position, minOffset, maxOffset } =
     let
         position_ =
@@ -133,7 +133,7 @@ toggleVisibilityGroup groupId db =
     }
 
 
-makeDb : List PieceGroup -> DB
+makeDb : List Group -> DB
 makeDb pieceGroups =
     { unselected = makeIndex pieceGroups
     , selected = KDDict.fromList []
@@ -141,19 +141,19 @@ makeDb pieceGroups =
     }
 
 
-makeIndex : List PieceGroup -> DbIndex
+makeIndex : List Group -> DbIndex
 makeIndex list =
     KDDict.fromListBy makeKey list
 
 
-getSelected : DB -> List PieceGroup
+getSelected : DB -> List Group
 getSelected db =
     db.selected
         |> KDDict.toList
         |> List.map Tuple.second
 
 
-getVisibleUnSelected : DB -> List PieceGroup
+getVisibleUnSelected : DB -> List Group
 getVisibleUnSelected db =
     db.unselected
         |> KDDict.toList
@@ -161,7 +161,7 @@ getVisibleUnSelected db =
         |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
 
 
-modifySelected : (PieceGroup -> PieceGroup) -> DB -> DB
+modifySelected : (Group -> Group) -> DB -> DB
 modifySelected f db =
     { db
         | selected =
@@ -173,7 +173,7 @@ modifySelected f db =
     }
 
 
-insert : PieceGroup -> DbIndex -> DbIndex
+insert : Group -> DbIndex -> DbIndex
 insert pg =
     KDDict.insert (makeKey pg) pg
 
@@ -308,7 +308,7 @@ selectAt point mode db =
                 db |> select mode pg
 
 
-select : UI.SelectionMode -> PieceGroup -> DB -> DB
+select : UI.SelectionMode -> Group -> DB -> DB
 select mode pg db =
     case mode of
         UI.Add ->
@@ -342,13 +342,13 @@ select mode pg db =
             }
 
 
-clickedUnselectedPieceGroup : Point.Point -> DB -> Maybe PieceGroup
+clickedUnselectedPieceGroup : Point.Point -> DB -> Maybe Group
 clickedUnselectedPieceGroup point db =
     db.unselected
         |> KDDict.findMatching
             (matchPoint point)
         |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
-        |> List.filter (PieceGroup.isPointInsidePieceGroup point)
+        |> List.filter (PieceGroup.isPointInsideGroup point)
         |> List.reverse
         |> List.head
 
@@ -359,7 +359,7 @@ clickedUnselected point db =
         |> KDDict.findMatching
             (matchPoint point)
         |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
-        |> List.any (PieceGroup.isPointInsidePieceGroup point)
+        |> List.any (PieceGroup.isPointInsideGroup point)
 
 
 clickedAny : Point.Point -> DB -> Bool
@@ -373,7 +373,7 @@ clickedSelected point db =
         |> KDDict.findMatching
             (matchPoint point)
         |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
-        |> List.any (PieceGroup.isPointInsidePieceGroup point)
+        |> List.any (PieceGroup.isPointInsideGroup point)
 
 
 countDeleted : DB -> Int
@@ -389,7 +389,7 @@ heightDifference =
 getPieces : DB -> List ( PieceGroup.ID, Point )
 getPieces db =
     let
-        pgToP : PieceGroup -> List ( PieceGroup.ID, Point )
+        pgToP : Group -> List ( PieceGroup.ID, Point )
         pgToP pg =
             pg.members
                 |> List.map (\p -> ( p.id, Point.add p.offset pg.position ))

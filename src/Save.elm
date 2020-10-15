@@ -146,7 +146,7 @@ load s =
             (Seeded.unwrap newModel).image
 
         createPG ( position, id ) =
-            PieceGroup.createPieceGroup image id position
+            PieceGroup.createGroup image id position
 
         db =
             s

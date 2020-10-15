@@ -14,7 +14,7 @@ import Model
         ( Msg(..)
         , NewModel
         )
-import PieceGroup exposing (PieceGroup)
+import PieceGroup exposing (Group)
 import Point exposing (Point)
 import Set
 import Svg exposing (Svg)
@@ -168,12 +168,12 @@ viewSelectionBox model =
             box -10 -10 0 0 "rgba(0,255,0,0.2)"
 
 
-lazyPieceDiv : String -> PieceGroup -> PieceGroup.Piece -> Html msg
+lazyPieceDiv : String -> Group -> PieceGroup.Piece -> Html msg
 lazyPieceDiv =
     Html.Lazy.lazy3 pieceDiv
 
 
-pieceDiv : String -> PieceGroup -> PieceGroup.Piece -> Html msg
+pieceDiv : String -> Group -> PieceGroup.Piece -> Html msg
 pieceDiv backgroundUrl pg piece =
     let
         ( borderWidth, borderHeight ) =
@@ -295,10 +295,10 @@ viewDiv model =
     ]
 
 
-renderPieces : JigsawImage -> List PieceGroup -> List ( String, Html msg )
+renderPieces : JigsawImage -> List Group -> List ( String, Html msg )
 renderPieces image visiblePieces =
     let
-        pieceGroupDiv : PieceGroup -> List ( String, Html msg )
+        pieceGroupDiv : Group -> List ( String, Html msg )
         pieceGroupDiv pg =
             let
                 render piece =
