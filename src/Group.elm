@@ -28,7 +28,8 @@ type alias Piece =
 
 
 type alias Group =
-    { members : List Piece
+    { id : ID
+    , members : List Piece
     , neighbours : Set ID
     , position : Point
     , minOffset : Point
@@ -58,7 +59,8 @@ merge a b =
                 (max a.maxOffset.x b.maxOffset.x)
                 (max a.maxOffset.y b.maxOffset.y)
     in
-    { minOffset = minOffset
+    { id = a.id
+    , minOffset = minOffset
     , maxOffset = maxOffset
     , members = newMembers
     , neighbours = newNeighbours
@@ -86,7 +88,8 @@ createGroup image id pos =
         size =
             Point image.pieceWidth image.pieceHeight
     in
-    { position = Point.sub pos offset
+    { id = id
+    , position = Point.sub pos offset
     , members = [ Piece id offset size ]
     , neighbours = neighbours id
     , visibilityGroup = -1
