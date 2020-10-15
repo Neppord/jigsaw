@@ -33,6 +33,10 @@ type alias DbIndex =
     KDDict Int PieceGroup
 
 
+type alias GroupID =
+    Int
+
+
 type alias DB =
     { unselected : DbIndex
     , selected : DbIndex
