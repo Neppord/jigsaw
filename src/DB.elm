@@ -36,7 +36,8 @@ type alias DbIndex =
 
 
 type alias DB =
-    { index : DbIndex
+    { boxIndex : DbIndex
+    , withinIndex : DbIndex
     , selected : Set.Set Group.ID
     , visibleGroups : Set.Set Int
     , groups : Dict Group.ID Group
@@ -49,12 +50,12 @@ type alias DbKey =
 
 size : DB -> Int
 size =
-    .index >> KDDict.size
+    .boxIndex >> KDDict.size
 
 
 height : DB -> Int
 height =
-    .index >> KDDict.height
+    .boxIndex >> KDDict.height
 
 
 optimalHeight : DB -> Int
@@ -66,36 +67,38 @@ optimalHeight db =
         |> floor
 
 
-makeKey : Group -> DbKey
-makeKey { position, minOffset, maxOffset } =
+makeBoxKey : Group -> DbKey
+makeBoxKey { position, minOffset, maxOffset } =
     let
-        position_ =
-            position
-                |> Point.toPair
-
         x =
             ( position.x + minOffset.x, position.x + maxOffset.x )
 
         y =
             ( position.y + minOffset.y, position.y + maxOffset.y )
     in
-    KDDict.coordinateKey position_
-        |> KDDict.addCoordinateAxis x
+    KDDict.coordinateKey x
         |> KDDict.addCoordinateAxis y
+
+
+makeWithinKey : Group -> DbKey
+makeWithinKey { position } =
+    let
+        position_ =
+            position
+                |> Point.toPair
+    in
+    KDDict.coordinateKey position_
 
 
 matchWithin : { x : Int, y : Int, w : Int, h : Int } -> MatchKey Int
 matchWithin { x, y, w, h } =
     KDDict.coordinateKey
         ( WithinRange x (x + w), WithinRange y (y + h) )
-        |> KDDict.addCoordinateAxis ( Anything, Anything )
-        |> KDDict.addCoordinateAxis ( Anything, Anything )
 
 
 matchBox : { x : Int, y : Int, w : Int, h : Int } -> MatchKey Int
 matchBox { x, y, w, h } =
-    KDDict.coordinateKey ( Anything, Anything )
-        |> KDDict.addCoordinateAxis ( LargerThan x, SmallerThan (x + w) )
+    KDDict.coordinateKey ( LargerThan x, SmallerThan (x + w) )
         |> KDDict.addCoordinateAxis ( LargerThan y, SmallerThan (y + h) )
 
 
@@ -105,9 +108,8 @@ matchPoint { x, y } =
         radius =
             1
     in
-    KDDict.coordinateKey ( Anything, Anything )
-        |> KDDict.addCoordinateAxis
-            ( SmallerThan (x + radius), LargerThan (x - radius) )
+    KDDict.coordinateKey
+        ( SmallerThan (x + radius), LargerThan (x - radius) )
         |> KDDict.addCoordinateAxis
             ( SmallerThan (y + radius), LargerThan (y - radius) )
 
@@ -134,7 +136,8 @@ toggleVisibilityGroup groupId db =
 
 makeDb : List Group -> DB
 makeDb pieceGroups =
-    { index = makeIndex pieceGroups
+    { boxIndex = makeBoxIndex pieceGroups
+    , withinIndex = makeWithinIndex pieceGroups
     , selected = Set.empty
     , visibleGroups = Set.fromList [ -1 ]
     , groups =
@@ -144,10 +147,17 @@ makeDb pieceGroups =
     }
 
 
-makeIndex : List Group -> DbIndex
-makeIndex list =
+makeBoxIndex : List Group -> DbIndex
+makeBoxIndex list =
     list
-        |> List.map (\g -> ( makeKey g, g.id ))
+        |> List.map (\g -> ( makeBoxKey g, g.id ))
+        |> KDDict.fromList
+
+
+makeWithinIndex : List Group -> DbIndex
+makeWithinIndex list =
+    list
+        |> List.map (\g -> ( makeWithinKey g, g.id ))
         |> KDDict.fromList
 
 
@@ -178,17 +188,21 @@ modifySelected f db =
                     db.groups
     in
     { db
-        | index =
+        | boxIndex =
             groups
                 |> Dict.values
-                |> makeIndex
+                |> makeBoxIndex
+        , withinIndex =
+            groups
+                |> Dict.values
+                |> makeWithinIndex
         , groups = groups
     }
 
 
 insert : Group -> DbIndex -> DbIndex
 insert pg =
-    KDDict.insert (makeKey pg) pg.id
+    KDDict.insert (makeBoxKey pg) pg.id
 
 
 snap : Int -> DB -> DB
@@ -219,7 +233,7 @@ snap radius db =
                     }
 
                 targets =
-                    db.index
+                    db.withinIndex
                         |> KDDict.findMatching
                             (matchWithin dimensions)
                         |> List.map (\id -> Dict.get id db.groups)
@@ -233,10 +247,14 @@ snap radius db =
                     merge targets
             in
             { db
-                | index =
-                    db.index
-                        |> KDDict.removeAll (List.map makeKey (pg :: targets))
-                        |> KDDict.insert (makeKey merged) merged.id
+                | boxIndex =
+                    db.boxIndex
+                        |> KDDict.removeAll (List.map makeBoxKey (pg :: targets))
+                        |> KDDict.insert (makeBoxKey merged) merged.id
+                , withinIndex =
+                    db.withinIndex
+                        |> KDDict.removeAll (List.map makeWithinKey (pg :: targets))
+                        |> KDDict.insert (makeWithinKey merged) merged.id
                 , groups =
                     (pg :: targets)
                         |> List.map .id
@@ -248,8 +266,12 @@ snap radius db =
         _ ->
             if countDeleted db > size db then
                 { db
-                    | index =
-                        db.index
+                    | boxIndex =
+                        db.boxIndex
+                            |> KDDict.toList
+                            |> KDDict.fromList
+                    , withinIndex =
+                        db.withinIndex
                             |> KDDict.toList
                             |> KDDict.fromList
                 }
@@ -262,7 +284,7 @@ boxSelect : UI.SelectionMode -> Drag.Drag -> DB -> DB
 boxSelect mode drag db =
     let
         insideBox =
-            db.index
+            db.boxIndex
                 |> KDDict.findMatching (matchBox <| Drag.getDimensions drag)
                 |> List.filter
                     (\id ->
@@ -323,7 +345,7 @@ select mode pg db =
 
 clickedUnselectedPieceGroup : Point.Point -> DB -> Maybe Group
 clickedUnselectedPieceGroup point db =
-    db.index
+    db.boxIndex
         |> KDDict.findMatching
             (matchPoint point)
         |> List.map (\id -> Dict.get id db.groups)
@@ -336,7 +358,7 @@ clickedUnselectedPieceGroup point db =
 
 clickedAny : Point.Point -> DB -> Bool
 clickedAny point db =
-    db.index
+    db.boxIndex
         |> KDDict.findMatching
             (matchPoint point)
         |> List.map (\id -> Dict.get id db.groups)
@@ -347,7 +369,7 @@ clickedAny point db =
 
 clickedSelected : Point.Point -> DB -> Bool
 clickedSelected point db =
-    db.index
+    db.boxIndex
         |> KDDict.findMatching
             (matchPoint point)
         |> List.map (\id -> Dict.get id db.groups)
@@ -359,12 +381,12 @@ clickedSelected point db =
 
 countDeleted : DB -> Int
 countDeleted =
-    .index >> KDDict.countDeleted
+    .boxIndex >> KDDict.countDeleted
 
 
 heightDifference : DB -> Int
 heightDifference =
-    .index >> KDDict.heightDifference
+    .boxIndex >> KDDict.heightDifference
 
 
 getPieces : DB -> List ( Group.ID, Point )

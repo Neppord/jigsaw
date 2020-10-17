@@ -798,11 +798,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.L.P === region.aC.P)
+	if (region.M.Q === region.aD.Q)
 	{
-		return 'on line ' + region.L.P;
+		return 'on line ' + region.M.Q;
 	}
-	return 'on lines ' + region.L.P + ' through ' + region.aC.P;
+	return 'on lines ' + region.M.Q + ' through ' + region.aD.Q;
 }
 
 
@@ -1871,9 +1871,9 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.bq,
-		impl.bT,
-		impl.bP,
+		impl.br,
+		impl.bU,
+		impl.bQ,
 		function() { return function() {} }
 	);
 });
@@ -2674,8 +2674,8 @@ var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
 		y: func(record.y),
-		am: record.am,
-		ak: record.ak
+		an: record.an,
+		al: record.al
 	}
 });
 
@@ -2944,10 +2944,10 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 
 		var value = result.a;
 		var message = !tag ? value : tag < 3 ? value.a : value.y;
-		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.am;
+		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.an;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
-			(tag == 2 ? value.b : tag == 3 && value.ak) && event.preventDefault(),
+			(tag == 2 ? value.b : tag == 3 && value.al) && event.preventDefault(),
 			eventNode
 		);
 		var tagger;
@@ -3897,11 +3897,11 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.bq,
-		impl.bT,
-		impl.bP,
+		impl.br,
+		impl.bU,
+		impl.bQ,
 		function(sendToApp, initialModel) {
-			var view = impl.bU;
+			var view = impl.bV;
 			/**/
 			var domNode = args['node'];
 			//*/
@@ -3933,12 +3933,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.bq,
-		impl.bT,
-		impl.bP,
+		impl.br,
+		impl.bU,
+		impl.bQ,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.al && impl.al(sendToApp)
-			var view = impl.bU;
+			var divertHrefToApp = impl.am && impl.am(sendToApp)
+			var view = impl.bV;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
 			var currNode = _VirtualDom_virtualize(bodyNode);
@@ -3946,12 +3946,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 			{
 				_VirtualDom_divertHrefToApp = divertHrefToApp;
 				var doc = view(model);
-				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.bb);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.bc);
 				var patches = _VirtualDom_diff(currNode, nextNode);
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
 				_VirtualDom_divertHrefToApp = 0;
-				(title !== doc.bS) && (_VirtualDom_doc.title = title = doc.bS);
+				(title !== doc.bT) && (_VirtualDom_doc.title = title = doc.bT);
 			});
 		}
 	);
@@ -4007,12 +4007,12 @@ function _Browser_makeAnimator(model, draw)
 
 function _Browser_application(impl)
 {
-	var onUrlChange = impl.bF;
-	var onUrlRequest = impl.bG;
+	var onUrlChange = impl.bG;
+	var onUrlRequest = impl.bH;
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		al: function(sendToApp)
+		am: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -4028,9 +4028,9 @@ function _Browser_application(impl)
 					var next = $elm$url$Url$fromString(href).a;
 					sendToApp(onUrlRequest(
 						(next
-							&& curr.aR === next.aR
-							&& curr.aH === next.aH
-							&& curr.aO.a === next.aO.a
+							&& curr.aS === next.aS
+							&& curr.aI === next.aI
+							&& curr.aP.a === next.aP.a
 						)
 							? $elm$browser$Browser$Internal(next)
 							: $elm$browser$Browser$External(href)
@@ -4038,13 +4038,13 @@ function _Browser_application(impl)
 				}
 			});
 		},
-		bq: function(flags)
+		br: function(flags)
 		{
-			return A3(impl.bq, flags, _Browser_getUrl(), key);
+			return A3(impl.br, flags, _Browser_getUrl(), key);
 		},
+		bV: impl.bV,
 		bU: impl.bU,
-		bT: impl.bT,
-		bP: impl.bP
+		bQ: impl.bQ
 	});
 }
 
@@ -4110,17 +4110,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { bo: 'hidden', bd: 'visibilitychange' }
+		? { bp: 'hidden', be: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { bo: 'mozHidden', bd: 'mozvisibilitychange' }
+		? { bp: 'mozHidden', be: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { bo: 'msHidden', bd: 'msvisibilitychange' }
+		? { bp: 'msHidden', be: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { bo: 'webkitHidden', bd: 'webkitvisibilitychange' }
-		: { bo: 'hidden', bd: 'visibilitychange' };
+		? { bp: 'webkitHidden', be: 'webkitvisibilitychange' }
+		: { bp: 'hidden', be: 'visibilitychange' };
 }
 
 
@@ -4201,12 +4201,12 @@ var _Browser_call = F2(function(functionName, id)
 function _Browser_getViewport()
 {
 	return {
-		aX: _Browser_getScene(),
-		a2: {
+		aY: _Browser_getScene(),
+		a3: {
 			v: _Browser_window.pageXOffset,
 			w: _Browser_window.pageYOffset,
-			a3: _Browser_doc.documentElement.clientWidth,
-			aG: _Browser_doc.documentElement.clientHeight
+			a4: _Browser_doc.documentElement.clientWidth,
+			aH: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4216,8 +4216,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		a3: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		aG: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		a4: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		aH: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4240,15 +4240,15 @@ function _Browser_getViewportOf(id)
 	return _Browser_withNode(id, function(node)
 	{
 		return {
-			aX: {
-				a3: node.scrollWidth,
-				aG: node.scrollHeight
+			aY: {
+				a4: node.scrollWidth,
+				aH: node.scrollHeight
 			},
-			a2: {
+			a3: {
 				v: node.scrollLeft,
 				w: node.scrollTop,
-				a3: node.clientWidth,
-				aG: node.clientHeight
+				a4: node.clientWidth,
+				aH: node.clientHeight
 			}
 		};
 	});
@@ -4278,18 +4278,18 @@ function _Browser_getElement(id)
 		var x = _Browser_window.pageXOffset;
 		var y = _Browser_window.pageYOffset;
 		return {
-			aX: _Browser_getScene(),
-			a2: {
+			aY: _Browser_getScene(),
+			a3: {
 				v: x,
 				w: y,
-				a3: _Browser_doc.documentElement.clientWidth,
-				aG: _Browser_doc.documentElement.clientHeight
+				a4: _Browser_doc.documentElement.clientWidth,
+				aH: _Browser_doc.documentElement.clientHeight
 			},
-			bh: {
+			bi: {
 				v: x + rect.left,
 				w: y + rect.top,
-				a3: rect.width,
-				aG: rect.height
+				a4: rect.width,
+				aH: rect.height
 			}
 		};
 	});
@@ -4977,7 +4977,7 @@ var $elm$core$Array$builderToArray = F2(
 			var treeLen = builder.b * $elm$core$Array$branchFactor;
 			var depth = $elm$core$Basics$floor(
 				A2($elm$core$Basics$logBase, $elm$core$Array$branchFactor, treeLen - 1));
-			var correctNodeList = reverseNodeList ? $elm$core$List$reverse(builder.e) : builder.e;
+			var correctNodeList = reverseNodeList ? $elm$core$List$reverse(builder.f) : builder.f;
 			var tree = A2($elm$core$Array$treeFromBuilder, correctNodeList, builder.b);
 			return A4(
 				$elm$core$Array$Array_elm_builtin,
@@ -4997,7 +4997,7 @@ var $elm$core$Array$initializeHelp = F5(
 				return A2(
 					$elm$core$Array$builderToArray,
 					false,
-					{e: nodeList, b: (len / $elm$core$Array$branchFactor) | 0, d: tail});
+					{f: nodeList, b: (len / $elm$core$Array$branchFactor) | 0, d: tail});
 			} else {
 				var leaf = $elm$core$Array$Leaf(
 					A3($elm$core$Elm$JsArray$initialize, $elm$core$Array$branchFactor, fromIndex, fn));
@@ -5064,7 +5064,7 @@ var $elm$url$Url$Http = 0;
 var $elm$url$Url$Https = 1;
 var $elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
-		return {bn: fragment, aH: host, bJ: path, aO: port_, aR: protocol, aS: query};
+		return {bo: fragment, aI: host, bK: path, aP: port_, aS: protocol, aT: query};
 	});
 var $elm$core$String$contains = _String_contains;
 var $elm$core$String$length = _String_length;
@@ -5350,7 +5350,7 @@ var $elm$core$Basics$composeR = F3(
 	});
 var $author$project$Keyed$Keyed = F2(
 	function (key, value) {
-		return {af: key, ap: value};
+		return {ah: key, aq: value};
 	});
 var $elm$core$Maybe$andThen = F2(
 	function (callback, maybeValue) {
@@ -6321,63 +6321,76 @@ var $author$project$KDDict$coordinateKey = function (_v0) {
 		_List_fromArray(
 			[y]));
 };
-var $author$project$Point$toPair = function (point) {
-	return _Utils_Tuple2(point.v, point.w);
-};
-var $author$project$DB$makeKey = function (_v0) {
-	var position = _v0.aj;
-	var minOffset = _v0.bs;
-	var maxOffset = _v0.br;
+var $author$project$DB$makeBoxKey = function (_v0) {
+	var position = _v0.aa;
+	var minOffset = _v0.bt;
+	var maxOffset = _v0.bs;
 	var y = _Utils_Tuple2(position.w + minOffset.w, position.w + maxOffset.w);
 	var x = _Utils_Tuple2(position.v + minOffset.v, position.v + maxOffset.v);
-	var position_ = $author$project$Point$toPair(position);
 	return A2(
 		$author$project$KDDict$addCoordinateAxis,
 		y,
-		A2(
-			$author$project$KDDict$addCoordinateAxis,
-			x,
-			$author$project$KDDict$coordinateKey(position_)));
+		$author$project$KDDict$coordinateKey(x));
 };
-var $author$project$DB$makeIndex = function (list) {
+var $author$project$DB$makeBoxIndex = function (list) {
 	return $author$project$KDDict$fromList(
 		A2(
 			$elm$core$List$map,
 			function (g) {
 				return _Utils_Tuple2(
-					$author$project$DB$makeKey(g),
-					g.i);
+					$author$project$DB$makeBoxKey(g),
+					g.e);
+			},
+			list));
+};
+var $author$project$Point$toPair = function (point) {
+	return _Utils_Tuple2(point.v, point.w);
+};
+var $author$project$DB$makeWithinKey = function (_v0) {
+	var position = _v0.aa;
+	var position_ = $author$project$Point$toPair(position);
+	return $author$project$KDDict$coordinateKey(position_);
+};
+var $author$project$DB$makeWithinIndex = function (list) {
+	return $author$project$KDDict$fromList(
+		A2(
+			$elm$core$List$map,
+			function (g) {
+				return _Utils_Tuple2(
+					$author$project$DB$makeWithinKey(g),
+					g.e);
 			},
 			list));
 };
 var $author$project$DB$makeDb = function (pieceGroups) {
 	return {
+		i: $author$project$DB$makeBoxIndex(pieceGroups),
 		k: $elm$core$Dict$fromList(
 			A2(
 				$elm$core$List$map,
 				function (g) {
-					return _Utils_Tuple2(g.i, g);
+					return _Utils_Tuple2(g.e, g);
 				},
 				pieceGroups)),
-		h: $author$project$DB$makeIndex(pieceGroups),
-		f: $elm$core$Set$empty,
+		g: $elm$core$Set$empty,
 		t: $elm$core$Set$fromList(
 			_List_fromArray(
-				[-1]))
+				[-1])),
+		B: $author$project$DB$makeWithinIndex(pieceGroups)
 	};
 };
 var $author$project$Model$buildModel = F3(
 	function (image, pieceGroups, edges) {
 		return {
 			r: $author$project$DB$makeDb(pieceGroups),
-			aB: edges,
-			X: image,
-			E: $author$project$UI$WaitingForInput
+			aC: edges,
+			Y: image,
+			F: $author$project$UI$WaitingForInput
 		};
 	});
 var $author$project$Group$Piece = F3(
 	function (id, offset, size) {
-		return {i: id, bE: offset, aY: size};
+		return {e: id, bF: offset, aZ: size};
 	});
 var $author$project$Point$add = F2(
 	function (a, b) {
@@ -6399,7 +6412,7 @@ var $author$project$JigsawImage$pieceIdToOffset = F2(
 	function (image, _v0) {
 		var x = _v0.a;
 		var y = _v0.b;
-		return A2($author$project$Point$Point, x * image.bL, y * image.bK);
+		return A2($author$project$Point$Point, x * image.bM, y * image.bL);
 	});
 var $author$project$Point$sub = F2(
 	function (a, b) {
@@ -6407,19 +6420,19 @@ var $author$project$Point$sub = F2(
 	});
 var $author$project$Group$createGroup = F3(
 	function (image, id, pos) {
-		var size = A2($author$project$Point$Point, image.bL, image.bK);
+		var size = A2($author$project$Point$Point, image.bM, image.bL);
 		var offset = A2($author$project$JigsawImage$pieceIdToOffset, image, id);
 		return {
-			i: id,
-			br: A2($author$project$Point$add, size, offset),
-			aK: _List_fromArray(
+			e: id,
+			bs: A2($author$project$Point$add, size, offset),
+			aL: _List_fromArray(
 				[
 					A3($author$project$Group$Piece, id, offset, size)
 				]),
-			bs: offset,
-			bw: $author$project$Group$neighbours(id),
-			aj: A2($author$project$Point$sub, pos, offset),
-			F: -1
+			bt: offset,
+			bx: $author$project$Group$neighbours(id),
+			aa: A2($author$project$Point$sub, pos, offset),
+			G: -1
 		};
 	});
 var $elm$core$List$append = F2(
@@ -6456,8 +6469,8 @@ var $author$project$Group$genIds = F2(
 	});
 var $author$project$Group$createGroups = F2(
 	function (image, points) {
-		var numberOfPieces = image.a4 * image.a6;
-		var ids = A2($author$project$Group$genIds, image.a4, image.a6);
+		var numberOfPieces = image.a5 * image.a7;
+		var ids = A2($author$project$Group$genIds, image.a5, image.a7);
 		var positions = (_Utils_cmp(
 			$elm$core$List$length(points),
 			numberOfPieces) < 0) ? A2(
@@ -6619,7 +6632,7 @@ var $elm$core$Array$fromListHelp = F3(
 				return A2(
 					$elm$core$Array$builderToArray,
 					true,
-					{e: nodeList, b: nodeListSize, d: jsArray});
+					{f: nodeList, b: nodeListSize, d: jsArray});
 			} else {
 				var $temp$list = remainingItems,
 					$temp$nodeList = A2(
@@ -6868,20 +6881,20 @@ var $author$project$Edge$S = F2(
 	});
 var $author$project$Edge$defaultCurvedEdge = $author$project$Edge$Curved(
 	{
-		at: A3(
+		au: A3(
 			$author$project$Edge$C,
 			A2($author$project$Point$Point, 50, 20),
 			A2($author$project$Point$Point, 100, 25),
 			A2($author$project$Point$Point, 80, 0)),
-		au: A2(
+		av: A2(
 			$author$project$Edge$S,
 			A2($author$project$Point$Point, 70, -40),
 			A2($author$project$Point$Point, 100, -40)),
-		av: A2(
+		aw: A2(
 			$author$project$Edge$S,
 			A2($author$project$Point$Point, 140, -25),
 			A2($author$project$Point$Point, 120, 0)),
-		aw: A2(
+		ax: A2(
 			$author$project$Edge$S,
 			A2($author$project$Point$Point, 150, 20),
 			A2($author$project$Point$Point, 200, 0))
@@ -6981,10 +6994,10 @@ var $author$project$Edge$makeEdge = F2(
 						var p9 = _v8.a;
 						return $author$project$Edge$Curved(
 							{
-								at: A3($author$project$Edge$C, p1, p2, p3),
-								au: A2($author$project$Edge$S, p4, p5),
-								av: A2($author$project$Edge$S, p6, p7),
-								aw: A2($author$project$Edge$S, p8, p9)
+								au: A3($author$project$Edge$C, p1, p2, p3),
+								av: A2($author$project$Edge$S, p4, p5),
+								aw: A2($author$project$Edge$S, p6, p7),
+								ax: A2($author$project$Edge$S, p8, p9)
 							});
 					} else {
 						break _v0$2;
@@ -6994,7 +7007,7 @@ var $author$project$Edge$makeEdge = F2(
 					var _v9 = _v0.b;
 					var p2 = _v9.a;
 					return $author$project$Edge$Flat(
-						{a7: p1, ba: p2});
+						{a8: p1, bb: p2});
 				}
 			} else {
 				break _v0$2;
@@ -7028,15 +7041,15 @@ var $author$project$Edge$pieceEdges = F4(
 var $author$project$JigsawImage$shufflePiecePositions = F3(
 	function (w, h, image) {
 		var ymin = 0;
-		var ymax = h - ((image.aG / image.a6) | 0);
+		var ymax = h - ((image.aH / image.a7) | 0);
 		var xmin = 0;
-		var xmax = w - ((image.a3 / image.a4) | 0);
-		var n = image.a4 * image.a6;
+		var xmax = w - ((image.a4 / image.a5) | 0);
+		var n = image.a5 * image.a7;
 		return A5($author$project$Point$randomPoints, n, xmin, xmax, ymin, ymax);
 	});
 var $author$project$Model$generateModel = function (image) {
-	var numberOfEdges = (((2 * image.a4) * image.a6) - image.a4) - image.a6;
-	var generatePositions = A3($author$project$JigsawImage$shufflePiecePositions, image.a3, image.aG, image);
+	var numberOfEdges = (((2 * image.a5) * image.a7) - image.a5) - image.a7;
+	var generatePositions = A3($author$project$JigsawImage$shufflePiecePositions, image.a4, image.aH, image);
 	var generatePieceGroups = A2(
 		$elm$random$Random$map,
 		$author$project$Group$createGroups(image),
@@ -7047,9 +7060,9 @@ var $author$project$Model$generateModel = function (image) {
 			return A2(
 				$elm$core$List$map,
 				function (id) {
-					return A4($author$project$Edge$pieceEdges, image.a4, image.a6, id, eps);
+					return A4($author$project$Edge$pieceEdges, image.a5, image.a7, id, eps);
 				},
-				A2($author$project$Group$genIds, image.a4, image.a6));
+				A2($author$project$Group$genIds, image.a5, image.a7));
 		},
 		$author$project$Edge$generateEdgePoints(numberOfEdges));
 	return A3(
@@ -7098,7 +7111,7 @@ var $author$project$Model$init = function (_v0) {
 	var height = _v2.b;
 	var pieceHeight = (height / ypieces) | 0;
 	var pieceWidth = (width / xpieces) | 0;
-	var image = {aG: height, bJ: 'ship-1366926_crop_4k.png', bK: pieceHeight, bL: pieceWidth, a3: width, a4: xpieces, a6: ypieces};
+	var image = {aH: height, bK: 'ship-1366926_crop_4k.png', bL: pieceHeight, bM: pieceWidth, a4: width, a5: xpieces, a7: ypieces};
 	return $author$project$Seeded$step(
 		A2(
 			$author$project$Seeded$map,
@@ -7114,7 +7127,7 @@ var $author$project$Seeded$unwrap = function (_v0) {
 };
 var $author$project$Save$load = function (s) {
 	var newModel = $author$project$Model$init(0);
-	var image = $author$project$Seeded$unwrap(newModel).X;
+	var image = $author$project$Seeded$unwrap(newModel).Y;
 	var createPG = function (_v0) {
 		var position = _v0.a;
 		var id = _v0.b;
@@ -7160,7 +7173,7 @@ var $author$project$Main$init = F3(
 			A2(
 				$elm$core$Maybe$andThen,
 				$author$project$Save$deserialize,
-				A2($elm$core$Maybe$andThen, $elm$url$Url$percentDecode, url.bn)));
+				A2($elm$core$Maybe$andThen, $elm$url$Url$percentDecode, url.bo)));
 		var model = A2(
 			$elm$core$Maybe$withDefault,
 			$author$project$Model$init(flags),
@@ -7211,7 +7224,7 @@ var $author$project$Decode$key = A2(
 	A2($elm$json$Json$Decode$field, 'key', $elm$json$Json$Decode$string));
 var $author$project$Keyboard$Keyboard = F2(
 	function (shift, ctrl) {
-		return {bf: ctrl, bO: shift};
+		return {bg: ctrl, bP: shift};
 	});
 var $elm$json$Json$Decode$bool = _Json_decodeBool;
 var $author$project$Decode$keyboard = A3(
@@ -7226,7 +7239,7 @@ var $elm$browser$Browser$Events$MySub = F3(
 	});
 var $elm$browser$Browser$Events$State = F2(
 	function (subs, pids) {
-		return {aN: pids, a0: subs};
+		return {aO: pids, a1: subs};
 	});
 var $elm$browser$Browser$Events$init = $elm$core$Task$succeed(
 	A2($elm$browser$Browser$Events$State, _List_Nil, $elm$core$Dict$empty));
@@ -7335,7 +7348,7 @@ var $elm$core$Dict$merge = F6(
 	});
 var $elm$browser$Browser$Events$Event = F2(
 	function (key, event) {
-		return {aD: event, af: key};
+		return {aE: event, ah: key};
 	});
 var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
 var $elm$browser$Browser$Events$spawn = F3(
@@ -7410,7 +7423,7 @@ var $elm$browser$Browser$Events$onEffects = F3(
 			stepLeft,
 			stepBoth,
 			stepRight,
-			state.aN,
+			state.aO,
 			$elm$core$Dict$fromList(newSubs),
 			_Utils_Tuple3(_List_Nil, $elm$core$Dict$empty, _List_Nil));
 		var deadPids = _v0.a;
@@ -7456,8 +7469,8 @@ var $elm$core$List$filterMap = F2(
 	});
 var $elm$browser$Browser$Events$onSelfMsg = F3(
 	function (router, _v0, state) {
-		var key = _v0.af;
-		var event = _v0.aD;
+		var key = _v0.ah;
+		var event = _v0.aE;
 		var toMessage = function (_v2) {
 			var subKey = _v2.a;
 			var _v3 = _v2.b;
@@ -7466,7 +7479,7 @@ var $elm$browser$Browser$Events$onSelfMsg = F3(
 			var decoder = _v3.c;
 			return _Utils_eq(subKey, key) ? A2(_Browser_decodeEvent, decoder, event) : $elm$core$Maybe$Nothing;
 		};
-		var messages = A2($elm$core$List$filterMap, toMessage, state.a0);
+		var messages = A2($elm$core$List$filterMap, toMessage, state.a1);
 		return A2(
 			$elm$core$Task$andThen,
 			function (_v1) {
@@ -7504,7 +7517,7 @@ var $author$project$Subscription$keyDown = $elm$browser$Browser$Events$onKeyDown
 			function (keyboard, key) {
 				if (!key.$) {
 					var x = key.a;
-					return keyboard.bf ? $elm$core$Maybe$Just(
+					return keyboard.bg ? $elm$core$Maybe$Just(
 						$author$project$Model$SendToVisibility(x)) : $elm$core$Maybe$Just(
 						$author$project$Model$ToggleVisibility(x));
 				} else {
@@ -7538,7 +7551,7 @@ var $elm$browser$Browser$Events$onMouseUp = A2($elm$browser$Browser$Events$on, 0
 var $author$project$Subscription$trackMouseUp = $elm$browser$Browser$Events$onMouseUp(
 	$elm$json$Json$Decode$succeed($author$project$Model$MouseUp));
 var $author$project$Subscription$subscriptions = function (newModel) {
-	var _v0 = newModel.E;
+	var _v0 = newModel.F;
 	switch (_v0.$) {
 		case 0:
 			return A2(
@@ -7565,11 +7578,11 @@ var $author$project$Subscription$subscriptions = function (newModel) {
 };
 var $author$project$Keyed$map = F2(
 	function (f, _v0) {
-		var key = _v0.af;
-		var value = _v0.ap;
+		var key = _v0.ah;
+		var value = _v0.aq;
 		return {
-			af: key,
-			ap: f(value)
+			ah: key,
+			aq: f(value)
 		};
 	});
 var $elm$browser$Browser$Navigation$replaceUrl = _Browser_replaceUrl;
@@ -7589,10 +7602,10 @@ var $author$project$DB$getPieces = function (db) {
 			$elm$core$List$map,
 			function (p) {
 				return _Utils_Tuple2(
-					p.i,
-					A2($author$project$Point$add, p.bE, pg.aj));
+					p.e,
+					A2($author$project$Point$add, p.bF, pg.aa));
 			},
-			pg.aK);
+			pg.aL);
 	};
 	return A2(
 		$elm$core$List$concatMap,
@@ -8079,12 +8092,14 @@ var $author$project$DB$modifySelected = F2(
 						dict);
 				}),
 			db.k,
-			db.f);
+			db.g);
 		return _Utils_update(
 			db,
 			{
+				i: $author$project$DB$makeBoxIndex(
+					$elm$core$Dict$values(groups)),
 				k: groups,
-				h: $author$project$DB$makeIndex(
+				B: $author$project$DB$makeWithinIndex(
 					$elm$core$Dict$values(groups))
 			});
 	});
@@ -8095,7 +8110,7 @@ var $author$project$DB$sendSelectedToVisibilityGroup = F2(
 			function (pg) {
 				return _Utils_update(
 					pg,
-					{F: x});
+					{G: x});
 			},
 			db);
 	});
@@ -8350,16 +8365,16 @@ var $elm$bytes$Bytes$Decode$map3 = F4(
 			});
 	});
 var $danfishgold$base64_bytes$Decode$loopHelp = function (_v0) {
-	var remaining = _v0._;
-	var string = _v0.ab;
+	var remaining = _v0.ab;
+	var string = _v0.ad;
 	if (remaining >= 18) {
 		return A2(
 			$elm$bytes$Bytes$Decode$map,
 			function (result) {
 				return $elm$bytes$Bytes$Decode$Loop(
 					{
-						_: remaining - 18,
-						ab: _Utils_ap(string, result)
+						ab: remaining - 18,
+						ad: _Utils_ap(string, result)
 					});
 			},
 			$danfishgold$base64_bytes$Decode$decode18Bytes);
@@ -8370,8 +8385,8 @@ var $danfishgold$base64_bytes$Decode$loopHelp = function (_v0) {
 					var combined = ((a << 16) | (b << 8)) | c;
 					return $elm$bytes$Bytes$Decode$Loop(
 						{
-							_: remaining - 3,
-							ab: _Utils_ap(
+							ab: remaining - 3,
+							ad: _Utils_ap(
 								string,
 								A2($danfishgold$base64_bytes$Decode$bitsToChars, combined, 0))
 						});
@@ -8410,7 +8425,7 @@ var $danfishgold$base64_bytes$Decode$loopHelp = function (_v0) {
 var $danfishgold$base64_bytes$Decode$decoder = function (width) {
 	return A2(
 		$elm$bytes$Bytes$Decode$loop,
-		{_: width, ab: ''},
+		{ab: width, ad: ''},
 		$danfishgold$base64_bytes$Decode$loopHelp);
 };
 var $elm$bytes$Bytes$width = _Bytes_width;
@@ -8666,19 +8681,18 @@ var $author$project$KDDict$findMatching = F2(
 	});
 var $author$project$Group$isPointInsidePiece = F2(
 	function (point, piece) {
-		var pieceTL = piece.bE;
-		var pieceBR = A2($author$project$Point$add, piece.bE, piece.aY);
+		var pieceTL = piece.bF;
+		var pieceBR = A2($author$project$Point$add, piece.bF, piece.aZ);
 		return (_Utils_cmp(pieceTL.v, point.v) < 1) && ((_Utils_cmp(pieceTL.w, point.w) < 1) && ((_Utils_cmp(pieceBR.v, point.v) > -1) && (_Utils_cmp(pieceBR.w, point.w) > -1)));
 	});
 var $author$project$Group$isPointInsideGroup = F2(
 	function (point, pieceGroup) {
-		var relativePosition = A2($author$project$Point$sub, point, pieceGroup.aj);
+		var relativePosition = A2($author$project$Point$sub, point, pieceGroup.aa);
 		return A2(
 			$elm$core$List$any,
 			$author$project$Group$isPointInsidePiece(relativePosition),
-			pieceGroup.aK);
+			pieceGroup.aL);
 	});
-var $author$project$KD$Match$Anything = {$: 0};
 var $author$project$KD$Match$LargerThan = function (a) {
 	return {$: 3, a: a};
 };
@@ -8694,13 +8708,10 @@ var $author$project$DB$matchPoint = function (_v0) {
 		_Utils_Tuple2(
 			$author$project$KD$Match$SmallerThan(y + radius),
 			$author$project$KD$Match$LargerThan(y - radius)),
-		A2(
-			$author$project$KDDict$addCoordinateAxis,
+		$author$project$KDDict$coordinateKey(
 			_Utils_Tuple2(
 				$author$project$KD$Match$SmallerThan(x + radius),
-				$author$project$KD$Match$LargerThan(x - radius)),
-			$author$project$KDDict$coordinateKey(
-				_Utils_Tuple2($author$project$KD$Match$Anything, $author$project$KD$Match$Anything))));
+				$author$project$KD$Match$LargerThan(x - radius))));
 };
 var $elm_community$maybe_extra$Maybe$Extra$cons = F2(
 	function (item, list) {
@@ -8720,7 +8731,7 @@ var $author$project$DB$clickedAny = F2(
 			A2(
 				$elm$core$List$filter,
 				function (group) {
-					return A2($elm$core$Set$member, group.F, db.t);
+					return A2($elm$core$Set$member, group.G, db.t);
 				},
 				$elm_community$maybe_extra$Maybe$Extra$values(
 					A2(
@@ -8731,11 +8742,11 @@ var $author$project$DB$clickedAny = F2(
 						A2(
 							$author$project$KDDict$findMatching,
 							$author$project$DB$matchPoint(point),
-							db.h)))));
+							db.i)))));
 	});
 var $author$project$Drag$Drag = $elm$core$Basics$identity;
 var $author$project$Drag$from = function (p) {
-	return {O: p, L: p};
+	return {P: p, M: p};
 };
 var $author$project$DB$clickedSelected = F2(
 	function (point, db) {
@@ -8745,12 +8756,12 @@ var $author$project$DB$clickedSelected = F2(
 			A2(
 				$elm$core$List$filter,
 				function (group) {
-					return A2($elm$core$Set$member, group.F, db.t);
+					return A2($elm$core$Set$member, group.G, db.t);
 				},
 				A2(
 					$elm$core$List$filter,
 					function (group) {
-						return A2($elm$core$Set$member, group.i, db.f);
+						return A2($elm$core$Set$member, group.e, db.g);
 					},
 					$elm_community$maybe_extra$Maybe$Extra$values(
 						A2(
@@ -8761,7 +8772,7 @@ var $author$project$DB$clickedSelected = F2(
 							A2(
 								$author$project$KDDict$findMatching,
 								$author$project$DB$matchPoint(point),
-								db.h))))));
+								db.i))))));
 	});
 var $author$project$DB$clickedUnselectedPieceGroup = F2(
 	function (point, db) {
@@ -8773,7 +8784,7 @@ var $author$project$DB$clickedUnselectedPieceGroup = F2(
 					A2(
 						$elm$core$List$filter,
 						function (pg) {
-							return A2($elm$core$Set$member, pg.F, db.t);
+							return A2($elm$core$Set$member, pg.G, db.t);
 						},
 						$elm_community$maybe_extra$Maybe$Extra$values(
 							A2(
@@ -8784,7 +8795,7 @@ var $author$project$DB$clickedUnselectedPieceGroup = F2(
 								A2(
 									$author$project$KDDict$findMatching,
 									$author$project$DB$matchPoint(point),
-									db.h)))))));
+									db.i)))))));
 	});
 var $elm$core$Dict$singleton = F2(
 	function (key, value) {
@@ -8800,19 +8811,19 @@ var $author$project$DB$select = F3(
 				return _Utils_update(
 					db,
 					{
-						f: A2($elm$core$Set$insert, pg.i, db.f)
+						g: A2($elm$core$Set$insert, pg.e, db.g)
 					});
 			case 2:
 				return _Utils_update(
 					db,
 					{
-						f: A2($elm$core$Set$remove, pg.i, db.f)
+						g: A2($elm$core$Set$remove, pg.e, db.g)
 					});
 			default:
 				return _Utils_update(
 					db,
 					{
-						f: $elm$core$Set$singleton(pg.i)
+						g: $elm$core$Set$singleton(pg.e)
 					});
 		}
 	});
@@ -8832,7 +8843,7 @@ var $author$project$DB$selectAt = F3(
 	});
 var $author$project$Main$updateMouseDown = F3(
 	function (coordinate, keyboard, model) {
-		var mode = keyboard.bO ? 1 : (keyboard.bf ? 2 : 0);
+		var mode = keyboard.bP ? 1 : (keyboard.bg ? 2 : 0);
 		var _v0 = model;
 		var db = _v0.r;
 		var ui = A2($author$project$DB$clickedAny, coordinate, db) ? A2(
@@ -8846,7 +8857,7 @@ var $author$project$Main$updateMouseDown = F3(
 			model,
 			{
 				r: A3($author$project$DB$selectAt, coordinate, mode, db),
-				E: ui
+				F: ui
 			});
 	});
 var $elm$core$Dict$diff = F2(
@@ -8871,11 +8882,11 @@ var $elm$core$Basics$min = F2(
 		return (_Utils_cmp(x, y) < 0) ? x : y;
 	});
 var $author$project$Drag$getDimensions = function (_v0) {
-	var start = _v0.L;
-	var current = _v0.O;
+	var start = _v0.M;
+	var current = _v0.P;
 	return {
-		ad: $elm$core$Basics$abs(start.w - current.w),
-		aq: $elm$core$Basics$abs(start.v - current.v),
+		af: $elm$core$Basics$abs(start.w - current.w),
+		ar: $elm$core$Basics$abs(start.v - current.v),
 		v: A2($elm$core$Basics$min, start.v, current.v),
 		w: A2($elm$core$Basics$min, start.w, current.w)
 	};
@@ -8883,20 +8894,17 @@ var $author$project$Drag$getDimensions = function (_v0) {
 var $author$project$DB$matchBox = function (_v0) {
 	var x = _v0.v;
 	var y = _v0.w;
-	var w = _v0.aq;
-	var h = _v0.ad;
+	var w = _v0.ar;
+	var h = _v0.af;
 	return A2(
 		$author$project$KDDict$addCoordinateAxis,
 		_Utils_Tuple2(
 			$author$project$KD$Match$LargerThan(y),
 			$author$project$KD$Match$SmallerThan(y + h)),
-		A2(
-			$author$project$KDDict$addCoordinateAxis,
+		$author$project$KDDict$coordinateKey(
 			_Utils_Tuple2(
 				$author$project$KD$Match$LargerThan(x),
-				$author$project$KD$Match$SmallerThan(x + w)),
-			$author$project$KDDict$coordinateKey(
-				_Utils_Tuple2($author$project$KD$Match$Anything, $author$project$KD$Match$Anything))));
+				$author$project$KD$Match$SmallerThan(x + w))));
 };
 var $elm$core$Set$union = F2(
 	function (_v0, _v1) {
@@ -8916,7 +8924,7 @@ var $author$project$DB$boxSelect = F3(
 						A2(
 							$elm$core$Maybe$map,
 							function (pg) {
-								return A2($elm$core$Set$member, pg.F, db.t);
+								return A2($elm$core$Set$member, pg.G, db.t);
 							},
 							A2($elm$core$Dict$get, id, db.k)));
 				},
@@ -8924,29 +8932,29 @@ var $author$project$DB$boxSelect = F3(
 					$author$project$KDDict$findMatching,
 					$author$project$DB$matchBox(
 						$author$project$Drag$getDimensions(drag)),
-					db.h)));
+					db.i)));
 		switch (mode) {
 			case 1:
 				return _Utils_update(
 					db,
 					{
-						f: A2($elm$core$Set$union, insideBox, db.f)
+						g: A2($elm$core$Set$union, insideBox, db.g)
 					});
 			case 2:
 				return _Utils_update(
 					db,
 					{
-						f: A2($elm$core$Set$diff, insideBox, db.f)
+						g: A2($elm$core$Set$diff, insideBox, db.g)
 					});
 			default:
 				return _Utils_update(
 					db,
-					{f: insideBox});
+					{g: insideBox});
 		}
 	});
 var $author$project$Drag$distance = function (_v0) {
-	var start = _v0.L;
-	var current = _v0.O;
+	var start = _v0.M;
+	var current = _v0.P;
 	return A2($author$project$Point$sub, current, start);
 };
 var $author$project$Group$move = F2(
@@ -8954,7 +8962,7 @@ var $author$project$Group$move = F2(
 		return _Utils_update(
 			pg,
 			{
-				aj: A2($author$project$Point$add, offset, pg.aj)
+				aa: A2($author$project$Point$add, offset, pg.aa)
 			});
 	});
 var $author$project$KDDict$countDeleted = function (dict) {
@@ -8974,7 +8982,7 @@ var $author$project$KDDict$countDeleted = function (dict) {
 var $author$project$DB$countDeleted = A2(
 	$elm$core$Basics$composeR,
 	function ($) {
-		return $.h;
+		return $.i;
 	},
 	$author$project$KDDict$countDeleted);
 var $author$project$DB$getSelected = function (db) {
@@ -8984,7 +8992,7 @@ var $author$project$DB$getSelected = function (db) {
 			function (id) {
 				return A2($elm$core$Dict$get, id, db.k);
 			},
-			$elm$core$Set$toList(db.f)));
+			$elm$core$Set$toList(db.g)));
 };
 var $author$project$KDDict$insert_ = F4(
 	function (i, key_, value, dict) {
@@ -9078,41 +9086,35 @@ var $author$project$KD$Match$WithinRange = F2(
 var $author$project$DB$matchWithin = function (_v0) {
 	var x = _v0.v;
 	var y = _v0.w;
-	var w = _v0.aq;
-	var h = _v0.ad;
-	return A2(
-		$author$project$KDDict$addCoordinateAxis,
-		_Utils_Tuple2($author$project$KD$Match$Anything, $author$project$KD$Match$Anything),
-		A2(
-			$author$project$KDDict$addCoordinateAxis,
-			_Utils_Tuple2($author$project$KD$Match$Anything, $author$project$KD$Match$Anything),
-			$author$project$KDDict$coordinateKey(
-				_Utils_Tuple2(
-					A2($author$project$KD$Match$WithinRange, x, x + w),
-					A2($author$project$KD$Match$WithinRange, y, y + h)))));
+	var w = _v0.ar;
+	var h = _v0.af;
+	return $author$project$KDDict$coordinateKey(
+		_Utils_Tuple2(
+			A2($author$project$KD$Match$WithinRange, x, x + w),
+			A2($author$project$KD$Match$WithinRange, y, y + h)));
 };
 var $author$project$Group$merge = F2(
 	function (a, b) {
-		var newMembers = _Utils_ap(b.aK, a.aK);
+		var newMembers = _Utils_ap(b.aL, a.aL);
 		var newNeighbours = A2(
 			$elm$core$Set$diff,
-			A2($elm$core$Set$union, b.bw, a.bw),
+			A2($elm$core$Set$union, b.bx, a.bx),
 			$elm$core$Set$fromList(
 				A2(
 					$elm$core$List$map,
 					function ($) {
-						return $.i;
+						return $.e;
 					},
 					newMembers)));
 		var minOffset = A2(
 			$author$project$Point$Point,
-			A2($elm$core$Basics$min, a.bs.v, b.bs.v),
-			A2($elm$core$Basics$min, a.bs.w, b.bs.w));
+			A2($elm$core$Basics$min, a.bt.v, b.bt.v),
+			A2($elm$core$Basics$min, a.bt.w, b.bt.w));
 		var maxOffset = A2(
 			$author$project$Point$Point,
-			A2($elm$core$Basics$max, a.br.v, b.br.v),
-			A2($elm$core$Basics$max, a.br.w, b.br.w));
-		return {i: a.i, br: maxOffset, aK: newMembers, bs: minOffset, bw: newNeighbours, aj: a.aj, F: a.F};
+			A2($elm$core$Basics$max, a.bs.v, b.bs.v),
+			A2($elm$core$Basics$max, a.bs.w, b.bs.w));
+		return {e: a.e, bs: maxOffset, aL: newMembers, bt: minOffset, bx: newNeighbours, aa: a.aa, G: a.G};
 	});
 var $elm$core$Basics$neq = _Utils_notEqual;
 var $elm$core$List$member = F2(
@@ -9268,7 +9270,7 @@ var $author$project$KDDict$size = function (dict) {
 var $author$project$DB$size = A2(
 	$elm$core$Basics$composeR,
 	function ($) {
-		return $.h;
+		return $.i;
 	},
 	$author$project$KDDict$size);
 var $author$project$DB$snap = F2(
@@ -9283,18 +9285,18 @@ var $author$project$DB$snap = F2(
 				A2(
 					$elm$core$List$map,
 					function ($) {
-						return $.i;
+						return $.e;
 					},
-					pg.aK));
+					pg.aL));
 			var shouldBeMerged = function (other) {
-				return A2($elm$core$Set$member, other.F, db.t) && ((!$elm$core$Set$isEmpty(
-					A2($elm$core$Set$intersect, memberIds, other.bw))) && (!_Utils_eq(other.i, pg.i)));
+				return A2($elm$core$Set$member, other.G, db.t) && ((!$elm$core$Set$isEmpty(
+					A2($elm$core$Set$intersect, memberIds, other.bx))) && (!_Utils_eq(other.e, pg.e)));
 			};
 			var dimensions = function () {
-				var _v1 = pg.aj;
+				var _v1 = pg.aa;
 				var x = _v1.v;
 				var y = _v1.w;
-				return {ad: radius * 2, aq: radius * 2, v: x - radius, w: y - radius};
+				return {af: radius * 2, ar: radius * 2, v: x - radius, w: y - radius};
 			}();
 			var targets = A2(
 				$elm$core$List$filter,
@@ -9308,14 +9310,25 @@ var $author$project$DB$snap = F2(
 						A2(
 							$author$project$KDDict$findMatching,
 							$author$project$DB$matchWithin(dimensions),
-							db.h))));
+							db.B))));
 			var merged = merge(targets);
 			return _Utils_update(
 				db,
 				{
+					i: A3(
+						$author$project$KDDict$insert,
+						$author$project$DB$makeBoxKey(merged),
+						merged.e,
+						A2(
+							$author$project$KDDict$removeAll,
+							A2(
+								$elm$core$List$map,
+								$author$project$DB$makeBoxKey,
+								A2($elm$core$List$cons, pg, targets)),
+							db.i)),
 					k: A3(
 						$elm$core$Dict$insert,
-						merged.i,
+						merged.e,
 						merged,
 						A3(
 							$elm$core$List$foldl,
@@ -9327,21 +9340,21 @@ var $author$project$DB$snap = F2(
 							A2(
 								$elm$core$List$map,
 								function ($) {
-									return $.i;
+									return $.e;
 								},
 								A2($elm$core$List$cons, pg, targets)))),
-					h: A3(
+					g: $elm$core$Set$empty,
+					B: A3(
 						$author$project$KDDict$insert,
-						$author$project$DB$makeKey(merged),
-						merged.i,
+						$author$project$DB$makeWithinKey(merged),
+						merged.e,
 						A2(
 							$author$project$KDDict$removeAll,
 							A2(
 								$elm$core$List$map,
-								$author$project$DB$makeKey,
+								$author$project$DB$makeWithinKey,
 								A2($elm$core$List$cons, pg, targets)),
-							db.h)),
-					f: $elm$core$Set$empty
+							db.B))
 				});
 		} else {
 			return (_Utils_cmp(
@@ -9349,8 +9362,10 @@ var $author$project$DB$snap = F2(
 				$author$project$DB$size(db)) > 0) ? _Utils_update(
 				db,
 				{
-					h: $author$project$KDDict$fromList(
-						$author$project$KDDict$toList(db.h))
+					i: $author$project$KDDict$fromList(
+						$author$project$KDDict$toList(db.i)),
+					B: $author$project$KDDict$fromList(
+						$author$project$KDDict$toList(db.B))
 				}) : db;
 		}
 	});
@@ -9366,7 +9381,7 @@ var $author$project$DB$move = F3(
 				db));
 	});
 var $author$project$Main$updateMouseUp = function (model) {
-	var _v0 = model.E;
+	var _v0 = model.F;
 	switch (_v0.$) {
 		case 1:
 			var mode = _v0.a;
@@ -9375,15 +9390,15 @@ var $author$project$Main$updateMouseUp = function (model) {
 				model,
 				{
 					r: A3($author$project$DB$boxSelect, mode, drag, model.r),
-					E: $author$project$UI$WaitingForInput
+					F: $author$project$UI$WaitingForInput
 				});
 		case 0:
 			var drag = _v0.b;
 			return _Utils_update(
 				model,
 				{
-					r: A3($author$project$DB$move, (model.X.bL / 2) | 0, drag, model.r),
-					E: $author$project$UI$WaitingForInput
+					r: A3($author$project$DB$move, (model.Y.bM / 2) | 0, drag, model.r),
+					F: $author$project$UI$WaitingForInput
 				});
 		default:
 			return model;
@@ -9391,12 +9406,12 @@ var $author$project$Main$updateMouseUp = function (model) {
 };
 var $author$project$Drag$to = F2(
 	function (point, _v0) {
-		var start = _v0.L;
-		return {O: point, L: start};
+		var start = _v0.M;
+		return {P: point, M: start};
 	});
 var $author$project$Main$updateMoveMouse = F2(
 	function (newPos, model) {
-		var _v0 = model.E;
+		var _v0 = model.F;
 		switch (_v0.$) {
 			case 0:
 				var mode = _v0.a;
@@ -9404,7 +9419,7 @@ var $author$project$Main$updateMoveMouse = F2(
 				return _Utils_update(
 					model,
 					{
-						E: A2(
+						F: A2(
 							$author$project$UI$Moving,
 							mode,
 							A2($author$project$Drag$to, newPos, drag))
@@ -9415,7 +9430,7 @@ var $author$project$Main$updateMoveMouse = F2(
 				return _Utils_update(
 					model,
 					{
-						E: A2(
+						F: A2(
 							$author$project$UI$Boxing,
 							mode,
 							A2($author$project$Drag$to, newPos, drag))
@@ -9436,7 +9451,7 @@ var $author$project$Main$update = F2(
 								A2(
 									$elm$core$Basics$composeR,
 									function ($) {
-										return $.X;
+										return $.Y;
 									},
 									$author$project$Model$generateModel),
 								seededModel));
@@ -9460,13 +9475,13 @@ var $author$project$Main$update = F2(
 						var updateImage = function (image) {
 							return _Utils_update(
 								image,
-								{bJ: url});
+								{bK: url});
 						};
 						var updateModel = function (m) {
 							return _Utils_update(
 								m,
 								{
-									X: updateImage(m.X)
+									Y: updateImage(m.Y)
 								});
 						};
 						return A2($author$project$Seeded$map, updateModel, seededModel);
@@ -9500,12 +9515,12 @@ var $author$project$Main$update = F2(
 			function () {
 				if ((!maybeMsg.$) && (maybeMsg.a.$ === 2)) {
 					var _v1 = maybeMsg.a;
-					var _v2 = A2($elm$core$Basics$composeL, $author$project$Save$serialize, $author$project$Save$save)(nextModel.ap);
+					var _v2 = A2($elm$core$Basics$composeL, $author$project$Save$serialize, $author$project$Save$save)(nextModel.aq);
 					if (_v2.$ === 1) {
 						return $elm$core$Platform$Cmd$none;
 					} else {
 						var data = _v2.a;
-						return A2($elm$browser$Browser$Navigation$replaceUrl, model.af, '#' + data);
+						return A2($elm$browser$Browser$Navigation$replaceUrl, model.ah, '#' + data);
 					}
 				} else {
 					return $elm$core$Platform$Cmd$none;
@@ -9514,7 +9529,7 @@ var $author$project$Main$update = F2(
 	});
 var $elm$browser$Browser$Document = F2(
 	function (title, body) {
-		return {bb: body, bS: title};
+		return {bc: body, bT: title};
 	});
 var $elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
 var $elm$html$Html$map = $elm$virtual_dom$VirtualDom$map;
@@ -9543,7 +9558,7 @@ var $author$project$KDDict$height = function (dict) {
 var $author$project$DB$height = A2(
 	$elm$core$Basics$composeR,
 	function ($) {
-		return $.h;
+		return $.i;
 	},
 	$author$project$KDDict$height);
 var $author$project$KDDict$heightDifference = function (dict) {
@@ -9579,7 +9594,7 @@ var $author$project$KDDict$heightDifference = function (dict) {
 var $author$project$DB$heightDifference = A2(
 	$elm$core$Basics$composeR,
 	function ($) {
-		return $.h;
+		return $.i;
 	},
 	$author$project$KDDict$heightDifference);
 var $elm$html$Html$li = _VirtualDom_node('li');
@@ -9601,8 +9616,8 @@ var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$html$Html$ul = _VirtualDom_node('ul');
 var $author$project$View$renderStats = function (_v0) {
 	var db = _v0.r;
-	var image = _v0.X;
-	var size = image.a4 * image.a6;
+	var image = _v0.Y;
+	var size = image.a5 * image.a7;
 	var perf = $elm$core$String$fromFloat(
 		$author$project$DB$height(db) / $author$project$DB$optimalHeight(db));
 	var item = function (string) {
@@ -9690,10 +9705,10 @@ var $author$project$SvgUtil$bezierToSvg = function (b) {
 };
 var $author$project$SvgUtil$edgeToSvg = function (e) {
 	if (!e.$) {
-		var b1 = e.a.at;
-		var b2 = e.a.au;
-		var b3 = e.a.av;
-		var b4 = e.a.aw;
+		var b1 = e.a.au;
+		var b2 = e.a.av;
+		var b3 = e.a.aw;
+		var b4 = e.a.ax;
 		return A2(
 			$elm$core$String$join,
 			' ',
@@ -9703,8 +9718,8 @@ var $author$project$SvgUtil$edgeToSvg = function (e) {
 				_List_fromArray(
 					[b1, b2, b3, b4])));
 	} else {
-		var a = e.a.a7;
-		var b = e.a.ba;
+		var a = e.a.a8;
+		var b = e.a.bb;
 		return 'L ' + $author$project$SvgUtil$pointsToSvg(
 			_List_fromArray(
 				[a, b]));
@@ -9720,8 +9735,8 @@ var $author$project$SvgUtil$pieceToSvg = function (edges) {
 var $elm$svg$Svg$Attributes$transform = _VirtualDom_attribute('transform');
 var $author$project$View$piecePath = F3(
 	function (image, edges, id) {
-		var w = image.bL;
-		var h = image.bK;
+		var w = image.bM;
+		var h = image.bL;
 		var offset = A2(
 			$author$project$Point$Point,
 			$elm$core$Basics$floor(w / 2),
@@ -9755,7 +9770,7 @@ var $author$project$View$definePieceClipPaths = F2(
 			$elm$core$List$map2,
 			$author$project$View$piecePath(image),
 			edges,
-			A2($author$project$Group$genIds, image.a4, image.a6));
+			A2($author$project$Group$genIds, image.a5, image.a7));
 	});
 var $elm$svg$Svg$defs = $elm$svg$Svg$trustedNode('defs');
 var $elm$html$Html$Attributes$height = function (n) {
@@ -9790,18 +9805,18 @@ var $author$project$View$lazyclipPathDefs = $elm$svg$Svg$Lazy$lazy2(
 						A2($author$project$View$definePieceClipPaths, image, edges))));
 		}));
 var $author$project$View$viewClipPath = function (model) {
-	return A2($author$project$View$lazyclipPathDefs, model.X, model.aB);
+	return A2($author$project$View$lazyclipPathDefs, model.Y, model.aC);
 };
 var $author$project$DB$getVisibleUnSelected = function (db) {
 	return A2(
 		$elm$core$List$filter,
 		function (group) {
-			return !A2($elm$core$Set$member, group.i, db.f);
+			return !A2($elm$core$Set$member, group.e, db.g);
 		},
 		A2(
 			$elm$core$List$filter,
 			function (group) {
-				return A2($elm$core$Set$member, group.F, db.t);
+				return A2($elm$core$Set$member, group.G, db.t);
 			},
 			$elm$core$Dict$values(db.k)));
 };
@@ -9829,24 +9844,24 @@ var $author$project$View$clipPathRef = function (id) {
 };
 var $author$project$View$pieceDiv = F3(
 	function (backgroundUrl, pg, piece) {
-		var _v0 = _Utils_Tuple2((piece.aY.v / 2) | 0, (piece.aY.w / 2) | 0);
+		var _v0 = _Utils_Tuple2((piece.aZ.v / 2) | 0, (piece.aZ.w / 2) | 0);
 		var borderWidth = _v0.a;
 		var borderHeight = _v0.b;
-		var height = (borderHeight + piece.aY.w) + borderHeight;
+		var height = (borderHeight + piece.aZ.w) + borderHeight;
 		var _v1 = $author$project$Point$toPair(
 			A2(
 				$author$project$Point$add,
 				A2($author$project$Point$Point, -borderWidth, -borderHeight),
-				A2($author$project$Point$add, piece.bE, pg.aj)));
+				A2($author$project$Point$add, piece.bF, pg.aa)));
 		var left = _v1.a;
 		var top = _v1.b;
 		var translate = 'translate(' + ($elm$core$String$fromInt(left) + ('px,' + ($elm$core$String$fromInt(top) + 'px)')));
-		var width = (borderWidth + piece.aY.v) + borderWidth;
+		var width = (borderWidth + piece.aZ.v) + borderWidth;
 		var _v2 = $author$project$Point$toPair(
 			A2(
 				$author$project$Point$sub,
 				A2($author$project$Point$Point, borderWidth, borderHeight),
-				piece.bE));
+				piece.bF));
 		var bgLeft = _v2.a;
 		var bgTop = _v2.b;
 		return A2(
@@ -9864,7 +9879,7 @@ var $author$project$View$pieceDiv = F3(
 					A2(
 					$elm$html$Html$Attributes$style,
 					'clipPath',
-					$author$project$View$clipPathRef(piece.i)),
+					$author$project$View$clipPathRef(piece.e)),
 					A2($elm$html$Html$Attributes$style, 'background-image', 'url(\'' + (backgroundUrl + '\')')),
 					A2(
 					$elm$html$Html$Attributes$style,
@@ -9880,14 +9895,14 @@ var $author$project$View$renderPieces = F2(
 	function (image, visiblePieces) {
 		var pieceGroupDiv = function (pg) {
 			var render = function (piece) {
-				var _v0 = piece.i;
+				var _v0 = piece.e;
 				var x = _v0.a;
 				var y = _v0.b;
 				return _Utils_Tuple2(
 					'piece-' + ($elm$core$String$fromInt(x) + ('-' + $elm$core$String$fromInt(y))),
-					A3($author$project$View$lazyPieceDiv, image.bJ, pg, piece));
+					A3($author$project$View$lazyPieceDiv, image.bK, pg, piece));
 			};
-			return A2($elm$core$List$map, render, pg.aK);
+			return A2($elm$core$List$map, render, pg.aL);
 		};
 		return $elm$core$List$concat(
 			A2($elm$core$List$map, pieceGroupDiv, visiblePieces));
@@ -9913,7 +9928,7 @@ var $author$project$View$viewDiv = function (model) {
 		});
 	var shadowRed = shadowWithColor('red');
 	var shadowBlack = shadowWithColor('black');
-	var image = model.X;
+	var image = model.Y;
 	var _v0 = model;
 	var db = _v0.r;
 	var _v1 = _Utils_Tuple2(
@@ -9931,7 +9946,7 @@ var $author$project$View$viewDiv = function (model) {
 			A2(
 			$author$project$View$keyedDiv,
 			function () {
-				var _v2 = model.E;
+				var _v2 = model.F;
 				if (!_v2.$) {
 					var drag = _v2.b;
 					var _v3 = $author$project$Drag$distance(drag);
@@ -9994,15 +10009,15 @@ var $author$project$View$viewSelectionBox = function (model) {
 					$author$project$View$turnOffTheBloodyImageDragging),
 				_List_Nil);
 		});
-	var _v0 = model.E;
+	var _v0 = model.F;
 	if (_v0.$ === 1) {
 		var mode = _v0.a;
 		var drag = _v0.b;
 		var _v1 = $author$project$Drag$getDimensions(drag);
 		var x = _v1.v;
 		var y = _v1.w;
-		var w = _v1.aq;
-		var h = _v1.ad;
+		var w = _v1.ar;
+		var h = _v1.af;
 		return A5(
 			box,
 			x,
@@ -10093,7 +10108,7 @@ var $author$project$View$visibilityCheckbox = F2(
 				]));
 	});
 var $author$project$View$view = function (model) {
-	var image = model.X;
+	var image = model.Y;
 	return A2(
 		$elm$html$Html$div,
 		$author$project$View$turnOffTheBloodyImageDragging,
@@ -10107,11 +10122,11 @@ var $author$project$View$view = function (model) {
 						A2(
 						$elm$html$Html$Attributes$style,
 						'width',
-						$elm$core$String$fromInt(image.a3) + 'px'),
+						$elm$core$String$fromInt(image.a4) + 'px'),
 						A2(
 						$elm$html$Html$Attributes$style,
 						'height',
-						$elm$core$String$fromInt(image.aG) + 'px'),
+						$elm$core$String$fromInt(image.aH) + 'px'),
 						A2($elm$html$Html$Attributes$style, 'position', 'absolute'),
 						A2($elm$html$Html$Attributes$style, 'top', '0'),
 						A2($elm$html$Html$Attributes$style, 'left', '0')
@@ -10168,20 +10183,20 @@ var $author$project$Main$view = function (model) {
 };
 var $author$project$Main$main = $elm$browser$Browser$application(
 	{
-		bq: $author$project$Main$init,
-		bF: $elm$core$Basics$always($elm$core$Maybe$Nothing),
+		br: $author$project$Main$init,
 		bG: $elm$core$Basics$always($elm$core$Maybe$Nothing),
-		bP: A2(
+		bH: $elm$core$Basics$always($elm$core$Maybe$Nothing),
+		bQ: A2(
 			$elm$core$Basics$composeR,
 			function ($) {
-				return $.ap;
+				return $.aq;
 			},
 			A2($elm$core$Basics$composeR, $author$project$Seeded$unwrap, $author$project$Subscription$subscriptions)),
-		bT: $author$project$Main$update,
-		bU: A2(
+		bU: $author$project$Main$update,
+		bV: A2(
 			$elm$core$Basics$composeR,
 			function ($) {
-				return $.ap;
+				return $.aq;
 			},
 			A2($elm$core$Basics$composeR, $author$project$Seeded$unwrap, $author$project$Main$view))
 	});
