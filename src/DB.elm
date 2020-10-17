@@ -197,6 +197,7 @@ snap radius db =
                                 |> Set.isEmpty
                                 |> not
                            )
+                        && (other.id /= pg.id)
 
                 dimensions =
                     let
@@ -224,7 +225,7 @@ snap radius db =
             { db
                 | index =
                     db.index
-                        |> KDDict.removeAll (List.map makeKey targets)
+                        |> KDDict.removeAll (List.map makeKey (pg :: targets))
                         |> KDDict.insert (makeKey merged) merged
                 , selected = Set.empty
             }

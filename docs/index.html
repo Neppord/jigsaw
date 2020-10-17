@@ -6354,7 +6354,7 @@ var $author$project$DB$makeDb = function (pieceGroups) {
 var $author$project$Model$buildModel = F3(
 	function (image, pieceGroups, edges) {
 		return {
-			p: $author$project$DB$makeDb(pieceGroups),
+			q: $author$project$DB$makeDb(pieceGroups),
 			aA: edges,
 			W: image,
 			D: $author$project$UI$WaitingForInput
@@ -6362,7 +6362,7 @@ var $author$project$Model$buildModel = F3(
 	});
 var $author$project$Group$Piece = F3(
 	function (id, offset, size) {
-		return {q: id, bD: offset, aX: size};
+		return {n: id, bD: offset, aX: size};
 	});
 var $author$project$Point$add = F2(
 	function (a, b) {
@@ -6395,7 +6395,7 @@ var $author$project$Group$createGroup = F3(
 		var size = A2($author$project$Point$Point, image.bK, image.bJ);
 		var offset = A2($author$project$JigsawImage$pieceIdToOffset, image, id);
 		return {
-			q: id,
+			n: id,
 			bq: A2($author$project$Point$add, size, offset),
 			aJ: _List_fromArray(
 				[
@@ -7130,7 +7130,7 @@ var $author$project$Save$load = function (s) {
 		function (m) {
 			return _Utils_update(
 				m,
-				{p: db});
+				{q: db});
 		},
 		newModel);
 };
@@ -7598,7 +7598,7 @@ var $author$project$DB$getPieces = function (db) {
 			$elm$core$List$map,
 			function (p) {
 				return _Utils_Tuple2(
-					p.q,
+					p.n,
 					A2($author$project$Point$add, p.bD, pg.ai));
 			},
 			pg.aJ);
@@ -7660,7 +7660,7 @@ var $author$project$Save$save = function (model) {
 				$elm$core$List$sortBy,
 				$elm$core$Tuple$first,
 				$author$project$DB$getPieces(
-					$author$project$Seeded$unwrap(model).p))));
+					$author$project$Seeded$unwrap(model).q))));
 };
 var $elm$core$Dict$get = F2(
 	function (targetKey, dict) {
@@ -7716,7 +7716,7 @@ var $author$project$DB$modifySelected = F2(
 					A2(
 						$elm$core$List$map,
 						function (group) {
-							return A2($elm$core$Set$member, group.q, db.g) ? f(group) : group;
+							return A2($elm$core$Set$member, group.n, db.g) ? f(group) : group;
 						},
 						A2(
 							$elm$core$List$map,
@@ -7740,7 +7740,7 @@ var $author$project$Main$sendToVisibilityGroup = F2(
 		return _Utils_update(
 			model,
 			{
-				p: A2($author$project$DB$sendSelectedToVisibilityGroup, x, model.p)
+				q: A2($author$project$DB$sendSelectedToVisibilityGroup, x, model.q)
 			});
 	});
 var $author$project$Save$int16 = $elm$bytes$Bytes$Encode$unsignedInt16(1);
@@ -8447,7 +8447,7 @@ var $author$project$Main$toggleVisibilityGroup = F2(
 		return _Utils_update(
 			model,
 			{
-				p: A2($author$project$DB$toggleVisibilityGroup, x, model.p)
+				q: A2($author$project$DB$toggleVisibilityGroup, x, model.q)
 			});
 	});
 var $author$project$UI$Add = 1;
@@ -8696,7 +8696,7 @@ var $author$project$DB$clickedSelected = F2(
 				A2(
 					$elm$core$List$filter,
 					function (group) {
-						return A2($elm$core$Set$member, group.q, db.g);
+						return A2($elm$core$Set$member, group.n, db.g);
 					},
 					A2(
 						$author$project$KDDict$findMatching,
@@ -8734,19 +8734,19 @@ var $author$project$DB$select = F3(
 				return _Utils_update(
 					db,
 					{
-						g: A2($elm$core$Set$insert, pg.q, db.g)
+						g: A2($elm$core$Set$insert, pg.n, db.g)
 					});
 			case 2:
 				return _Utils_update(
 					db,
 					{
-						g: A2($elm$core$Set$remove, pg.q, db.g)
+						g: A2($elm$core$Set$remove, pg.n, db.g)
 					});
 			default:
 				return _Utils_update(
 					db,
 					{
-						g: $elm$core$Set$singleton(pg.q)
+						g: $elm$core$Set$singleton(pg.n)
 					});
 		}
 	});
@@ -8768,7 +8768,7 @@ var $author$project$Main$updateMouseDown = F3(
 	function (coordinate, keyboard, model) {
 		var mode = keyboard.bN ? 1 : (keyboard.be ? 2 : 0);
 		var _v0 = model;
-		var db = _v0.p;
+		var db = _v0.q;
 		var ui = A2($author$project$DB$clickedAny, coordinate, db) ? A2(
 			$author$project$UI$Moving,
 			0,
@@ -8779,7 +8779,7 @@ var $author$project$Main$updateMouseDown = F3(
 		return _Utils_update(
 			model,
 			{
-				p: A3($author$project$DB$selectAt, coordinate, mode, db),
+				q: A3($author$project$DB$selectAt, coordinate, mode, db),
 				D: ui
 			});
 	});
@@ -8856,7 +8856,7 @@ var $author$project$DB$boxSelect = F3(
 			A2(
 				$elm$core$List$map,
 				function ($) {
-					return $.q;
+					return $.n;
 				},
 				targets(db.b)));
 		switch (mode) {
@@ -8915,7 +8915,7 @@ var $author$project$DB$getSelected = function (db) {
 	return A2(
 		$elm$core$List$filter,
 		function (group) {
-			return A2($elm$core$Set$member, group.q, db.g);
+			return A2($elm$core$Set$member, group.n, db.g);
 		},
 		A2(
 			$elm$core$List$map,
@@ -9037,7 +9037,7 @@ var $author$project$Group$merge = F2(
 				A2(
 					$elm$core$List$map,
 					function ($) {
-						return $.q;
+						return $.n;
 					},
 					newMembers)));
 		var minOffset = A2(
@@ -9048,8 +9048,9 @@ var $author$project$Group$merge = F2(
 			$author$project$Point$Point,
 			A2($elm$core$Basics$max, a.bq.u, b.bq.u),
 			A2($elm$core$Basics$max, a.bq.v, b.bq.v));
-		return {q: a.q, bq: maxOffset, aJ: newMembers, br: minOffset, bv: newNeighbours, ai: a.ai, E: a.E};
+		return {n: a.n, bq: maxOffset, aJ: newMembers, br: minOffset, bv: newNeighbours, ai: a.ai, E: a.E};
 	});
+var $elm$core$Basics$neq = _Utils_notEqual;
 var $elm$core$List$member = F2(
 	function (x, xs) {
 		return A2(
@@ -9059,7 +9060,6 @@ var $elm$core$List$member = F2(
 			},
 			xs);
 	});
-var $elm$core$Basics$neq = _Utils_notEqual;
 var $author$project$KDDict$partition = F3(
 	function (compareFunction, pivot, items) {
 		if (!items.b) {
@@ -9219,12 +9219,12 @@ var $author$project$DB$snap = F2(
 				A2(
 					$elm$core$List$map,
 					function ($) {
-						return $.q;
+						return $.n;
 					},
 					pg.aJ));
 			var shouldBeMerged = function (other) {
-				return A2($elm$core$Set$member, other.E, db.s) && (!$elm$core$Set$isEmpty(
-					A2($elm$core$Set$intersect, memberIds, other.bv)));
+				return A2($elm$core$Set$member, other.E, db.s) && ((!$elm$core$Set$isEmpty(
+					A2($elm$core$Set$intersect, memberIds, other.bv))) && (!_Utils_eq(other.n, pg.n)));
 			};
 			var dimensions = function () {
 				var _v1 = pg.ai;
@@ -9249,7 +9249,10 @@ var $author$project$DB$snap = F2(
 						merged,
 						A2(
 							$author$project$KDDict$removeAll,
-							A2($elm$core$List$map, $author$project$DB$makeKey, targets),
+							A2(
+								$elm$core$List$map,
+								$author$project$DB$makeKey,
+								A2($elm$core$List$cons, pg, targets)),
 							db.b)),
 					g: $elm$core$Set$empty
 				});
@@ -9284,7 +9287,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 			return _Utils_update(
 				model,
 				{
-					p: A3($author$project$DB$boxSelect, mode, drag, model.p),
+					q: A3($author$project$DB$boxSelect, mode, drag, model.q),
 					D: $author$project$UI$WaitingForInput
 				});
 		case 0:
@@ -9292,7 +9295,7 @@ var $author$project$Main$updateMouseUp = function (model) {
 			return _Utils_update(
 				model,
 				{
-					p: A3($author$project$DB$move, (model.W.bK / 2) | 0, drag, model.p),
+					q: A3($author$project$DB$move, (model.W.bK / 2) | 0, drag, model.q),
 					D: $author$project$UI$WaitingForInput
 				});
 		default:
@@ -9510,7 +9513,7 @@ var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$html$Html$ul = _VirtualDom_node('ul');
 var $author$project$View$renderStats = function (_v0) {
-	var db = _v0.p;
+	var db = _v0.q;
 	var image = _v0.W;
 	var size = image.a3 * image.a5;
 	var perf = $elm$core$String$fromFloat(
@@ -9706,7 +9709,7 @@ var $author$project$DB$getVisibleUnSelected = function (db) {
 	return A2(
 		$elm$core$List$filter,
 		function (group) {
-			return !A2($elm$core$Set$member, group.q, db.g);
+			return !A2($elm$core$Set$member, group.n, db.g);
 		},
 		A2(
 			$elm$core$List$filter,
@@ -9777,7 +9780,7 @@ var $author$project$View$pieceDiv = F3(
 					A2(
 					$elm$html$Html$Attributes$style,
 					'clipPath',
-					$author$project$View$clipPathRef(piece.q)),
+					$author$project$View$clipPathRef(piece.n)),
 					A2($elm$html$Html$Attributes$style, 'background-image', 'url(\'' + (backgroundUrl + '\')')),
 					A2(
 					$elm$html$Html$Attributes$style,
@@ -9793,7 +9796,7 @@ var $author$project$View$renderPieces = F2(
 	function (image, visiblePieces) {
 		var pieceGroupDiv = function (pg) {
 			var render = function (piece) {
-				var _v0 = piece.q;
+				var _v0 = piece.n;
 				var x = _v0.a;
 				var y = _v0.b;
 				return _Utils_Tuple2(
@@ -9828,7 +9831,7 @@ var $author$project$View$viewDiv = function (model) {
 	var shadowBlack = shadowWithColor('black');
 	var image = model.W;
 	var _v0 = model;
-	var db = _v0.p;
+	var db = _v0.q;
 	var _v1 = _Utils_Tuple2(
 		$author$project$DB$getSelected(db),
 		$author$project$DB$getVisibleUnSelected(db));
@@ -9995,7 +9998,7 @@ var $author$project$View$visibilityCheckbox = F2(
 						[
 							$elm$html$Html$Attributes$type_('checkbox'),
 							$elm$html$Html$Attributes$checked(
-							A2($elm$core$Set$member, x, model.p.s)),
+							A2($elm$core$Set$member, x, model.q.s)),
 							$elm$html$Html$Events$onCheck(
 							$elm$core$Basics$always(
 								$author$project$Model$ToggleVisibility(x)))
