@@ -20,23 +20,26 @@ module DB exposing
     , toggleVisibilityGroup
     )
 
+import Dict exposing (Dict)
 import Drag
 import Group exposing (Group)
 import KD.Match exposing (Match(..))
 import KDDict exposing (KDDict, MatchKey)
+import Maybe.Extra
 import Point exposing (Point)
 import Set exposing (Set)
 import UI
 
 
 type alias DbIndex =
-    KDDict Int Group
+    KDDict Int Group.ID
 
 
 type alias DB =
     { index : DbIndex
     , selected : Set.Set Group.ID
     , visibleGroups : Set.Set Int
+    , groups : Dict Group.ID Group
     }
 
 
@@ -134,53 +137,58 @@ makeDb pieceGroups =
     { index = makeIndex pieceGroups
     , selected = Set.empty
     , visibleGroups = Set.fromList [ -1 ]
+    , groups =
+        pieceGroups
+            |> List.map (\g -> ( g.id, g ))
+            |> Dict.fromList
     }
 
 
 makeIndex : List Group -> DbIndex
 makeIndex list =
-    KDDict.fromListBy makeKey list
+    list
+        |> List.map (\g -> ( makeKey g, g.id ))
+        |> KDDict.fromList
 
 
 getSelected : DB -> List Group
 getSelected db =
-    db.index
-        |> KDDict.toList
-        |> List.map Tuple.second
-        |> List.filter (\group -> Set.member group.id db.selected)
+    db.selected
+        |> Set.toList
+        |> List.map (\id -> Dict.get id db.groups)
+        |> Maybe.Extra.values
 
 
 getVisibleUnSelected : DB -> List Group
 getVisibleUnSelected db =
-    db.index
-        |> KDDict.toList
-        |> List.map Tuple.second
+    db.groups
+        |> Dict.values
         |> List.filter (\group -> Set.member group.visibilityGroup db.visibleGroups)
         |> List.filter (\group -> not <| Set.member group.id db.selected)
 
 
 modifySelected : (Group -> Group) -> DB -> DB
 modifySelected f db =
+    let
+        groups : Dict Group.ID Group
+        groups =
+            db.selected
+                |> Set.foldl
+                    (\id dict -> Dict.update id (Maybe.map f) dict)
+                    db.groups
+    in
     { db
         | index =
-            db.index
-                |> KDDict.toList
-                |> List.map Tuple.second
-                |> List.map
-                    (\group ->
-                        if Set.member group.id db.selected then
-                            f group
-
-                        else
-                            group
-                    )
+            groups
+                |> Dict.values
                 |> makeIndex
+        , groups = groups
     }
 
 
 insert : Group -> DbIndex -> DbIndex
 insert pg =
-    KDDict.insert (makeKey pg) pg
+    KDDict.insert (makeKey pg) pg.id
 
 
 snap : Int -> DB -> DB
@@ -214,6 +222,8 @@ snap radius db =
                     db.index
                         |> KDDict.findMatching
                             (matchWithin dimensions)
+                        |> List.map (\id -> Dict.get id db.groups)
+                        |> Maybe.Extra.values
                         |> List.filter shouldBeMerged
 
                 merge list =
@@ -226,7 +236,12 @@ snap radius db =
                 | index =
                     db.index
                         |> KDDict.removeAll (List.map makeKey (pg :: targets))
-                        |> KDDict.insert (makeKey merged) merged
+                        |> KDDict.insert (makeKey merged) merged.id
+                , groups =
+                    (pg :: targets)
+                        |> List.map .id
+                        |> List.foldl (\id dict -> Dict.remove id dict) db.groups
+                        |> Dict.insert merged.id merged
                 , selected = Set.empty
             }
 
@@ -246,14 +261,15 @@ snap radius db =
 boxSelect : UI.SelectionMode -> Drag.Drag -> DB -> DB
 boxSelect mode drag db =
     let
-        targets index =
-            index
-                |> KDDict.findMatching (matchBox <| Drag.getDimensions drag)
-                |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
-
         insideBox =
-            targets db.index
-                |> List.map .id
+            db.index
+                |> KDDict.findMatching (matchBox <| Drag.getDimensions drag)
+                |> List.filter
+                    (\id ->
+                        Dict.get id db.groups
+                            |> Maybe.map (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
+                            |> Maybe.withDefault False
+                    )
                 |> Set.fromList
     in
     case mode of
@@ -310,6 +326,8 @@ clickedUnselectedPieceGroup point db =
     db.index
         |> KDDict.findMatching
             (matchPoint point)
+        |> List.map (\id -> Dict.get id db.groups)
+        |> Maybe.Extra.values
         |> List.filter (\pg -> Set.member pg.visibilityGroup db.visibleGroups)
         |> List.filter (Group.isPointInsideGroup point)
         |> List.reverse
@@ -321,6 +339,8 @@ clickedAny point db =
     db.index
         |> KDDict.findMatching
             (matchPoint point)
+        |> List.map (\id -> Dict.get id db.groups)
+        |> Maybe.Extra.values
         |> List.filter (\group -> Set.member group.visibilityGroup db.visibleGroups)
         |> List.any (Group.isPointInsideGroup point)
 
@@ -330,6 +350,8 @@ clickedSelected point db =
     db.index
         |> KDDict.findMatching
             (matchPoint point)
+        |> List.map (\id -> Dict.get id db.groups)
+        |> Maybe.Extra.values
         |> List.filter (\group -> Set.member group.id db.selected)
         |> List.filter (\group -> Set.member group.visibilityGroup db.visibleGroups)
         |> List.any (Group.isPointInsideGroup point)
@@ -353,8 +375,8 @@ getPieces db =
             pg.members
                 |> List.map (\p -> ( p.id, Point.add p.offset pg.position ))
     in
-    KDDict.toList db.index
-        |> List.map Tuple.second
+    db.groups
+        |> Dict.values
         |> List.concatMap pgToP
 
 
