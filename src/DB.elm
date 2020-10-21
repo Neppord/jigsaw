@@ -127,6 +127,11 @@ sToggle a set =
         Set.insert a set
 
 
+contains : Set comparable -> comparable -> Bool
+contains set a =
+    Set.member a set
+
+
 toggleVisibilityGroup : Int -> DB -> DB
 toggleVisibilityGroup groupId db =
     { db
