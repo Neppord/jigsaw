@@ -301,10 +301,10 @@ boxSelect mode drag db =
     in
     case mode of
         UI.Add ->
-            { db | selected = db.selected |> Set.union insideBox }
+            { db | selected = insideBox |> Set.union db.selected }
 
         UI.Remove ->
-            { db | selected = db.selected |> Set.diff insideBox }
+            { db | selected = insideBox |> Set.diff db.selected }
 
         UI.Replace ->
             { db | selected = insideBox }
