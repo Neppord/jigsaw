@@ -4969,10 +4969,10 @@ var $elm$core$Array$builderToArray = F2(
 		if (!builder.b) {
 			return A4(
 				$elm$core$Array$Array_elm_builtin,
-				$elm$core$Elm$JsArray$length(builder.d),
+				$elm$core$Elm$JsArray$length(builder.e),
 				$elm$core$Array$shiftStep,
 				$elm$core$Elm$JsArray$empty,
-				builder.d);
+				builder.e);
 		} else {
 			var treeLen = builder.b * $elm$core$Array$branchFactor;
 			var depth = $elm$core$Basics$floor(
@@ -4981,10 +4981,10 @@ var $elm$core$Array$builderToArray = F2(
 			var tree = A2($elm$core$Array$treeFromBuilder, correctNodeList, builder.b);
 			return A4(
 				$elm$core$Array$Array_elm_builtin,
-				$elm$core$Elm$JsArray$length(builder.d) + treeLen,
+				$elm$core$Elm$JsArray$length(builder.e) + treeLen,
 				A2($elm$core$Basics$max, 5, depth * $elm$core$Array$shiftStep),
 				tree,
-				builder.d);
+				builder.e);
 		}
 	});
 var $elm$core$Basics$idiv = _Basics_idiv;
@@ -4997,7 +4997,7 @@ var $elm$core$Array$initializeHelp = F5(
 				return A2(
 					$elm$core$Array$builderToArray,
 					false,
-					{f: nodeList, b: (len / $elm$core$Array$branchFactor) | 0, d: tail});
+					{f: nodeList, b: (len / $elm$core$Array$branchFactor) | 0, e: tail});
 			} else {
 				var leaf = $elm$core$Array$Leaf(
 					A3($elm$core$Elm$JsArray$initialize, $elm$core$Array$branchFactor, fromIndex, fn));
@@ -6339,7 +6339,7 @@ var $author$project$DB$makeBoxIndex = function (list) {
 			function (g) {
 				return _Utils_Tuple2(
 					$author$project$DB$makeBoxKey(g),
-					g.e);
+					g.c);
 			},
 			list));
 };
@@ -6358,7 +6358,7 @@ var $author$project$DB$makeWithinIndex = function (list) {
 			function (g) {
 				return _Utils_Tuple2(
 					$author$project$DB$makeWithinKey(g),
-					g.e);
+					g.c);
 			},
 			list));
 };
@@ -6369,7 +6369,7 @@ var $author$project$DB$makeDb = function (pieceGroups) {
 			A2(
 				$elm$core$List$map,
 				function (g) {
-					return _Utils_Tuple2(g.e, g);
+					return _Utils_Tuple2(g.c, g);
 				},
 				pieceGroups)),
 		g: $elm$core$Set$empty,
@@ -6390,7 +6390,7 @@ var $author$project$Model$buildModel = F3(
 	});
 var $author$project$Group$Piece = F3(
 	function (id, offset, size) {
-		return {e: id, bF: offset, aZ: size};
+		return {c: id, bF: offset, aZ: size};
 	});
 var $author$project$Point$add = F2(
 	function (a, b) {
@@ -6423,7 +6423,7 @@ var $author$project$Group$createGroup = F3(
 		var size = A2($author$project$Point$Point, image.bM, image.bL);
 		var offset = A2($author$project$JigsawImage$pieceIdToOffset, image, id);
 		return {
-			e: id,
+			c: id,
 			bs: A2($author$project$Point$add, size, offset),
 			aL: _List_fromArray(
 				[
@@ -6632,7 +6632,7 @@ var $elm$core$Array$fromListHelp = F3(
 				return A2(
 					$elm$core$Array$builderToArray,
 					true,
-					{f: nodeList, b: nodeListSize, d: jsArray});
+					{f: nodeList, b: nodeListSize, e: jsArray});
 			} else {
 				var $temp$list = remainingItems,
 					$temp$nodeList = A2(
@@ -7602,7 +7602,7 @@ var $author$project$DB$getPieces = function (db) {
 			$elm$core$List$map,
 			function (p) {
 				return _Utils_Tuple2(
-					p.e,
+					p.c,
 					A2($author$project$Point$add, p.bF, pg.aa));
 			},
 			pg.aL);
@@ -8761,7 +8761,7 @@ var $author$project$DB$clickedSelected = F2(
 				A2(
 					$elm$core$List$filter,
 					function (group) {
-						return A2($elm$core$Set$member, group.e, db.g);
+						return A2($elm$core$Set$member, group.c, db.g);
 					},
 					$elm_community$maybe_extra$Maybe$Extra$values(
 						A2(
@@ -8811,19 +8811,19 @@ var $author$project$DB$select = F3(
 				return _Utils_update(
 					db,
 					{
-						g: A2($elm$core$Set$insert, pg.e, db.g)
+						g: A2($elm$core$Set$insert, pg.c, db.g)
 					});
 			case 2:
 				return _Utils_update(
 					db,
 					{
-						g: A2($elm$core$Set$remove, pg.e, db.g)
+						g: A2($elm$core$Set$remove, pg.c, db.g)
 					});
 			default:
 				return _Utils_update(
 					db,
 					{
-						g: $elm$core$Set$singleton(pg.e)
+						g: $elm$core$Set$singleton(pg.c)
 					});
 		}
 	});
@@ -9103,7 +9103,7 @@ var $author$project$Group$merge = F2(
 				A2(
 					$elm$core$List$map,
 					function ($) {
-						return $.e;
+						return $.c;
 					},
 					newMembers)));
 		var minOffset = A2(
@@ -9114,7 +9114,7 @@ var $author$project$Group$merge = F2(
 			$author$project$Point$Point,
 			A2($elm$core$Basics$max, a.bs.v, b.bs.v),
 			A2($elm$core$Basics$max, a.bs.w, b.bs.w));
-		return {e: a.e, bs: maxOffset, aL: newMembers, bt: minOffset, bx: newNeighbours, aa: a.aa, G: a.G};
+		return {c: a.c, bs: maxOffset, aL: newMembers, bt: minOffset, bx: newNeighbours, aa: a.aa, G: a.G};
 	});
 var $elm$core$Basics$neq = _Utils_notEqual;
 var $elm$core$List$member = F2(
@@ -9285,12 +9285,12 @@ var $author$project$DB$snap = F2(
 				A2(
 					$elm$core$List$map,
 					function ($) {
-						return $.e;
+						return $.c;
 					},
 					pg.aL));
 			var shouldBeMerged = function (other) {
 				return A2($elm$core$Set$member, other.G, db.t) && ((!$elm$core$Set$isEmpty(
-					A2($elm$core$Set$intersect, memberIds, other.bx))) && (!_Utils_eq(other.e, pg.e)));
+					A2($elm$core$Set$intersect, memberIds, other.bx))) && (!_Utils_eq(other.c, pg.c)));
 			};
 			var dimensions = function () {
 				var _v1 = pg.aa;
@@ -9318,7 +9318,7 @@ var $author$project$DB$snap = F2(
 					i: A3(
 						$author$project$KDDict$insert,
 						$author$project$DB$makeBoxKey(merged),
-						merged.e,
+						merged.c,
 						A2(
 							$author$project$KDDict$removeAll,
 							A2(
@@ -9328,7 +9328,7 @@ var $author$project$DB$snap = F2(
 							db.i)),
 					k: A3(
 						$elm$core$Dict$insert,
-						merged.e,
+						merged.c,
 						merged,
 						A3(
 							$elm$core$List$foldl,
@@ -9340,14 +9340,14 @@ var $author$project$DB$snap = F2(
 							A2(
 								$elm$core$List$map,
 								function ($) {
-									return $.e;
+									return $.c;
 								},
 								A2($elm$core$List$cons, pg, targets)))),
-					g: $elm$core$Set$empty,
+					g: $elm$core$Set$singleton(merged.c),
 					B: A3(
 						$author$project$KDDict$insert,
 						$author$project$DB$makeWithinKey(merged),
-						merged.e,
+						merged.c,
 						A2(
 							$author$project$KDDict$removeAll,
 							A2(
@@ -9811,7 +9811,7 @@ var $author$project$DB$getVisibleUnSelected = function (db) {
 	return A2(
 		$elm$core$List$filter,
 		function (group) {
-			return !A2($elm$core$Set$member, group.e, db.g);
+			return !A2($elm$core$Set$member, group.c, db.g);
 		},
 		A2(
 			$elm$core$List$filter,
@@ -9879,7 +9879,7 @@ var $author$project$View$pieceDiv = F3(
 					A2(
 					$elm$html$Html$Attributes$style,
 					'clipPath',
-					$author$project$View$clipPathRef(piece.e)),
+					$author$project$View$clipPathRef(piece.c)),
 					A2($elm$html$Html$Attributes$style, 'background-image', 'url(\'' + (backgroundUrl + '\')')),
 					A2(
 					$elm$html$Html$Attributes$style,
@@ -9895,7 +9895,7 @@ var $author$project$View$renderPieces = F2(
 	function (image, visiblePieces) {
 		var pieceGroupDiv = function (pg) {
 			var render = function (piece) {
-				var _v0 = piece.e;
+				var _v0 = piece.c;
 				var x = _v0.a;
 				var y = _v0.b;
 				return _Utils_Tuple2(

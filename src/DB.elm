@@ -260,7 +260,7 @@ snap radius db =
                         |> List.map .id
                         |> List.foldl (\id dict -> Dict.remove id dict) db.groups
                         |> Dict.insert merged.id merged
-                , selected = Set.empty
+                , selected = Set.singleton merged.id
             }
 
         _ ->
